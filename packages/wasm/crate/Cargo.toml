@@ -1,0 +1,43 @@
+[package]
+name = "ignition-core-wasm"
+version = "0.1.0"
+authors = ["theochupp <tclchiam@gmail.com>"]
+
+[profile.release]
+debug = false
+lto = true
+opt-level = 's'
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default-features = ["console_error_panic_hook", "wee_alloc"]
+
+[dependencies]
+js-sys = "^0.2"
+
+serde = "^1.0"
+serde_derive = "^1.0"
+bincode = "1.0"
+
+itertools = "0.7"
+
+cfg-if = "0.1.2"
+
+ignition = { git = "https://github.com/tchupp/ignition", rev = "19a9a35b5e05672f2421c1a581c330d710ad8f37" }
+
+# The `console_error_panic_hook` crate provides better debugging of panics by
+# logging them with `console.error`. This is great for development, but requires
+# all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
+# code size when deploying.
+console_error_panic_hook = { version = "0.1.1", optional = true }
+
+# `wee_alloc` is a tiny allocator for wasm that is only ~1K in code size
+# compared to the default allocator's ~10K. It is slower than the default
+# allocator, however.
+wee_alloc = { version = "0.4.1", optional = true }
+
+[dependencies.wasm-bindgen]
+version = "^0.2.22"
+features = ["serde-serialize"]

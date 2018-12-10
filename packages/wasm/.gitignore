@@ -1,0 +1,11 @@
+target
+
+**/*~
+**/node_modules
+
+**/.DS_Store
+
+lib
+dist
+pkg
+wasm-pack.log

@@ -1,0 +1,17 @@
+{
+  "name": "root",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "clean": "lerna run clean",
+    "build": "lerna run build",
+    "test": "lerna run test"
+  },
+  "devDependencies": {
+    "lerna": "^3.5.1",
+    "rxjs-tslint-rules": "^4.13.0"
+  }
+}
