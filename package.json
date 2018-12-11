@@ -12,6 +12,9 @@
   },
   "devDependencies": {
     "lerna": "^3.5.1",
-    "rxjs-tslint-rules": "^4.13.0"
+    "rxjs": "^6.3.3",
+    "rxjs-tslint-rules": "^4.13.0",
+    "tslint": "^5.11.0",
+    "typescript": "^3.2.2"
   }
 }
