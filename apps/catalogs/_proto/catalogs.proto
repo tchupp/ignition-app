@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package catalogs;
+
+service CatalogManager {
+    rpc GetCatalog (GetCatalogRequest) returns (Catalog) {
+    }
+}
+
+message GetCatalogRequest {
+    string catalog_id = 1;
+    repeated string selections = 2;
+    repeated string exclusions = 3;
+}
+
+message Catalog {
+    string id = 1;
+    repeated Family families = 2;
+}
+
+message Family {
+    string id = 1;
+    repeated ItemStatus items = 2;
+}
+
+message ItemStatus {
+    enum Status {
+        AVAILABLE = 0;
+        SELECTED = 1;
+        EXCLUDED = 2;
+        REQUIRED = 3;
+    }
+
+    string id = 1;
+    Status status = 2;
+}
