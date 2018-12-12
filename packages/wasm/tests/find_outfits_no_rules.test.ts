@@ -1,5 +1,5 @@
 import test from "ava";
-import {buildCloset, findOutfits} from "../src";
+import {buildCatalog, findOutfits} from "../src";
 import {right} from "fp-ts/lib/Either";
 
 test("findOutfits with no rules", async t => {
@@ -11,8 +11,8 @@ test("findOutfits with no rules", async t => {
 
 
     // case 1
-    const outfit1 = await buildCloset(families)
-        .chain(closet => findOutfits(closet))
+    const outfit1 = await buildCatalog(families)
+        .chain(catalog => findOutfits(catalog))
         .run();
 
     const expected1 = [
@@ -25,8 +25,8 @@ test("findOutfits with no rules", async t => {
 
 
     // case 2
-    const outfit2 = await buildCloset(families)
-        .chain(closet => findOutfits(closet, ["shirts:red"]))
+    const outfit2 = await buildCatalog(families)
+        .chain(catalog => findOutfits(catalog, ["shirts:red"]))
         .run();
 
     const expected2 = [
@@ -37,8 +37,8 @@ test("findOutfits with no rules", async t => {
 
 
     // case 3
-    const outfit3 = await buildCloset(families)
-        .chain(closet => findOutfits(closet, ["pants:slacks", "shirts:red"]))
+    const outfit3 = await buildCatalog(families)
+        .chain(catalog => findOutfits(catalog, ["pants:slacks", "shirts:red"]))
         .run();
 
     const expected3 = [

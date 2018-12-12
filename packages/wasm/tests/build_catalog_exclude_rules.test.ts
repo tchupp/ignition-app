@@ -1,5 +1,5 @@
 import test from "ava";
-import {buildCloset} from "../src";
+import {buildCatalog} from "../src";
 import {left} from "fp-ts/lib/Either";
 
 test("build, when exclusion rule has the same family as the selection, gives an error", async t => {
@@ -11,7 +11,7 @@ test("build, when exclusion rule has the same family as the selection, gives an 
         "shirts:red": ["shirts:blue"]
     };
 
-    const error = await buildCloset(families, exclusions).run();
+    const error = await buildCatalog(families, exclusions).run();
 
     let expectedError = {
         error: "ExclusionError",
@@ -30,7 +30,7 @@ test("build, when exclusion rule has unknown item as selection, gives an error",
         "shirts:black": ["pants:jeans"]
     };
 
-    const error = await buildCloset(families, exclusions).run();
+    const error = await buildCatalog(families, exclusions).run();
 
     let expectedError = {
         error: "MissingFamily",
@@ -49,7 +49,7 @@ test("build, when exclusion rule has unknown item in exclusions, gives an error"
         "shirts:blue": ["pants:ripped"]
     };
 
-    const error = await buildCloset(families, exclusions).run();
+    const error = await buildCatalog(families, exclusions).run();
 
     let expectedError = {
         error: "MissingFamily",

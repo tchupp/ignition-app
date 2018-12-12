@@ -1,5 +1,5 @@
 import test from "ava";
-import {buildCloset} from "../src";
+import {buildCatalog} from "../src";
 import {left} from "fp-ts/lib/Either";
 
 test("build, when one item is in two families, gives an error", async t => {
@@ -8,7 +8,7 @@ test("build, when one item is in two families, gives an error", async t => {
         "pants": ["shirts:blue"],
     };
 
-    const error = await buildCloset(families).run();
+    const error = await buildCatalog(families).run();
 
     let expectedError = {
         error: "ConflictingFamilies",

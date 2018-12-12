@@ -1,6 +1,6 @@
 import {TaskEither, tryCatch} from "fp-ts/lib/TaskEither";
 
-export type Closet = string;
+export type Catalog = string;
 
 export interface IgnitionError {
     error: string;
@@ -8,7 +8,7 @@ export interface IgnitionError {
     details: IgnitionError[] | string;
 }
 
-export interface ClosetContents {
+export interface CatalogContents {
     [key: string]: Item[];
 }
 
@@ -20,11 +20,11 @@ export type ItemStatus = { Available: Item } | { Excluded: Item } | { Selected: 
 
 export type Item = string;
 
-export function buildCloset(
-    families: ClosetContents,
-    exclusions: ClosetContents = {},
-    inclusions: ClosetContents = {}
-): TaskEither<IgnitionError, Closet> {
+export function buildCatalog(
+    families: CatalogContents,
+    exclusions: CatalogContents = {},
+    inclusions: CatalogContents = {}
+): TaskEither<IgnitionError, Catalog> {
     let contents = {families: families, exclusions: exclusions, inclusions: inclusions};
 
     return tryCatch(
@@ -35,25 +35,25 @@ export function buildCloset(
 }
 
 export function findOptions(
-    closet: Closet,
+    catalog: Catalog,
     selections: Item[] = [],
     exclusions: Item[] = []
 ): TaskEither<IgnitionError, Options> {
     return tryCatch(
         () => import("../crate/pkg")
-            .then(m => m.findOptionsWasm(closet, selections, exclusions)),
+            .then(m => m.findOptionsWasm(catalog, selections, exclusions)),
         (err: any) => err
     );
 }
 
 export function findOutfits(
-    closet: Closet,
+    catalog: Catalog,
     selections: Item[] = [],
     exclusions: Item[] = []
 ): TaskEither<IgnitionError, Item[][]> {
     return tryCatch(
         () => import("../crate/pkg")
-            .then(m => m.findOutfitsWasm(closet, selections, exclusions)),
+            .then(m => m.findOutfitsWasm(catalog, selections, exclusions)),
         (err: any) => err
     );
 }

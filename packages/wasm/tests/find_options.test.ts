@@ -1,5 +1,5 @@
 import test from "ava";
-import {buildCloset, findOptions, Options} from "../src";
+import {buildCatalog, findOptions, Options} from "../src";
 import {left, right} from "fp-ts/lib/Either";
 
 test("findOptions with no rules, and no selections", async t => {
@@ -8,8 +8,8 @@ test("findOptions with no rules, and no selections", async t => {
         "pants": ["pants:jeans", "pants:slacks"],
     };
 
-    const options = await buildCloset(families)
-        .chain(closet => findOptions(closet))
+    const options = await buildCatalog(families)
+        .chain(catalog => findOptions(catalog))
         .run();
 
     const expected: Options = {
@@ -31,8 +31,8 @@ test("findOptions with no rules, and one selection", async t => {
         "pants": ["pants:jeans", "pants:slacks"],
     };
 
-    const options = await buildCloset(families)
-        .chain(closet => findOptions(closet, ["shirts:red"]))
+    const options = await buildCatalog(families)
+        .chain(catalog => findOptions(catalog, ["shirts:red"]))
         .run();
 
     const expected: Options = {
@@ -54,8 +54,8 @@ test("findOptions with no rules, and all selections", async t => {
         "pants": ["pants:jeans", "pants:slacks"],
     };
 
-    const options = await buildCloset(families)
-        .chain(closet => findOptions(closet, ["pants:slacks", "shirts:red"]))
+    const options = await buildCatalog(families)
+        .chain(catalog => findOptions(catalog, ["pants:slacks", "shirts:red"]))
         .run();
 
     const expected: Options = {
@@ -77,8 +77,8 @@ test.skip("findOptions with no rules, with unknown selection", async t => {
         "pants": ["pants:jeans", "pants:slacks"],
     };
 
-    const error = await buildCloset(families)
-        .chain(closet => findOptions(closet, ["shirts:black"]))
+    const error = await buildCatalog(families)
+        .chain(catalog => findOptions(catalog, ["shirts:black"]))
         .run();
 
     let expectedError = {
@@ -95,8 +95,8 @@ test.skip("findOptions with no rules, with more selections than families", async
         "pants": ["pants:jeans", "pants:slacks"],
     };
 
-    const options = buildCloset(families)
-        .chain(closet => findOptions(closet, ["shirts:red", "shirts:blue"]))
+    const options = buildCatalog(families)
+        .chain(catalog => findOptions(catalog, ["shirts:red", "shirts:blue"]))
         .run();
     const error = await options;
 

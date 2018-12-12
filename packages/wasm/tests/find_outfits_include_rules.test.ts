@@ -1,5 +1,5 @@
 import test from "ava";
-import {buildCloset, findOutfits} from "../src";
+import {buildCatalog, findOutfits} from "../src";
 import {right} from "fp-ts/lib/Either";
 
 test("findOutfits with one inclusion rule, and one deterministic selection", async t => {
@@ -13,8 +13,8 @@ test("findOutfits with one inclusion rule, and one deterministic selection", asy
     };
 
     // case 1
-    const outfits1 = await buildCloset(families, {}, inclusions)
-        .chain(closet => findOutfits(closet, ["shirts:red"]))
+    const outfits1 = await buildCatalog(families, {}, inclusions)
+        .chain(catalog => findOutfits(catalog, ["shirts:red"]))
         .run();
 
     const expected1 = [
@@ -23,8 +23,8 @@ test("findOutfits with one inclusion rule, and one deterministic selection", asy
     t.deepEqual(outfits1, right(expected1));
 
     // case 2
-    const outfits2 = await buildCloset(families, {}, inclusions)
-        .chain(closet => findOutfits(closet, ["pants:jeans"]))
+    const outfits2 = await buildCatalog(families, {}, inclusions)
+        .chain(catalog => findOutfits(catalog, ["pants:jeans"]))
         .run();
 
     const expected2 = [
