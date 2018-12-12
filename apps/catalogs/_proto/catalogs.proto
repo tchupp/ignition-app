@@ -3,24 +3,47 @@ syntax = "proto3";
 package catalogs;
 
 service CatalogManager {
-    rpc GetCatalog (GetCatalogRequest) returns (Catalog) {
+    rpc RetrieveCatalog (RetrieveCatalogRequest) returns (Catalog) {
+    }
+    rpc CreateCatalog (CreateCatalogRequest) returns (CreateCatalogResponse) {
     }
 }
 
-message GetCatalogRequest {
+message RetrieveCatalogRequest {
     string catalog_id = 1;
     repeated string selections = 2;
     repeated string exclusions = 3;
 }
 
-message Catalog {
-    string id = 1;
+message CreateCatalogRequest {
+    string catalog_id = 1;
     repeated Family families = 2;
+    repeated Exclusion exclusions = 3;
+    repeated Inclusion inclusions = 4;
+}
+
+message CreateCatalogResponse {
+    string catalog_id = 1;
 }
 
 message Family {
-    string id = 1;
-    repeated ItemStatus items = 2;
+    string family_id = 1;
+    repeated string items = 2;
+}
+
+message Exclusion {
+    string selected_item = 1;
+    repeated string exclusions = 2;
+}
+
+message Inclusion {
+    string selected_item = 1;
+    repeated string inclusions = 2;
+}
+
+message Catalog {
+    string catalog_id = 1;
+    map<string, ItemStatus> options = 2;
 }
 
 message ItemStatus {
@@ -31,6 +54,6 @@ message ItemStatus {
         REQUIRED = 3;
     }
 
-    string id = 1;
+    string item_id = 1;
     Status status = 2;
 }

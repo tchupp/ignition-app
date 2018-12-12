@@ -1,1 +1,5 @@
 generated
+yarn-error.log
+
+dist
+.webpack
