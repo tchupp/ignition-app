@@ -43,17 +43,22 @@ message Inclusion {
 
 message Catalog {
     string catalog_id = 1;
-    map<string, ItemStatus> options = 2;
+    repeated FamilyOptions options = 2;
 }
 
-message ItemStatus {
-    enum Status {
-        AVAILABLE = 0;
-        SELECTED = 1;
-        EXCLUDED = 2;
-        REQUIRED = 3;
+message FamilyOptions {
+    message Item {
+        enum Status {
+            AVAILABLE = 0;
+            SELECTED = 1;
+            EXCLUDED = 2;
+            REQUIRED = 3;
+        }
+
+        string item_id = 1;
+        Status status = 2;
     }
 
-    string item_id = 1;
-    Status status = 2;
+    string family_id = 1;
+    repeated Item items = 2;
 }

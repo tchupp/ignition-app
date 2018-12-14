@@ -49,9 +49,9 @@ pub fn find_options(closet: &JsValue, selections: &JsValue, exclusions: &JsValue
         .unwrap();
 
     let selections: Vec<String> = selections.into_serde().unwrap();
-    let selections: Vec<Item> = selections.into_iter().map(Item::new).collect();
     let exclusions: Vec<String> = exclusions.into_serde().unwrap();
-    let exclusions: Vec<Item> = exclusions.into_iter().map(Item::new).collect();
+    let selections: Vec<Item> = selections.into_iter().map(|item| Item::new(item.trim())).collect();
+    let exclusions: Vec<Item> = exclusions.into_iter().map(|item| Item::new(item.trim())).collect();
 
     closet.options(&selections[..], &exclusions[..])
         .map(|options| JsValue::from_serde(&options).unwrap())

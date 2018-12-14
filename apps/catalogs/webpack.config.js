@@ -32,5 +32,7 @@ module.exports = {
         filename: 'index.js'
     },
     externals: [nodeExternals({modulesFromFile: true, whitelist: [/^@ignition/]})],
-    plugins: [new GeneratePackageJsonPlugin(basePackageValues, versionsPackageFilename)],
+    plugins: [
+        new GeneratePackageJsonPlugin(basePackageValues, versionsPackageFilename),
+    ],
 };

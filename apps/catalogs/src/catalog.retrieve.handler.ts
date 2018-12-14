@@ -1,6 +1,6 @@
 import Datastore = require("@google-cloud/datastore");
-import {Item} from "@ignition/wasm";
-import {Catalog, RetrieveCatalogRequest} from "../generated/catalogs_pb";
+import {Item, ItemStatus} from "@ignition/wasm";
+import {Catalog, FamilyOptions, RetrieveCatalogRequest} from "../generated/catalogs_pb";
 
 import {Either} from "fp-ts/lib/Either";
 import {fromLeft, readerTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
@@ -24,24 +24,60 @@ export function retrieveCatalog(req: RetrieveCatalogRequest, datastore: Datastor
 }
 
 function fromRequest(req: RetrieveCatalogRequest): ReaderTaskEither<Datastore, RetrieveCatalogError, [string, Item[]]> {
-    let catalogId = req.getCatalogId();
-    let selections = req.getSelectionsList();
+    const catalogId = req.getCatalogId();
+    const selections = req.getSelectionsList();
 
     if (catalogId.length === 0) {
-        return fromLeft({type: ErrorType.Request, body: {error: "No catalog id in request"}});
+        return fromLeft({type: ErrorType.NotFound, body: {error: "No catalog id in request"}});
     }
 
     return readerTaskEither.of([catalogId, selections] as [string, Item[]]);
 }
 
 function toSuccessResponse(response: RetrieveCatalogResponse): Catalog {
-    let catalog = new Catalog();
-    catalog.setCatalogId(response.id);
+    function toItem(status: ItemStatus): FamilyOptions.Item {
+        const item = new FamilyOptions.Item();
+        switch (status.type) {
+            case "Available":
+                item.setItemId(status.item);
+                item.setStatus(FamilyOptions.Item.Status.AVAILABLE);
+                return item;
+            case "Excluded":
+                item.setItemId(status.item);
+                item.setStatus(FamilyOptions.Item.Status.EXCLUDED);
+                return item;
+            case "Selected":
+                item.setItemId(status.item);
+                item.setStatus(FamilyOptions.Item.Status.SELECTED);
+                return item;
+            case "Required":
+                item.setItemId(status.item);
+                item.setStatus(FamilyOptions.Item.Status.SELECTED);
+                return item;
+        }
+    }
 
+    function toFamilyOptions(familyId: string, statuses: ItemStatus[]): FamilyOptions {
+        const items = statuses.map((status: ItemStatus) => toItem(status));
+
+        const familyOptions = new FamilyOptions();
+        familyOptions.setFamilyId(familyId);
+        familyOptions.setItemsList(items);
+        return familyOptions;
+    }
+
+    const familyOptions: FamilyOptions[] =
+        Object.keys(response.options)
+            .map(familyId => toFamilyOptions(familyId, response.options[familyId]));
+
+    const catalog = new Catalog();
+    catalog.setCatalogId(response.id);
+    catalog.setOptionsList(familyOptions);
     return catalog;
 }
 
 function toErrorResponse(_error: RetrieveCatalogError): ServiceError {
+    console.error(_error);
     return {
         name: "",
         message: "",

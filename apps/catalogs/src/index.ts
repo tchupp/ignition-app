@@ -5,6 +5,7 @@ import {CatalogManagerService} from "../generated/catalogs_grpc_pb";
 import * as messages from "../generated/catalogs_pb";
 
 import {retrieveCatalog as retrieveCatalogInner} from "./catalog.retrieve.handler";
+import {createCatalog as createCatalogInner} from "./catalog.create.handler";
 import {Either} from "fp-ts/lib/Either";
 
 
@@ -18,6 +19,7 @@ function handleResult<Res>(callback: grpc.sendUnaryData<Res>): (either: Either<g
 
 function handleError<Res>(callback: grpc.sendUnaryData<Res>): (error: any) => void {
     return (error: any) => {
+        console.error(error);
         callback({
             name: "Internal Error",
             message: error.toString(),
@@ -26,9 +28,13 @@ function handleError<Res>(callback: grpc.sendUnaryData<Res>): (error: any) => vo
     };
 }
 
-const service = {
+const service: grpc.UntypedServiceImplementation = {
     retrieveCatalog: (call: grpc.ServerUnaryCall<messages.RetrieveCatalogRequest>, callback: grpc.sendUnaryData<messages.Catalog>) =>
         retrieveCatalogInner(call.request, new Datastore())
+            .subscribe(handleResult(callback), handleError(callback)),
+
+    createCatalog: (call: grpc.ServerUnaryCall<messages.CreateCatalogRequest>, callback: grpc.sendUnaryData<messages.CreateCatalogResponse>) =>
+        createCatalogInner(call.request, new Datastore())
             .subscribe(handleResult(callback), handleError(callback))
 };
 
@@ -44,6 +50,7 @@ function main() {
     server.addService(CatalogManagerService, service);
     server.bind(port, grpc.ServerCredentials.createInsecure());
     server.start();
+
     console.log(`Started gRPC service on ${port}`);
 }
 
