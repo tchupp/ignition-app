@@ -14,12 +14,12 @@ test("findOptions with no rules, and no selections", async t => {
 
     const expected: Options = {
         "shirts": [
-            {Available: "shirts:blue"},
-            {Available: "shirts:red"}
+            {type: "Available", item: "shirts:blue"},
+            {type: "Available", item: "shirts:red"}
         ],
         "pants": [
-            {Available: "pants:jeans"},
-            {Available: "pants:slacks"},
+            {type: "Available", item: "pants:jeans"},
+            {type: "Available", item: "pants:slacks"},
         ]
     };
     t.deepEqual(options, right(expected));
@@ -37,12 +37,12 @@ test("findOptions with no rules, and one selection", async t => {
 
     const expected: Options = {
         "shirts": [
-            {Excluded: "shirts:blue"},
-            {Selected: "shirts:red"}
+            {type: "Excluded", item: "shirts:blue"},
+            {type: "Selected", item: "shirts:red"}
         ],
         "pants": [
-            {Available: "pants:jeans"},
-            {Available: "pants:slacks"},
+            {type: "Available", item: "pants:jeans"},
+            {type: "Available", item: "pants:slacks"},
         ]
     };
     t.deepEqual(options, right(expected));
@@ -60,12 +60,12 @@ test("findOptions with no rules, and all selections", async t => {
 
     const expected: Options = {
         "shirts": [
-            {Excluded: "shirts:blue"},
-            {Selected: "shirts:red"}
+            {type: "Excluded", item: "shirts:blue"},
+            {type: "Selected", item: "shirts:red"}
         ],
         "pants": [
-            {Excluded: "pants:jeans"},
-            {Selected: "pants:slacks"},
+            {type: "Excluded", item: "pants:jeans"},
+            {type: "Selected", item: "pants:slacks"},
         ]
     };
     t.deepEqual(options, right(expected));
