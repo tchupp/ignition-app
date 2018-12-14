@@ -16,7 +16,11 @@ export interface Options {
     [key: string]: ItemStatus[];
 }
 
-export type ItemStatus = { Available: Item } | { Excluded: Item } | { Selected: Item };
+export type ItemStatus =
+    { type: "Available", item: string }
+    | { type: "Excluded", item: string }
+    | { type: "Selected", item: string }
+    | { type: "Required", item: string };
 
 export type Item = string;
 

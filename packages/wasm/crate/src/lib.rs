@@ -1,3 +1,4 @@
+extern crate base64;
 extern crate bincode;
 extern crate cfg_if;
 extern crate ignition;

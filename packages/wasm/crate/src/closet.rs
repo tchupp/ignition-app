@@ -26,14 +26,15 @@ impl From<ClosetError> for IgnitionError {
 
 #[wasm_bindgen(js_name = findOutfitsWasm)]
 pub fn find_outfits(closet: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
-    let closet: Closet = closet.into_serde()
-        .map(|bytes: Vec<u8>| bincode::deserialize(&bytes[..]).unwrap())
+    let closet: Closet = closet.as_string()
+        .map(|bytes| base64::decode(bytes.as_str()).unwrap())
+        .map(|bytes| bincode::deserialize(&bytes[..]).unwrap())
         .unwrap();
 
     let selections: Vec<String> = selections.into_serde().unwrap();
     let exclusions: Vec<String> = exclusions.into_serde().unwrap();
-    let selections: Vec<Item> = selections.into_iter().map(Item::new).collect();
-    let exclusions: Vec<Item> = exclusions.into_iter().map(Item::new).collect();
+    let selections: Vec<Item> = selections.into_iter().map(|item| Item::new(item.trim())).collect();
+    let exclusions: Vec<Item> = exclusions.into_iter().map(|item| Item::new(item.trim())).collect();
 
     let outfits = closet.outfits_with(&selections[..], &exclusions[..]);
 
@@ -42,8 +43,9 @@ pub fn find_outfits(closet: &JsValue, selections: &JsValue, exclusions: &JsValue
 
 #[wasm_bindgen(js_name = findOptionsWasm)]
 pub fn find_options(closet: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
-    let closet: Closet = closet.into_serde()
-        .map(|bytes: Vec<u8>| bincode::deserialize(&bytes[..]).unwrap())
+    let closet: Closet = closet.as_string()
+        .map(|bytes| base64::decode(bytes.as_str()).unwrap())
+        .map(|bytes| bincode::deserialize(&bytes[..]).unwrap())
         .unwrap();
 
     let selections: Vec<String> = selections.into_serde().unwrap();

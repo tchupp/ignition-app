@@ -70,7 +70,8 @@ pub fn build_closet(contents: &JsValue) -> js_sys::Promise {
 
     closet_builder.build()
         .map(|closet| bincode::serialize(&closet).unwrap())
-        .map(|closet| JsValue::from_serde(&closet).unwrap())
+        .map(|closet| base64::encode(&closet[..]))
+        .map(|closet| JsValue::from_str(closet.as_str()))
         .map(|closet| js_sys::Promise::resolve(&closet))
         .map_err(|err| IgnitionError::from(err))
         .map_err(|err| JsValue::from_serde(&err).unwrap())

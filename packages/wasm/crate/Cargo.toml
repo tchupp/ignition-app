@@ -20,12 +20,13 @@ js-sys = "^0.2"
 serde = "^1.0"
 serde_derive = "^1.0"
 bincode = "1.0"
+base64 = "0.10"
 
 itertools = "0.7"
 
 cfg-if = "0.1.2"
 
-ignition = { git = "https://github.com/tchupp/ignition", rev = "19a9a35b5e05672f2421c1a581c330d710ad8f37" }
+ignition = { git = "https://github.com/tchupp/ignition", rev = "ae9f87e2b1262f28031dfbccb2c86946d242d533" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
