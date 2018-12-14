@@ -54,8 +54,8 @@ deploy:catalogs-prod:
     - gcloud config set project $GCP_PROJECT
     - gcloud container clusters get-credentials ${GKE_CLUSTER_NAME} --zone ${GKE_CLUSTER_ZONE}
   script:
-    - sed -i "s/\$CATALOGS_IMAGE/v$CATALOGS_IMAGE/g" apps/catalogs/k8s-deployment.yml
-    - sed -i "s/\$VERSION/v$CI_PIPELINE_IID/g" apps/catalogs/k8s-deployment.yml
+    - sed -i "s,\$CATALOGS_IMAGE,$CATALOGS_IMAGE,g" apps/catalogs/k8s-deployment.yml
+    - sed -i "s,\$VERSION,v$CI_PIPELINE_IID,g" apps/catalogs/k8s-deployment.yml
     - kubectl apply -f apps/catalogs/k8s-deployment.yml
   environment:
     name: production
