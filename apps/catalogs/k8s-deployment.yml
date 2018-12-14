@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingition-catalogs-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: ingition-catalogs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingition-catalogs-deployment
+spec:
+  selector:
+    matchLabels:
+      app: ingition-catalogs
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ingition-catalogs
+    spec:
+      containers:
+        - name: ingition-catalogs-api
+          image: $CATALOGS_IMAGE:$VERSION
+          ports:
+            - containerPort: 8080

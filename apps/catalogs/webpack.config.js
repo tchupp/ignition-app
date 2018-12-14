@@ -4,9 +4,9 @@ const path = require('path');
 
 const versionsPackageFilename = __dirname + "/package.json";
 const basePackageValues = {
-    name: "@ignition/api",
+    name: "@ignition/catalogs",
     version: "1.0.0",
-    description: "Packaged externals for bowtie-api",
+    description: "Packaged externals for catalogs",
     private: true,
 };
 

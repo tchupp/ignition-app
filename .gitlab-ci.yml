@@ -1,0 +1,63 @@
+image: registry.gitlab.com/tclchiam/docker-rust-node
+
+variables:
+  VERSIONED_CATALOGS_IMAGE: '$CATALOGS_IMAGE:v$CI_PIPELINE_IID'
+  LATEST_CATALOGS_IMAGE: '$CATALOGS_IMAGE:latest'
+
+cache:
+  key: "$CI_PROJECT_NAME"
+  untracked: true
+  paths:
+    - node_modules
+
+stages:
+  - test
+  - publish
+  - deploy
+
+before_script:
+  - time yarn install
+
+test:unit:
+  stage: test
+  script:
+    - yarn run build
+    - yarn run test
+  artifacts:
+    paths:
+      - apps/catalogs/.webpack
+    expire_in: 1 hour
+
+publish:catalogs-docker:
+  stage: publish
+  image: docker:git
+  services:
+    - docker:dind
+  dependencies:
+    - test:unit
+  before_script:
+    - echo ${SERVICE_ACCOUNT} | base64 -d > sa_credentials.json
+    - docker login -u _json_key --password-stdin https://gcr.io < sa_credentials.json
+  script:
+    - docker build --cache-from "${LATEST_CATALOGS_IMAGE}" -t "${VERSIONED_CATALOGS_IMAGE}" -t "${LATEST_CATALOGS_IMAGE}" apps/catalogs
+    - docker push "${VERSIONED_CATALOGS_IMAGE}"
+    - docker push "${LATEST_CATALOGS_IMAGE}"
+  only:
+    - master
+
+deploy:catalogs-prod:
+  stage: deploy
+  image: google/cloud-sdk
+  before_script:
+    - echo ${SERVICE_ACCOUNT} | base64 -d > sa_credentials.json
+    - gcloud auth activate-service-account --key-file=sa_credentials.json
+    - gcloud config set project $GCP_PROJECT
+    - gcloud container clusters get-credentials ${GKE_CLUSTER_NAME} --zone ${GKE_CLUSTER_ZONE}
+  script:
+    - sed -i "s/\$CATALOGS_IMAGE/v$CATALOGS_IMAGE/g" apps/catalogs/k8s-deployment.yml
+    - sed -i "s/\$VERSION/v$CI_PIPELINE_IID/g" apps/catalogs/k8s-deployment.yml
+    - kubectl apply -f apps/catalogs/k8s-deployment.yml
+  environment:
+    name: production
+  only:
+    - master
