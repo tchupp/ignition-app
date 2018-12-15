@@ -44,7 +44,7 @@ const service: grpc.UntypedServiceImplementation = {
 require("source-map-support").install();
 
 function main() {
-    const port = '0.0.0.0:50051';
+    const port = '0.0.0.0:8080';
 
     const server = new grpc.Server();
     server.addService(CatalogManagerService, service);
