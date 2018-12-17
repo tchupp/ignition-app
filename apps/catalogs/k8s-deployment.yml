@@ -5,8 +5,12 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 80
-      targetPort: 8080
+    - port: 8081
+      targetPort: 8081
+      name: json
+    - port: 8082
+      targetPort: 8082
+      name: grpc
   selector:
     app: ignition-catalogs
 ---
@@ -25,6 +29,18 @@ spec:
         app: ignition-catalogs
     spec:
       containers:
+        - name: esp
+          image: gcr.io/endpoints-release/endpoints-runtime:1
+          args: [
+            "--http_port=8081",
+            "--http2_port=8082",
+            "--backend=grpc://127.0.0.1:8080",
+            "--rollout_strategy=managed",
+            "--service=catalogs.endpoints.$GCP_PROJECT.cloud.goog",
+          ]
+          ports:
+            - containerPort: 8081
+            - containerPort: 8082
         - name: ignition-catalogs-api
           image: $CATALOGS_IMAGE:$VERSION
           ports:
