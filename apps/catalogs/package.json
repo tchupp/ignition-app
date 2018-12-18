@@ -4,7 +4,7 @@
   "description": "Catalogs Service",
   "scripts": {
     "clean": "rimraf ./dist ./.webpack ./generated",
-    "build": "yarn run clean && ./build.sh && webpack",
+    "build": "yarn run clean && ./build_pb.sh && webpack",
     "test": "yarn run build && ava-ts"
   },
   "author": "Theo Chupp",

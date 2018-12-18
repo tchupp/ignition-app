@@ -1,0 +1,26 @@
+# The configuration schema is defined by service.proto file
+# https://github.com/googleapis/googleapis/blob/master/google/api/service.proto
+type: google.api.Service
+config_version: 3
+
+#
+# Name of the service configuration.
+#
+name: catalogs.endpoints.$GCP_PROJECT.cloud.goog
+
+#
+# API title to appear in the user interface (Google Cloud Console).
+#
+title: Catalogs gRPC API
+apis:
+  - name: catalogs.CatalogManager
+
+#
+# API usage restrictions
+#
+usage:
+  rules:
+    # None of these API methods require an API key
+    # N.B: JWTs are not a substitute for API keys
+    - selector: "*"
+      allow_unregistered_calls: true
