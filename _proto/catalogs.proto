@@ -70,5 +70,5 @@ message ItemOption {
     }
 
     string item_id = 1;
-    Status status = 2;
+    Status item_status = 2;
 }

@@ -40,19 +40,19 @@ function toSuccessResponse(response: RetrieveCatalogResponse): Catalog {
         switch (status.type) {
             case "Available":
                 item.setItemId(status.item);
-                item.setStatus(ItemOption.Status.AVAILABLE);
+                item.setItemStatus(ItemOption.Status.AVAILABLE);
                 return item;
             case "Excluded":
                 item.setItemId(status.item);
-                item.setStatus(ItemOption.Status.EXCLUDED);
+                item.setItemStatus(ItemOption.Status.EXCLUDED);
                 return item;
             case "Selected":
                 item.setItemId(status.item);
-                item.setStatus(ItemOption.Status.SELECTED);
+                item.setItemStatus(ItemOption.Status.SELECTED);
                 return item;
             case "Required":
                 item.setItemId(status.item);
-                item.setStatus(ItemOption.Status.REQUIRED);
+                item.setItemStatus(ItemOption.Status.REQUIRED);
                 return item;
         }
     }
