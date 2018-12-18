@@ -75,7 +75,6 @@ test("retrieveCatalog returns catalog options, modified by selections, when requ
 
     const datastore = instance(datastoreStub);
     const result = await retrieveCatalog(catalogId, selections).run(datastore);
-    console.log(result);
 
     const expected: Options = {
         "pants": [

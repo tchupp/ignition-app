@@ -12,9 +12,13 @@ OUT_DIR="./generated"
 mkdir -p ${OUT_DIR}
 
 grpc_tools_node_protoc \
-    -I_proto \
+    -I../../_proto \
+    --include_imports \
     --js_out=import_style=commonjs,binary:${OUT_DIR} \
     --ts_out="${OUT_DIR}" \
     --grpc_out=${OUT_DIR} \
     --plugin=protoc-gen-grpc=${GRPC_TOOLS_NODE} \
+    --descriptor_set_out=api_descriptor.pb \
+    google/api/annotations.proto \
+    google/api/http.proto \
     catalogs.proto

@@ -1,11 +1,20 @@
 syntax = "proto3";
 
+import "google/api/annotations.proto";
+
 package catalogs;
 
 service CatalogManager {
     rpc RetrieveCatalog (RetrieveCatalogRequest) returns (Catalog) {
+        option (google.api.http) = {
+          get: "/v1/catalogs/{catalog_id}"
+        };
     }
     rpc CreateCatalog (CreateCatalogRequest) returns (CreateCatalogResponse) {
+        option (google.api.http) = {
+          put: "/v1/catalogs/{catalog_id}"
+          body: "*"
+        };
     }
 }
 
