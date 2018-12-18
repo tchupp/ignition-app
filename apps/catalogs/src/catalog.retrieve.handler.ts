@@ -1,6 +1,6 @@
 import Datastore = require("@google-cloud/datastore");
 import {Item, ItemStatus} from "@ignition/wasm";
-import {Catalog, FamilyOptions, RetrieveCatalogRequest} from "../generated/catalogs_pb";
+import {Catalog, FamilyOptions, ItemOption, RetrieveCatalogRequest} from "../generated/catalogs_pb";
 
 import {Either} from "fp-ts/lib/Either";
 import {fromLeft, readerTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
@@ -35,24 +35,24 @@ function fromRequest(req: RetrieveCatalogRequest): ReaderTaskEither<Datastore, R
 }
 
 function toSuccessResponse(response: RetrieveCatalogResponse): Catalog {
-    function toItem(status: ItemStatus): FamilyOptions.Item {
-        const item = new FamilyOptions.Item();
+    function toItem(status: ItemStatus): ItemOption {
+        const item = new ItemOption();
         switch (status.type) {
             case "Available":
                 item.setItemId(status.item);
-                item.setStatus(FamilyOptions.Item.Status.AVAILABLE);
+                item.setStatus(ItemOption.Status.AVAILABLE);
                 return item;
             case "Excluded":
                 item.setItemId(status.item);
-                item.setStatus(FamilyOptions.Item.Status.EXCLUDED);
+                item.setStatus(ItemOption.Status.EXCLUDED);
                 return item;
             case "Selected":
                 item.setItemId(status.item);
-                item.setStatus(FamilyOptions.Item.Status.SELECTED);
+                item.setStatus(ItemOption.Status.SELECTED);
                 return item;
             case "Required":
                 item.setItemId(status.item);
-                item.setStatus(FamilyOptions.Item.Status.SELECTED);
+                item.setStatus(ItemOption.Status.REQUIRED);
                 return item;
         }
     }
@@ -62,7 +62,7 @@ function toSuccessResponse(response: RetrieveCatalogResponse): Catalog {
 
         const familyOptions = new FamilyOptions();
         familyOptions.setFamilyId(familyId);
-        familyOptions.setItemsList(items);
+        familyOptions.setOptionsList(items);
         return familyOptions;
     }
 

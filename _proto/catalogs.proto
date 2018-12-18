@@ -56,18 +56,19 @@ message Catalog {
 }
 
 message FamilyOptions {
-    message Item {
-        enum Status {
-            AVAILABLE = 0;
-            SELECTED = 1;
-            EXCLUDED = 2;
-            REQUIRED = 3;
-        }
+    string family_id = 1;
+    repeated ItemOption options = 2;
+}
 
-        string item_id = 1;
-        Status status = 2;
+message ItemOption {
+    enum Status {
+        UNUSED = 0;
+        AVAILABLE = 1;
+        SELECTED = 2;
+        EXCLUDED = 3;
+        REQUIRED = 4;
     }
 
-    string family_id = 1;
-    repeated Item items = 2;
+    string item_id = 1;
+    Status status = 2;
 }
