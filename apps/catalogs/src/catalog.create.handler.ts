@@ -1,7 +1,7 @@
 import Datastore = require("@google-cloud/datastore");
-import {CatalogContents} from "@ignition/wasm";
+import {CatalogContents, ItemStatus} from "@ignition/wasm";
 
-import {CreateCatalogRequest, CreateCatalogResponse} from "../generated/catalogs_pb";
+import {Catalog, CreateCatalogRequest, FamilyOptions, ItemOption} from "../generated/catalogs_pb";
 
 import {defer, Observable} from "rxjs";
 import {Either} from "fp-ts/lib/Either";
@@ -15,7 +15,7 @@ import {
 } from "./catalog.create";
 import {ServiceError, status} from "grpc";
 
-export function createCatalog(req: CreateCatalogRequest, datastore: Datastore, timestamp = new Date()): Observable<Either<ServiceError, CreateCatalogResponse>> {
+export function createCatalog(req: CreateCatalogRequest, datastore: Datastore, timestamp = new Date()): Observable<Either<ServiceError, Catalog>> {
     return defer(() => {
         return fromRequest<[Datastore, Date]>(req)
             .chain(rules => createCatalogInner(rules))
@@ -41,9 +41,45 @@ function fromRequest<Ctx>(req: CreateCatalogRequest): ReaderTaskEither<Ctx, Save
     });
 }
 
-function toSuccessResponse(response: SaveCatalogResponse): CreateCatalogResponse {
-    let grpcResponse = new CreateCatalogResponse();
+function toSuccessResponse(response: SaveCatalogResponse): Catalog {
+    function toItem(status: ItemStatus): ItemOption {
+        const item = new ItemOption();
+        switch (status.type) {
+            case "Available":
+                item.setItemId(status.item);
+                item.setItemStatus(ItemOption.Status.AVAILABLE);
+                return item;
+            case "Excluded":
+                item.setItemId(status.item);
+                item.setItemStatus(ItemOption.Status.EXCLUDED);
+                return item;
+            case "Selected":
+                item.setItemId(status.item);
+                item.setItemStatus(ItemOption.Status.SELECTED);
+                return item;
+            case "Required":
+                item.setItemId(status.item);
+                item.setItemStatus(ItemOption.Status.REQUIRED);
+                return item;
+        }
+    }
+
+    function toFamilyOptions(familyId: string, statuses: ItemStatus[]): FamilyOptions {
+        const items = statuses.map((status: ItemStatus) => toItem(status));
+
+        const familyOptions = new FamilyOptions();
+        familyOptions.setFamilyId(familyId);
+        familyOptions.setOptionsList(items);
+        return familyOptions;
+    }
+
+    const familyOptions: FamilyOptions[] =
+        Object.keys(response.options)
+            .map(familyId => toFamilyOptions(familyId, response.options[familyId]));
+
+    let grpcResponse = new Catalog();
     grpcResponse.setCatalogId(response.id);
+    grpcResponse.setOptionsList(familyOptions);
     return grpcResponse;
 }
 

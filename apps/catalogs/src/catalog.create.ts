@@ -2,7 +2,14 @@ import Datastore = require("@google-cloud/datastore");
 import {CommitResult} from "@google-cloud/datastore/request";
 import {DatastorePayload} from "@google-cloud/datastore/entity";
 
-import {buildCatalog, Catalog, CatalogContents, IgnitionError} from "@ignition/wasm";
+import {
+    buildCatalog,
+    Catalog,
+    CatalogContents,
+    findOptions as findOptionsInner,
+    IgnitionError,
+    Options,
+} from "@ignition/wasm";
 
 import {fromLeft, fromReader, fromTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
 import {tryCatch} from "fp-ts/lib/TaskEither";
@@ -13,19 +20,20 @@ import {DatastoreError} from "./datastore.error";
 export enum ErrorType {Datastore, InvalidInput, Internal, Ignition}
 
 export interface SaveCatalogError {
-    type: ErrorType;
-    body: object;
+    readonly type: ErrorType;
+    readonly body: object;
 }
 
 export interface SaveCatalogResponse {
-    id: string;
+    readonly id: string;
+    readonly options: Options;
 }
 
 export interface CatalogRules {
-    id: string;
-    families: CatalogContents;
-    exclusions: CatalogContents;
-    inclusions: CatalogContents;
+    readonly id: string;
+    readonly families: CatalogContents;
+    readonly exclusions: CatalogContents;
+    readonly inclusions: CatalogContents;
 }
 
 export function createCatalog(rules: CatalogRules): ReaderTaskEither<[Datastore, Date], SaveCatalogError, SaveCatalogResponse> {
@@ -36,11 +44,14 @@ export function createCatalog(rules: CatalogRules): ReaderTaskEither<[Datastore,
 
     return fromTaskEither<[Datastore, Date], IgnitionError, Catalog>(buildCatalog(rules.families, rules.exclusions, rules.inclusions))
         .mapLeft(fromIgnitionError)
-        .chain(catalog => fromReader(buildCatalogEntity(rules.id, catalog)))
-        .chain(entity =>
-            saveCatalogEntity(entity)
-                .local(([datastore]) => datastore))
-        .map(() => fromCommitResult(rules.id));
+        .chain(catalog => fromReader<[Datastore, Date], SaveCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(rules.id, catalog))
+            .chain(entity =>
+                saveCatalogEntity(entity)
+                    .local(([datastore]) => datastore))
+            .map(() => catalog)
+        )
+        .chain(catalog => findOptions(catalog))
+        .map(options => fromCommitResult(rules.id, options));
 }
 
 function fromIgnitionError(err: IgnitionError): SaveCatalogError {
@@ -50,6 +61,10 @@ function fromIgnitionError(err: IgnitionError): SaveCatalogError {
 function saveCatalogEntity(
     entity: DatastorePayload<CatalogEntity>
 ): ReaderTaskEither<Datastore, SaveCatalogError, CommitResult> {
+    function fromDatastoreError(err: DatastoreError): SaveCatalogError {
+        return {type: ErrorType.Datastore, body: {message: err.message}};
+    }
+
     return new ReaderTaskEither(datastore =>
         tryCatch(
             () => datastore.upsert(entity),
@@ -58,12 +73,17 @@ function saveCatalogEntity(
     );
 }
 
-function fromDatastoreError(err: DatastoreError): SaveCatalogError {
-    return {type: ErrorType.Datastore, body: {message: err.message}};
+function findOptions<Ctx>(
+    catalog: Catalog
+): ReaderTaskEither<Ctx, SaveCatalogError, Options> {
+    return fromTaskEither(
+        findOptionsInner(catalog)
+            .mapLeft(err => ({type: ErrorType.Ignition, body: err}))
+    );
 }
 
-function fromCommitResult(catalogId: string): SaveCatalogResponse {
-    return {id: catalogId};
+function fromCommitResult(catalogId: string, options: Options): SaveCatalogResponse {
+    return {id: catalogId, options: options};
 }
 
 function isEmptyObject(obj: object): boolean {

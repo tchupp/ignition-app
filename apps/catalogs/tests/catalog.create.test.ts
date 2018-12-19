@@ -7,6 +7,7 @@ import {deepEqual, instance, mock, when} from "ts-mockito";
 
 import {CatalogRules, createCatalog, ErrorType} from "../src/catalog.create";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
+import {Options} from "@ignition/wasm";
 
 const timestamp = new Date();
 
@@ -51,7 +52,13 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
     const datastore = instance(datastoreStub);
     const result = await createCatalog(catalogRules).run([datastore, timestamp]);
 
-    t.deepEqual(result, right({id: catalogRules.id}));
+    const expectedOptions: Options = {
+        "shirts": [
+            {"type": "Available", "item": "shirts:black"},
+            {"type": "Available", "item": "shirts:red"},
+        ]
+    };
+    t.deepEqual(result, right({id: catalogRules.id, options: expectedOptions}));
 });
 
 test("createCatalog returns error when families are empty in request", async (t) => {

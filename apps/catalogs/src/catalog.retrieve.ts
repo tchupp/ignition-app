@@ -1,11 +1,10 @@
 import Datastore = require("@google-cloud/datastore");
-import {findOptions as findOptionsInner, IgnitionError, Item, Options} from "@ignition/wasm";
+import {findOptions as findOptionsInner, Item, Options} from "@ignition/wasm";
 
 import {fromTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
 import {fromLeft, taskEither, tryCatch} from "fp-ts/lib/TaskEither";
 
 import {CatalogEntity} from "./catalog.entity";
-import {RetrieveCatalogError, RetrieveCatalogResponse} from "./catalog.retrieve";
 import {DatastoreError} from "./datastore.error";
 
 export enum ErrorType {Datastore, NotFound, Internal, Ignition}
@@ -55,10 +54,6 @@ function findOptions(
 ): ReaderTaskEither<Datastore, RetrieveCatalogError, Options> {
     return fromTaskEither(
         findOptionsInner(entity.serialized, selections)
-            .mapLeft(fromIgnitionError)
+            .mapLeft(err => ({type: ErrorType.Ignition, body: err}))
     );
-}
-
-function fromIgnitionError(err: IgnitionError): RetrieveCatalogError {
-    return {type: ErrorType.Ignition, body: err};
 }

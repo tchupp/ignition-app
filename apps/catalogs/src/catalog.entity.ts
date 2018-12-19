@@ -6,9 +6,9 @@ import {Catalog} from "@ignition/wasm";
 import {asks, Reader} from "fp-ts/lib/Reader";
 
 export interface CatalogEntity {
-    id: string;
-    serialized: Catalog;
-    created: Date;
+    readonly id: string;
+    readonly serialized: Catalog;
+    readonly created: Date;
 }
 
 export function buildCatalogEntity(catalogId: string, catalog: Catalog): Reader<[Datastore, Date], DatastorePayload<CatalogEntity>> {

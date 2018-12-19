@@ -12,7 +12,7 @@ export type DatastoreErrorStatus =
     | "UNAVAILABLE";
 
 export interface DatastoreError {
-    code: number;
-    message: string;
-    status: DatastoreErrorStatus;
+    readonly code: number;
+    readonly message: string;
+    readonly status: DatastoreErrorStatus;
 }

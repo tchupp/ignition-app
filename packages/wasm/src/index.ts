@@ -3,17 +3,17 @@ import {TaskEither, tryCatch} from "fp-ts/lib/TaskEither";
 export type Catalog = string;
 
 export interface IgnitionError {
-    error: string;
-    description: string;
-    details: IgnitionError[] | string;
+    readonly error: string;
+    readonly description: string;
+    readonly details: IgnitionError[] | string;
 }
 
 export interface CatalogContents {
-    [key: string]: Item[];
+    readonly [key: string]: Item[];
 }
 
 export interface Options {
-    [key: string]: ItemStatus[];
+    readonly [key: string]: ItemStatus[];
 }
 
 export type ItemStatus =

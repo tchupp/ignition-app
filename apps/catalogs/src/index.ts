@@ -33,7 +33,7 @@ const service: grpc.UntypedServiceImplementation = {
         retrieveCatalogInner(call.request, new Datastore())
             .subscribe(handleResult(callback), handleError(callback)),
 
-    createCatalog: (call: grpc.ServerUnaryCall<messages.CreateCatalogRequest>, callback: grpc.sendUnaryData<messages.CreateCatalogResponse>) =>
+    createCatalog: (call: grpc.ServerUnaryCall<messages.CreateCatalogRequest>, callback: grpc.sendUnaryData<messages.Catalog>) =>
         createCatalogInner(call.request, new Datastore())
             .subscribe(handleResult(callback), handleError(callback))
 };

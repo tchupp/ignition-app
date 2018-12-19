@@ -7,32 +7,30 @@ package catalogs;
 service CatalogManager {
     rpc RetrieveCatalog (RetrieveCatalogRequest) returns (Catalog) {
         option (google.api.http) = {
-          get: "/v1/catalogs/{catalog_id}"
+          get: "/v1/projects/{project_id}/catalogs/{catalog_id}"
         };
     }
-    rpc CreateCatalog (CreateCatalogRequest) returns (CreateCatalogResponse) {
+    rpc CreateCatalog (CreateCatalogRequest) returns (Catalog) {
         option (google.api.http) = {
-          put: "/v1/catalogs/{catalog_id}"
+          put: "/v1/projects/{project_id}/catalogs/{catalog_id}"
           body: "*"
         };
     }
 }
 
 message RetrieveCatalogRequest {
+    string project_id = 4;
     string catalog_id = 1;
     repeated string selections = 2;
     repeated string exclusions = 3;
 }
 
 message CreateCatalogRequest {
+    string project_id = 5;
     string catalog_id = 1;
     repeated Family families = 2;
     repeated Exclusion exclusions = 3;
     repeated Inclusion inclusions = 4;
-}
-
-message CreateCatalogResponse {
-    string catalog_id = 1;
 }
 
 message Family {
