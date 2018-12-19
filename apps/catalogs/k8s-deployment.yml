@@ -37,6 +37,7 @@ spec:
             "--backend=grpc://127.0.0.1:8080",
             "--rollout_strategy=managed",
             "--service=catalogs.endpoints.$GCP_PROJECT.cloud.goog",
+            "--cors_preset=basic",
           ]
           ports:
             - containerPort: 8081
