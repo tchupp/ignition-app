@@ -7,7 +7,7 @@ import {instance, mock, when} from "ts-mockito";
 import {left, right} from "fp-ts/lib/Either";
 
 import {CatalogEntity} from "../src/catalog.entity";
-import {ErrorType, retrieveCatalog} from "../src/catalog.retrieve";
+import {retrieveCatalog, RetrieveCatalogError} from "../src/catalog.retrieve";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 
 const timestamp = new Date();
@@ -91,7 +91,7 @@ test("retrieveCatalog returns catalog options, modified by selections, when requ
     t.deepEqual(result, right({id: catalogId, options: expected}));
 });
 
-test.skip("retrieveCatalog returns error, when request contains two selections in the same family", async (t) => {
+test("retrieveCatalog returns all excluded, when request contains two selections in the same family", async (t) => {
     const catalogId = "catalog-3";
     const selections = ["shirts:red", "  shirts:black"];
 
@@ -117,14 +117,18 @@ test.skip("retrieveCatalog returns error, when request contains two selections i
     const datastore = instance(datastoreStub);
     const result = await retrieveCatalog(catalogId, selections).run(datastore);
 
-    t.deepEqual(result, left({
-        type: ErrorType.Ignition,
-        body: {
-            description: "Only available items may be selected",
-            details: "Selected item is excluded: Item(\"shirts:black\")",
-            error: "ExcludedItem",
-        }
-    }));
+    const expected: Options = {
+        "pants": [
+            {"type": "Excluded", "item": "pants:jeans"},
+            {"type": "Excluded", "item": "pants:slacks"},
+        ],
+        "shirts": [
+            {"type": "Excluded", "item": "shirts:black"},
+            {"type": "Excluded", "item": "shirts:red"},
+        ]
+
+    };
+    t.deepEqual(result, right({id: catalogId, options: expected}));
 });
 
 test("retrieveCatalog returns error, when request contains unknown selection", async (t) => {
@@ -154,11 +158,11 @@ test("retrieveCatalog returns error, when request contains unknown selection", a
     const result = await retrieveCatalog(catalogId, selections).run(datastore);
 
     t.deepEqual(result, left({
-        type: ErrorType.Ignition,
-        body: {
+        type: "Ignition",
+        error: {
             description: "Only known items may be selected",
             details: "Selected items are unknown: [\"shirts:blue\"]",
             error: "UnknownItems",
         }
-    }));
+    } as RetrieveCatalogError));
 });

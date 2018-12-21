@@ -8,6 +8,9 @@ export interface IgnitionError {
     readonly details: IgnitionError[] | string;
 }
 
+export type IgnitionOptionsError =
+    { error: "UnknownItems", description: string, details: string }
+
 export interface CatalogContents {
     readonly [key: string]: Item[];
 }
@@ -42,7 +45,7 @@ export function findOptions(
     catalog: Catalog,
     selections: Item[] = [],
     exclusions: Item[] = []
-): TaskEither<IgnitionError, Options> {
+): TaskEither<IgnitionOptionsError, Options> {
     return tryCatch(
         () => import("../crate/pkg")
             .then(m => m.findOptionsWasm(catalog, selections, exclusions)),

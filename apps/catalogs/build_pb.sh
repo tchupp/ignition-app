@@ -21,4 +21,5 @@ grpc_tools_node_protoc \
     --descriptor_set_out=api_descriptor.pb \
     google/api/annotations.proto \
     google/api/http.proto \
+    google/rpc/error_details.proto \
     catalogs.proto

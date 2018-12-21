@@ -13,9 +13,10 @@ import {
     SaveCatalogError,
     SaveCatalogResponse
 } from "./catalog.create";
-import {ServiceError, status} from "grpc";
+import {status} from "grpc";
+import {GrpcServiceError} from "./errors.pb";
 
-export function createCatalog(req: CreateCatalogRequest, datastore: Datastore, timestamp = new Date()): Observable<Either<ServiceError, Catalog>> {
+export function createCatalog(req: CreateCatalogRequest, datastore: Datastore, timestamp = new Date()): Observable<Either<GrpcServiceError, Catalog>> {
     return defer(() => {
         return fromRequest<[Datastore, Date]>(req)
             .chain(rules => createCatalogInner(rules))
@@ -83,11 +84,11 @@ function toSuccessResponse(response: SaveCatalogResponse): Catalog {
     return grpcResponse;
 }
 
-function toErrorResponse(_error: SaveCatalogError): ServiceError {
+function toErrorResponse(_error: SaveCatalogError): GrpcServiceError {
     console.error(_error);
     return {
-        name: "",
         message: "",
-        code: status.ABORTED
+        code: status.ABORTED,
+        details: ""
     };
 }

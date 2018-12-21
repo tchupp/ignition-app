@@ -7,12 +7,15 @@ import * as messages from "../generated/catalogs_pb";
 import {retrieveCatalog as retrieveCatalogInner} from "./catalog.retrieve.handler";
 import {createCatalog as createCatalogInner} from "./catalog.create.handler";
 import {Either} from "fp-ts/lib/Either";
+import {GrpcServiceError} from "./errors.pb";
 
 
-function handleResult<Res>(callback: grpc.sendUnaryData<Res>): (either: Either<grpc.ServiceError, Res>) => void {
-    return (either: Either<grpc.ServiceError, Res>) =>
+function handleResult<Res>(callback: grpc.sendUnaryData<Res>): (either: Either<GrpcServiceError, Res>) => void {
+    return (either: Either<GrpcServiceError, Res>) =>
         either.fold(
-            (error: grpc.ServiceError) => callback(error, null),
+            (error: GrpcServiceError) => {
+                callback(error as unknown as grpc.ServiceError, null);
+            },
             (res: Res) => callback(null, res),
         );
 }
