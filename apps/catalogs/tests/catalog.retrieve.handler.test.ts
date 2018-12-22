@@ -65,6 +65,8 @@ test("retrieveCatalog returns catalog options, when request contains valid catal
 
 test("retrieveCatalog returns catalog options, when request contains an empty selection", async (t) => {
     const catalogId = "catalog-1";
+    const selections = [""];
+
     const entity: CatalogEntity = await buildTestCatalogEntity(
         catalogId,
         timestamp,
@@ -86,7 +88,7 @@ test("retrieveCatalog returns catalog options, when request contains an empty se
 
     const req = new RetrieveCatalogRequest();
     req.setCatalogId(catalogId);
-    req.setSelectionsList([""]);
+    req.setSelectionsList(selections);
 
     const datastore = instance(datastoreStub);
     const result = await retrieveCatalog(req, datastore)
@@ -115,7 +117,7 @@ test("retrieveCatalog returns catalog options, when request contains an empty se
     t.deepEqual(result, right(expected));
 });
 
-test("retrieveCatalog returns catalog options, modified by selections, when request contains valid id", async (t) => {
+test("retrieveCatalog returns catalog options, when there is one selection", async (t) => {
     const catalogId = "catalog-2";
     const selections = [" shirts:red"];
 
@@ -167,6 +169,114 @@ test("retrieveCatalog returns catalog options, modified by selections, when requ
         ]
     };
 
+    t.deepEqual(result, right(expected));
+});
+
+test("retrieveCatalog returns catalog options, when request contains an multiple selections", async (t) => {
+    const catalogId = "catalog-1";
+    const selections = ["shirts:red", "pants:slacks"];
+
+    const entity: CatalogEntity = await buildTestCatalogEntity(
+        catalogId,
+        timestamp,
+        {
+            "shirts": ["shirts:red", "shirts:black"],
+            "pants": ["pants:jeans", "pants:slacks"]
+        }
+    );
+
+    const queryStub = mock(Datastore.Query);
+    const query = instance(queryStub);
+
+    when(queryStub.filter("id", catalogId)).thenReturn(query);
+    when(queryStub.limit(1)).thenReturn(query);
+
+    const datastoreStub: Datastore = mock(Datastore);
+    when(datastoreStub.createQuery("Catalog")).thenReturn(query);
+    when(datastoreStub.runQuery(query)).thenResolve([[entity], {moreResults: 'NO_MORE_RESULTS'}]);
+
+    const req = new RetrieveCatalogRequest();
+    req.setCatalogId(catalogId);
+    req.setSelectionsList(selections);
+
+    const datastore = instance(datastoreStub);
+    const result = await retrieveCatalog(req, datastore)
+        .pipe(map(res => res.map(catalog => catalog.toObject())))
+        .toPromise();
+
+    const expected: Catalog.AsObject = {
+        catalogId: catalogId,
+        optionsList: [
+            {
+                familyId: "pants",
+                optionsList: [
+                    {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "pants:jeans"},
+                    {"itemStatus": ItemOption.Status.SELECTED, "itemId": "pants:slacks"},
+                ]
+            },
+            {
+                familyId: "shirts",
+                optionsList: [
+                    {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
+                    {"itemStatus": ItemOption.Status.SELECTED, "itemId": "shirts:red"},
+                ]
+            }
+        ]
+    };
+    t.deepEqual(result, right(expected));
+});
+
+test("retrieveCatalog returns catalog options, when request contains an multiple selections as a string", async (t) => {
+    const catalogId = "catalog-1";
+    const selections = ["  shirts:red,  pants:slacks"];
+
+    const entity: CatalogEntity = await buildTestCatalogEntity(
+        catalogId,
+        timestamp,
+        {
+            "shirts": ["shirts:red", "shirts:black"],
+            "pants": ["pants:jeans", "pants:slacks"]
+        }
+    );
+
+    const queryStub = mock(Datastore.Query);
+    const query = instance(queryStub);
+
+    when(queryStub.filter("id", catalogId)).thenReturn(query);
+    when(queryStub.limit(1)).thenReturn(query);
+
+    const datastoreStub: Datastore = mock(Datastore);
+    when(datastoreStub.createQuery("Catalog")).thenReturn(query);
+    when(datastoreStub.runQuery(query)).thenResolve([[entity], {moreResults: 'NO_MORE_RESULTS'}]);
+
+    const req = new RetrieveCatalogRequest();
+    req.setCatalogId(catalogId);
+    req.setSelectionsList(selections);
+
+    const datastore = instance(datastoreStub);
+    const result = await retrieveCatalog(req, datastore)
+        .pipe(map(res => res.map(catalog => catalog.toObject())))
+        .toPromise();
+
+    const expected: Catalog.AsObject = {
+        catalogId: catalogId,
+        optionsList: [
+            {
+                familyId: "pants",
+                optionsList: [
+                    {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "pants:jeans"},
+                    {"itemStatus": ItemOption.Status.SELECTED, "itemId": "pants:slacks"},
+                ]
+            },
+            {
+                familyId: "shirts",
+                optionsList: [
+                    {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
+                    {"itemStatus": ItemOption.Status.SELECTED, "itemId": "shirts:red"},
+                ]
+            }
+        ]
+    };
     t.deepEqual(result, right(expected));
 });
 

@@ -24,9 +24,11 @@ export function retrieveCatalog(req: RetrieveCatalogRequest, datastore: Datastor
 }
 
 function fromRequest(req: RetrieveCatalogRequest): ReaderTaskEither<Datastore, RetrieveCatalogError, [string, Item[]]> {
-    const catalogId = req.getCatalogId();
-    const selections = req.getSelectionsList();
+    const selections_matrix = req.getSelectionsList()
+        .map(selection => selection.split(","));
+    const selections: string[] = ([] as string[]).concat(...selections_matrix);
 
+    const catalogId = req.getCatalogId();
     if (catalogId.length === 0) {
         return fromLeft({type: "RequestMissingCatalogId", error: "No catalog id in request"} as RetrieveCatalogError);
     }
