@@ -4,18 +4,18 @@ import * as grpc from "grpc";
 import {CatalogManagerService} from "../generated/catalogs_grpc_pb";
 import * as messages from "../generated/catalogs_pb";
 
+import {Either} from "fp-ts/lib/Either";
+
 import {retrieveCatalog as retrieveCatalogInner} from "./catalog.retrieve.handler";
 import {createCatalog as createCatalogInner} from "./catalog.create.handler";
-import {Either} from "fp-ts/lib/Either";
-import {GrpcServiceError} from "./errors.pb";
+import {GrpcServiceError, serviceError} from "./errors.pb";
 
+const datastore = new Datastore();
 
 function handleResult<Res>(callback: grpc.sendUnaryData<Res>): (either: Either<GrpcServiceError, Res>) => void {
     return (either: Either<GrpcServiceError, Res>) =>
         either.fold(
-            (error: GrpcServiceError) => {
-                callback(error as unknown as grpc.ServiceError, null);
-            },
+            (error: GrpcServiceError) => callback(error as grpc.ServiceError, null),
             (res: Res) => callback(null, res),
         );
 }
@@ -23,21 +23,19 @@ function handleResult<Res>(callback: grpc.sendUnaryData<Res>): (either: Either<G
 function handleError<Res>(callback: grpc.sendUnaryData<Res>): (error: any) => void {
     return (error: any) => {
         console.error(error);
-        callback({
-            name: "Internal Error",
-            message: error.toString(),
-            code: grpc.status.INTERNAL
-        }, null);
+        const error_pb = serviceError(error.toString(), grpc.status.INTERNAL);
+        callback(error_pb as grpc.ServiceError, null);
     };
 }
 
+
 const service: grpc.UntypedServiceImplementation = {
     retrieveCatalog: (call: grpc.ServerUnaryCall<messages.RetrieveCatalogRequest>, callback: grpc.sendUnaryData<messages.Catalog>) =>
-        retrieveCatalogInner(call.request, new Datastore())
+        retrieveCatalogInner(call.request, datastore)
             .subscribe(handleResult(callback), handleError(callback)),
 
     createCatalog: (call: grpc.ServerUnaryCall<messages.CreateCatalogRequest>, callback: grpc.sendUnaryData<messages.Catalog>) =>
-        createCatalogInner(call.request, new Datastore())
+        createCatalogInner(call.request, datastore)
             .subscribe(handleResult(callback), handleError(callback))
 };
 

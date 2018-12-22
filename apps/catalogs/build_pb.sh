@@ -22,4 +22,5 @@ grpc_tools_node_protoc \
     google/api/annotations.proto \
     google/api/http.proto \
     google/rpc/error_details.proto \
+    google/rpc/status.proto \
     catalogs.proto

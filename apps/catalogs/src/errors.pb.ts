@@ -12,33 +12,46 @@ import {
 
 import {Metadata, status} from "grpc";
 import {Duration} from "google-protobuf/google/protobuf/duration_pb";
-import * as jspb from "google-protobuf";
+import {Any} from "google-protobuf/google/protobuf/any_pb";
+import {Status} from "../generated/google/rpc/status_pb";
 
 type GrpcServiceErrorDetail =
-    DebugInfo
-    | RetryInfo
-    | QuotaFailure
-    | PreconditionFailure
-    | BadRequest
-    | RequestInfo
-    | ResourceInfo
-    | Help
-    | LocalizedMessage
+    { type: "DebugInfo", detail: DebugInfo }
+    | { type: "RetryInfo", detail: RetryInfo }
+    | { type: "QuotaFailure", detail: QuotaFailure }
+    | { type: "PreconditionFailure", detail: PreconditionFailure }
+    | { type: "BadRequest", detail: BadRequest }
+    | { type: "RequestInfo", detail: RequestInfo }
+    | { type: "ResourceInfo", detail: ResourceInfo }
+    | { type: "Help", detail: Help }
+    | { type: "LocalizedMessage", detail: LocalizedMessage }
 
 export type GrpcServiceError = {
     message: string,
     code: status,
-    details: string,
-    metadata?: Metadata
+    metadata: Metadata
 };
 
-export function serviceError(message: string, code: status, details: GrpcServiceErrorDetail[]): GrpcServiceError {
-    const details_pb = details.map((detail: jspb.Message) => detail.toObject());
+export function serviceError(message: string, code: status, details: GrpcServiceErrorDetail[] = []): GrpcServiceError {
+    const statusDetails = details.map((detail) => {
+        const any = new Any();
+        any.setTypeUrl(`type.googleapis.com/google.rpc.${detail.type}`);
+        any.setValue(detail.detail.serializeBinary());
+        return any;
+    });
+
+    const status = new Status();
+    status.setMessage(message);
+    status.setCode(code.valueOf());
+    status.setDetailsList(statusDetails);
+
+    const metadata = new Metadata();
+    metadata.set('grpc-status-details-bin', Buffer.from(status.serializeBinary()));
 
     return {
         message: message,
         code: code,
-        details: JSON.stringify(details_pb)
+        metadata: metadata
     };
 }
 
@@ -47,7 +60,7 @@ export function debugInfoDetail(detail: DebugInfo.AsObject): GrpcServiceErrorDet
     const err = new DebugInfo();
     err.setDetail(detail.detail);
     err.setStackEntriesList(detail.stackEntriesList);
-    return err;
+    return {type: "DebugInfo", detail: err};
 }
 
 export function retryInfoDetail(detail: RetryInfo.AsObject): GrpcServiceErrorDetail {
@@ -58,10 +71,10 @@ export function retryInfoDetail(detail: RetryInfo.AsObject): GrpcServiceErrorDet
 
         const err = new RetryInfo();
         err.setRetryDelay(delay);
-        return err;
+        return {type: "RetryInfo", detail: err};
     }
 
-    return new RetryInfo();
+    return {type: "RetryInfo", detail: new RetryInfo()};
 }
 
 export function quotaFailureDetail(detail: QuotaFailure.AsObject): GrpcServiceErrorDetail {
@@ -74,7 +87,7 @@ export function quotaFailureDetail(detail: QuotaFailure.AsObject): GrpcServiceEr
 
     const err = new QuotaFailure();
     err.setViolationsList(violations);
-    return err;
+    return {type: "QuotaFailure", detail: err};
 }
 
 export function preconditionFailureDetail(detail: PreconditionFailure.AsObject): GrpcServiceErrorDetail {
@@ -88,7 +101,7 @@ export function preconditionFailureDetail(detail: PreconditionFailure.AsObject):
 
     const err = new PreconditionFailure();
     err.setViolationsList(violations);
-    return err;
+    return {type: "PreconditionFailure", detail: err};
 }
 
 export function badRequestDetail(detail: BadRequest.AsObject): GrpcServiceErrorDetail {
@@ -101,14 +114,14 @@ export function badRequestDetail(detail: BadRequest.AsObject): GrpcServiceErrorD
 
     const err = new BadRequest();
     err.setFieldViolationsList(violations);
-    return err;
+    return {type: "BadRequest", detail: err};
 }
 
 export function requestInfoDetail(detail: RequestInfo.AsObject): GrpcServiceErrorDetail {
     const err = new RequestInfo();
     err.setRequestId(detail.requestId);
     err.setServingData(detail.servingData);
-    return err;
+    return {type: "RequestInfo", detail: err};
 }
 
 export function resourceInfoDetail(detail: ResourceInfo.AsObject): GrpcServiceErrorDetail {
@@ -117,7 +130,7 @@ export function resourceInfoDetail(detail: ResourceInfo.AsObject): GrpcServiceEr
     err.setResourceType(detail.resourceType);
     err.setOwner(detail.owner);
     err.setDescription(detail.description);
-    return err;
+    return {type: "ResourceInfo", detail: err};
 }
 
 export function helpDetail(detail: Help.AsObject): GrpcServiceErrorDetail {
@@ -130,12 +143,12 @@ export function helpDetail(detail: Help.AsObject): GrpcServiceErrorDetail {
 
     const err = new Help();
     err.setLinksList(links);
-    return err;
+    return {type: "Help", detail: err};
 }
 
 export function localizedMessageDetail(detail: LocalizedMessage.AsObject): GrpcServiceErrorDetail {
     const err = new LocalizedMessage();
     err.setLocale(detail.locale);
     err.setMessage(detail.message);
-    return err;
+    return {type: "LocalizedMessage", detail: err};
 }

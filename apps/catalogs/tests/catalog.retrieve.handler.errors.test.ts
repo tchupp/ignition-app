@@ -9,30 +9,12 @@ import {CatalogEntity} from "../src/catalog.entity";
 import {retrieveCatalog} from "../src/catalog.retrieve.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {Catalog, RetrieveCatalogRequest} from "../generated/catalogs_pb";
-import {GrpcServiceError} from "../src/errors.pb";
+import {badRequestDetail, GrpcServiceError, serviceError} from "../src/errors.pb";
 
 const timestamp = new Date();
 
 test("retrieveCatalog returns error, when request is missing catalogId", async (t) => {
-    const catalogId = "catalog-4";
-    const entity: CatalogEntity = await buildTestCatalogEntity(
-        catalogId,
-        timestamp,
-        {
-            "shirts": ["shirts:red", "shirts:black"],
-            "pants": ["pants:jeans", "pants:slacks"]
-        }
-    );
-
-    const queryStub = mock(Datastore.Query);
-    const query = instance(queryStub);
-
-    when(queryStub.filter("id", catalogId)).thenReturn(query);
-    when(queryStub.limit(1)).thenReturn(query);
-
     const datastoreStub: Datastore = mock(Datastore);
-    when(datastoreStub.createQuery("Catalog")).thenReturn(query);
-    when(datastoreStub.runQuery(query)).thenResolve([[entity], {moreResults: 'NO_MORE_RESULTS'}]);
 
     const req = new RetrieveCatalogRequest();
 
@@ -40,18 +22,19 @@ test("retrieveCatalog returns error, when request is missing catalogId", async (
     const result: Either<GrpcServiceError, Catalog> = await retrieveCatalog(req, datastore)
         .toPromise();
 
-    t.deepEqual(result, left<GrpcServiceError, Catalog>({
-        code: status.INVALID_ARGUMENT,
-        message: `Missing CatalogId`,
-        details: JSON.stringify([
-            {
-                fieldViolationsList: [{
-                    field: "catalog_id",
-                    description: "Catalog Id is required"
-                }]
-            }
-        ])
-    }));
+    t.deepEqual(result, left(
+        serviceError(
+            "Missing CatalogId",
+            status.INVALID_ARGUMENT,
+            [
+                badRequestDetail({
+                    fieldViolationsList: [{
+                        field: "catalog_id",
+                        description: "Catalog Id is required"
+                    }]
+                })
+            ])
+    ));
 });
 
 test("retrieveCatalog returns error, when request contains unknown selection", async (t) => {
@@ -85,16 +68,44 @@ test("retrieveCatalog returns error, when request contains unknown selection", a
     const result: Either<GrpcServiceError, Catalog> = await retrieveCatalog(req, datastore)
         .toPromise();
 
-    t.deepEqual(result, left<GrpcServiceError, Catalog>({
-        code: status.INVALID_ARGUMENT,
-        message: `UnknownItems`,
-        details: JSON.stringify([
-            {
-                fieldViolationsList: [{
-                    field: "selections",
-                    description: "Selected items are unknown: [\"shirts:blue\"]"
-                }]
-            }
-        ])
-    }));
+    t.deepEqual(result, left(
+        serviceError(
+            "UnknownItems",
+            status.INVALID_ARGUMENT,
+            [
+                badRequestDetail({
+                    fieldViolationsList: [{
+                        field: "selections",
+                        description: "Selected items are unknown: [\"shirts:blue\"]"
+                    }]
+                })
+            ])
+    ));
+});
+
+test("retrieveCatalog returns error, when catalog does not exist", async (t) => {
+    const catalogId = "catalog-5";
+
+    const queryStub = mock(Datastore.Query);
+    const query = instance(queryStub);
+
+    when(queryStub.filter("id", catalogId)).thenReturn(query);
+    when(queryStub.limit(1)).thenReturn(query);
+
+    const datastoreStub: Datastore = mock(Datastore);
+    when(datastoreStub.createQuery("Catalog")).thenReturn(query);
+    when(datastoreStub.runQuery(query)).thenResolve([[], {moreResults: 'NO_MORE_RESULTS'}]);
+
+    const req = new RetrieveCatalogRequest();
+    req.setCatalogId(catalogId);
+
+    const datastore = instance(datastoreStub);
+    const result: Either<GrpcServiceError, Catalog> = await retrieveCatalog(req, datastore)
+        .toPromise();
+
+    t.deepEqual(result, left(
+        serviceError(
+            "No catalog found with id 'catalog-5'",
+            status.NOT_FOUND)
+    ));
 });
