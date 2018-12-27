@@ -10,9 +10,7 @@ extern crate wasm_bindgen;
 
 pub use closet::*;
 pub use closet_builder::*;
-pub use error::*;
 
 mod closet;
 mod closet_builder;
-mod error;
 mod utils;

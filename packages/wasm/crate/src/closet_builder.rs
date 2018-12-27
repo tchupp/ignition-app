@@ -6,11 +6,7 @@ use ignition::ClosetBuilder;
 use ignition::ClosetBuilderError;
 use ignition::Family;
 use ignition::Item;
-use itertools::Itertools;
 use wasm_bindgen::prelude::*;
-
-use error::IgnitionError;
-use error::IgnitionErrorDetail;
 
 #[derive(Serialize, Deserialize)]
 struct ClosetContents {
