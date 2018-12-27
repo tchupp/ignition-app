@@ -3,7 +3,7 @@ import {Item, ItemStatus} from "@ignition/wasm";
 import {Catalog, FamilyOptions, ItemOption, RetrieveCatalogRequest} from "../generated/catalogs_pb";
 
 import {Either} from "fp-ts/lib/Either";
-import {fromLeft, readerTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
+import {readerTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
 import {status} from "grpc";
 import {defer, Observable} from "rxjs";
 
@@ -24,14 +24,11 @@ export function retrieveCatalog(req: RetrieveCatalogRequest, datastore: Datastor
 }
 
 function fromRequest(req: RetrieveCatalogRequest): ReaderTaskEither<Datastore, RetrieveCatalogError, [string, Item[]]> {
+    const catalogId = req.getCatalogId();
+
     const selections_matrix = req.getSelectionsList()
         .map(selection => selection.split(","));
     const selections: string[] = ([] as string[]).concat(...selections_matrix);
-
-    const catalogId = req.getCatalogId();
-    if (catalogId.length === 0) {
-        return fromLeft({type: "RequestMissingCatalogId", error: "No catalog id in request"} as RetrieveCatalogError);
-    }
 
     return readerTaskEither.of([catalogId, selections] as [string, Item[]]);
 }
@@ -82,7 +79,13 @@ function toErrorResponse(error: RetrieveCatalogError): GrpcServiceError {
     console.error(error);
 
     switch (error.type) {
-        case "RequestMissingCatalogId":
+        case "Datastore":
+            return serviceError(
+                "Datastore Error",
+                status.INTERNAL,
+                []);
+
+        case "MissingCatalogId":
             return serviceError(
                 "Missing CatalogId",
                 status.INVALID_ARGUMENT,
@@ -95,27 +98,20 @@ function toErrorResponse(error: RetrieveCatalogError): GrpcServiceError {
                     })
                 ]);
 
-        case "Datastore":
-            return serviceError(
-                "Datastore Error",
-                status.INTERNAL,
-                []);
-
         case "CatalogNotFound":
             return serviceError(
-                error.error,
-                status.NOT_FOUND,
-                []);
+                `No catalog found with id '${error.catalogId}'`,
+                status.NOT_FOUND);
 
-        case "Ignition": {
+        case "UnknownSelections": {
             return serviceError(
-                error.error.error,
+                "Unknown Selections",
                 status.INVALID_ARGUMENT,
                 [
                     badRequestDetail({
                         fieldViolationsList: [{
                             field: "selections",
-                            description: error.error.details
+                            description: `Selected items are unknown: ${JSON.stringify(error.items)}`
                         }]
                     })
                 ]);

@@ -1,5 +1,5 @@
 import test from "ava";
-import {buildCatalog} from "../src";
+import {buildCatalog, IgnitionCreateCatalogError} from "../src";
 import {left} from "fp-ts/lib/Either";
 
 test("build, when one item is in two families, gives an error", async t => {
@@ -10,10 +10,10 @@ test("build, when one item is in two families, gives an error", async t => {
 
     const error = await buildCatalog(families).run();
 
-    let expectedError = {
-        error: "ConflictingFamilies",
-        description: "Items may only be registered to one family",
-        details: "Item Item(\"shirts:blue\") has multiple families: [Family(\"pants\"), Family(\"shirts\")]",
+    const expectedError: IgnitionCreateCatalogError = {
+        type: "MultipleFamiliesRegistered",
+        item: "shirts:blue",
+        families: ["pants", "shirts"]
     };
     t.deepEqual(error, left(expectedError));
 });

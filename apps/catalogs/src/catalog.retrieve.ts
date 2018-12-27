@@ -1,7 +1,7 @@
 import Datastore = require("@google-cloud/datastore");
-import {findOptions as findOptionsInner, IgnitionOptionsError, Item, Options} from "@ignition/wasm";
+import {findOptions as findOptionsInner, Item, Options} from "@ignition/wasm";
 
-import {fromTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
+import {fromLeft as readerTaskEitherFromLeft, fromTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
 import {fromLeft, taskEither, tryCatch} from "fp-ts/lib/TaskEither";
 
 import {CatalogEntity} from "./catalog.entity";
@@ -10,9 +10,10 @@ import {RetrieveCatalogError} from "./catalog.retrieve";
 
 export type RetrieveCatalogError =
     { type: "Datastore", error: DatastoreError }
-    | { type: "RequestMissingCatalogId", error: string }
-    | { type: "CatalogNotFound", error: string }
-    | { type: "Ignition", error: IgnitionOptionsError }
+    | { type: "MissingCatalogId" }
+    | { type: "CatalogNotFound", catalogId: string }
+    // Ignition options errors
+    | { type: "UnknownSelections", items: string[] }
 
 export interface RetrieveCatalogResponse {
     readonly id: string;
@@ -20,6 +21,10 @@ export interface RetrieveCatalogResponse {
 }
 
 export function retrieveCatalog(catalogId: string, selections: Item[]): ReaderTaskEither<Datastore, RetrieveCatalogError, RetrieveCatalogResponse> {
+    if (catalogId.length === 0) {
+        return readerTaskEitherFromLeft({type: "MissingCatalogId"} as RetrieveCatalogError);
+    }
+
     return findCatalog(catalogId)
         .chain(entity => findOptions(entity, selections))
         .map(options => ({id: catalogId, options: options}));
@@ -28,7 +33,7 @@ export function retrieveCatalog(catalogId: string, selections: Item[]): ReaderTa
 function findCatalog(catalogId: string): ReaderTaskEither<Datastore, RetrieveCatalogError, CatalogEntity> {
     const notFoundError = fromLeft<RetrieveCatalogError, CatalogEntity>({
         type: "CatalogNotFound",
-        error: `No catalog found with id '${catalogId}'`
+        catalogId: catalogId
     });
 
     return new ReaderTaskEither(datastore => {
@@ -44,12 +49,17 @@ function findCatalog(catalogId: string): ReaderTaskEither<Datastore, RetrieveCat
     );
 }
 
-function findOptions(
+function findOptions<Ctx>(
     entity: CatalogEntity,
     selections: Item[]
-): ReaderTaskEither<Datastore, RetrieveCatalogError, Options> {
+): ReaderTaskEither<Ctx, RetrieveCatalogError, Options> {
     return fromTaskEither(
         findOptionsInner(entity.serialized, selections)
-            .mapLeft((err): RetrieveCatalogError => ({type: "Ignition", error: err}))
+            .mapLeft((err): RetrieveCatalogError => {
+                switch (err.type) {
+                    case "UnknownSelections":
+                        return err;
+                }
+            })
     );
 }

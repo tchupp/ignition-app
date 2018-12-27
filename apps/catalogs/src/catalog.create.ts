@@ -7,7 +7,7 @@ import {
     Catalog,
     CatalogContents,
     findOptions as findOptionsInner,
-    IgnitionError,
+    IgnitionCreateCatalogError,
     Options,
 } from "@ignition/wasm";
 
@@ -17,12 +17,18 @@ import {tryCatch} from "fp-ts/lib/TaskEither";
 import {buildCatalogEntity, CatalogEntity} from "./catalog.entity";
 import {DatastoreError} from "./datastore.error";
 
-export enum ErrorType {Datastore, InvalidInput, Internal, Ignition}
-
-export interface SaveCatalogError {
-    readonly type: ErrorType;
-    readonly body: object;
-}
+export type SaveCatalogError =
+    { type: "Datastore", error: DatastoreError }
+    | { type: "MissingFamilies" }
+    // Ignition catalog creation errors
+    | { type: "CompoundError", errors: SaveCatalogError[] }
+    | { type: "MultipleFamiliesRegistered", item: string, families: string[] }
+    | { type: "InclusionFamilyConflict", family: string, items: string[] }
+    | { type: "ExclusionFamilyConflict", family: string, items: string[] }
+    | { type: "InclusionMissingFamily", item: string }
+    | { type: "ExclusionMissingFamily", item: string }
+    // Ignition options errors
+    | { type: "UnknownSelections", items: string[] }
 
 export interface SaveCatalogResponse {
     readonly id: string;
@@ -37,12 +43,9 @@ export interface CatalogRules {
 }
 
 export function createCatalog(rules: CatalogRules): ReaderTaskEither<[Datastore, Date], SaveCatalogError, SaveCatalogResponse> {
-    if (isEmptyObject(rules.families)) return fromLeft({
-        type: ErrorType.InvalidInput,
-        body: {message: "Request is missing 'families' object"}
-    });
+    if (isEmptyObject(rules.families)) return fromLeft({type: "MissingFamilies"} as SaveCatalogError);
 
-    return fromTaskEither<[Datastore, Date], IgnitionError, Catalog>(buildCatalog(rules.families, rules.exclusions, rules.inclusions))
+    return fromTaskEither<[Datastore, Date], IgnitionCreateCatalogError, Catalog>(buildCatalog(rules.families, rules.exclusions, rules.inclusions))
         .mapLeft(fromIgnitionError)
         .chain(catalog => fromReader<[Datastore, Date], SaveCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(rules.id, catalog))
             .chain(entity =>
@@ -51,18 +54,31 @@ export function createCatalog(rules: CatalogRules): ReaderTaskEither<[Datastore,
             .map(() => catalog)
         )
         .chain(catalog => findOptions(catalog))
-        .map(options => fromCommitResult(rules.id, options));
+        .map(options => ({id: rules.id, options: options}));
 }
 
-function fromIgnitionError(err: IgnitionError): SaveCatalogError {
-    return {type: ErrorType.Ignition, body: err};
+function fromIgnitionError(err: IgnitionCreateCatalogError): SaveCatalogError {
+    switch (err.type) {
+        case "CompoundError":
+            return err;
+        case "MultipleFamiliesRegistered":
+            return err;
+        case "InclusionFamilyConflict":
+            return err;
+        case "ExclusionFamilyConflict":
+            return err;
+        case "InclusionMissingFamily":
+            return err;
+        case "ExclusionMissingFamily":
+            return err;
+    }
 }
 
 function saveCatalogEntity(
     entity: DatastorePayload<CatalogEntity>
 ): ReaderTaskEither<Datastore, SaveCatalogError, CommitResult> {
     function fromDatastoreError(err: DatastoreError): SaveCatalogError {
-        return {type: ErrorType.Datastore, body: {message: err.message}};
+        return {type: "Datastore", error: err};
     }
 
     return new ReaderTaskEither(datastore =>
@@ -78,12 +94,13 @@ function findOptions<Ctx>(
 ): ReaderTaskEither<Ctx, SaveCatalogError, Options> {
     return fromTaskEither(
         findOptionsInner(catalog)
-            .mapLeft(err => ({type: ErrorType.Ignition, body: err}))
+            .mapLeft((err): SaveCatalogError => {
+                switch (err.type) {
+                    case "UnknownSelections":
+                        return err;
+                }
+            })
     );
-}
-
-function fromCommitResult(catalogId: string, options: Options): SaveCatalogResponse {
-    return {id: catalogId, options: options};
 }
 
 function isEmptyObject(obj: object): boolean {

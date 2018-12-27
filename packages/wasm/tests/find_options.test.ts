@@ -1,14 +1,16 @@
 import test from "ava";
-import {buildCatalog, findOptions, Options} from "../src";
+import {buildCatalog, findOptions, IgnitionOptionsError, Options} from "../src";
 import {left, right} from "fp-ts/lib/Either";
 
-test("findOptions with no rules, and no selections", async t => {
-    const families = {
-        "shirts": ["shirts:red", "shirts:blue"],
-        "pants": ["pants:jeans", "pants:slacks"],
-    };
+const families = {
+    "shirts": ["shirts:red", "shirts:blue"],
+    "pants": ["pants:jeans", "pants:slacks"],
+};
+const catalog = buildCatalog(families)
+    .mapLeft(err => err as unknown as IgnitionOptionsError);
 
-    const options = await buildCatalog(families)
+test("findOptions with no rules, and no selections", async t => {
+    const options = await catalog
         .chain(catalog => findOptions(catalog))
         .run();
 
@@ -26,12 +28,7 @@ test("findOptions with no rules, and no selections", async t => {
 });
 
 test("findOptions with no rules, and one selection", async t => {
-    const families = {
-        "shirts": ["shirts:red", "shirts:blue"],
-        "pants": ["pants:jeans", "pants:slacks"],
-    };
-
-    const options = await buildCatalog(families)
+    const options = await catalog
         .chain(catalog => findOptions(catalog, ["shirts:red"]))
         .run();
 
@@ -49,12 +46,7 @@ test("findOptions with no rules, and one selection", async t => {
 });
 
 test("findOptions with no rules, and all selections", async t => {
-    const families = {
-        "shirts": ["shirts:red", "shirts:blue"],
-        "pants": ["pants:jeans", "pants:slacks"],
-    };
-
-    const options = await buildCatalog(families)
+    const options = await catalog
         .chain(catalog => findOptions(catalog, ["pants:slacks", "shirts:red"]))
         .run();
 
@@ -71,39 +63,26 @@ test("findOptions with no rules, and all selections", async t => {
     t.deepEqual(options, right(expected));
 });
 
-test.skip("findOptions with no rules, with unknown selection", async t => {
-    const families = {
-        "shirts": ["shirts:red", "shirts:blue"],
-        "pants": ["pants:jeans", "pants:slacks"],
-    };
-
-    const error = await buildCatalog(families)
+test("findOptions with no rules, with unknown selection", async t => {
+    const error = await catalog
         .chain(catalog => findOptions(catalog, ["shirts:black"]))
         .run();
 
-    let expectedError = {
-        description: "Only known items may be selected",
-        details: "Selected item is unknown: Item(\"shirts:black\")",
-        error: "UnknownItem",
+    let expectedError: IgnitionOptionsError = {
+        items: ["shirts:black"],
+        type: "UnknownSelections",
     };
     t.deepEqual(error, left(expectedError));
 });
 
 test.skip("findOptions with no rules, with more selections than families", async t => {
-    const families = {
-        "shirts": ["shirts:red", "shirts:blue"],
-        "pants": ["pants:jeans", "pants:slacks"],
-    };
-
-    const options = buildCatalog(families)
+    const error = await catalog
         .chain(catalog => findOptions(catalog, ["shirts:red", "shirts:blue"]))
         .run();
-    const error = await options;
 
     let expectedError = {
-        description: "Only available items may be selected",
-        details: "Selected item is excluded: Item(\"shirts:blue\")",
-        error: "ExcludedItem",
+        items: ["shirts:black"],
+        type: "ExcludedItem",
     };
     t.deepEqual(error, left(expectedError));
 });

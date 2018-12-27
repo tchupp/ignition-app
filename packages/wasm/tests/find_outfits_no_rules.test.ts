@@ -2,16 +2,14 @@ import test from "ava";
 import {buildCatalog, findOutfits} from "../src";
 import {right} from "fp-ts/lib/Either";
 
-test("findOutfits with no rules", async t => {
-    // setup
-    const families = {
-        "shirts": ["shirts:red", "shirts:blue"],
-        "pants": ["pants:jeans", "pants:slacks"],
-    };
+const families = {
+    "shirts": ["shirts:red", "shirts:blue"],
+    "pants": ["pants:jeans", "pants:slacks"],
+};
+const catalog = buildCatalog(families);
 
-
-    // case 1
-    const outfit1 = await buildCatalog(families)
+test("findOutfits with no rules, no selections", async t => {
+    const outfit1 = await catalog
         .chain(catalog => findOutfits(catalog))
         .run();
 
@@ -22,10 +20,10 @@ test("findOutfits with no rules", async t => {
         ["pants:slacks", "shirts:red"]
     ];
     t.deepEqual(outfit1, right(expected1));
+});
 
-
-    // case 2
-    const outfit2 = await buildCatalog(families)
+test("findOutfits with no rules, shirts selected", async t => {
+    const outfit2 = await catalog
         .chain(catalog => findOutfits(catalog, ["shirts:red"]))
         .run();
 
@@ -34,15 +32,27 @@ test("findOutfits with no rules", async t => {
         ["pants:slacks", "shirts:red"]
     ];
     t.deepEqual(outfit2, right(expected2));
+});
 
-
-    // case 3
-    const outfit3 = await buildCatalog(families)
-        .chain(catalog => findOutfits(catalog, ["pants:slacks", "shirts:red"]))
+test("findOutfits with no rules, pants selected", async t => {
+    const outfit3 = await catalog
+        .chain(catalog => findOutfits(catalog, ["pants:slacks"]))
         .run();
 
     const expected3 = [
+        ["pants:slacks", "shirts:blue"],
         ["pants:slacks", "shirts:red"]
     ];
     t.deepEqual(outfit3, right(expected3));
+});
+
+test("findOutfits with no rules, shirts and pants selected", async t => {
+    const outfit4 = await catalog
+        .chain(catalog => findOutfits(catalog, ["pants:slacks", "shirts:red"]))
+        .run();
+
+    const expected4 = [
+        ["pants:slacks", "shirts:red"]
+    ];
+    t.deepEqual(outfit4, right(expected4));
 });

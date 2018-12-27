@@ -73,39 +73,52 @@ pub fn build_closet(contents: &JsValue) -> js_sys::Promise {
         .map(|closet| base64::encode(&closet[..]))
         .map(|closet| JsValue::from_str(closet.as_str()))
         .map(|closet| js_sys::Promise::resolve(&closet))
-        .map_err(|err| IgnitionError::from(err))
+        .map_err(|err| IgnitionOptionsError::from(err))
         .map_err(|err| JsValue::from_serde(&err).unwrap())
         .unwrap_or_else(|err| js_sys::Promise::reject(&err))
 }
 
-impl From<ClosetBuilderError> for IgnitionError {
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum IgnitionOptionsError {
+    InclusionMissingFamily { item: String },
+    ExclusionMissingFamily { item: String },
+    MultipleFamiliesRegistered { item: String, families: Vec<String> },
+    InclusionFamilyConflict { family: String, items: Vec<String> },
+    ExclusionFamilyConflict { family: String, items: Vec<String> },
+    CompoundError { errors: Vec<IgnitionOptionsError> },
+}
+
+impl From<ClosetBuilderError> for IgnitionOptionsError {
     fn from(error: ClosetBuilderError) -> Self {
         match error {
-            ClosetBuilderError::CompoundError(errors) => IgnitionError {
-                error: String::from("CompoundError"),
-                description: String::from("Multiple errors occurred"),
-                details: IgnitionErrorDetail::Many(errors.into_iter().map(IgnitionError::from).collect_vec()),
-            },
-            ClosetBuilderError::ConflictingFamilies(item, families) => IgnitionError {
-                error: String::from("ConflictingFamilies"),
-                description: String::from("Items may only be registered to one family"),
-                details: IgnitionErrorDetail::One(format!("Item {:?} has multiple families: {:?}", item, families)),
-            },
-            ClosetBuilderError::InclusionError(family, items) => IgnitionError {
-                error: String::from("InclusionError"),
-                description: String::from("Inclusion rules may only contain items from other families"),
-                details: IgnitionErrorDetail::One(format!("Inclusion rule has multiple items {:?} from the same family {:?}", items, family)),
-            },
-            ClosetBuilderError::ExclusionError(family, items) => IgnitionError {
-                error: String::from("ExclusionError"),
-                description: String::from("Exclusion rules may only contain items from other families"),
-                details: IgnitionErrorDetail::One(format!("Exclusion rule has multiple items {:?} from the same family {:?}", items, family)),
-            },
-            ClosetBuilderError::MissingFamily(item) => IgnitionError {
-                error: String::from("MissingFamily"),
-                description: String::from("Items must be registered to exactly one family"),
-                details: IgnitionErrorDetail::One(format!("Item is not registered to any family: {:?}", item)),
-            },
+            ClosetBuilderError::CompoundError(errors) =>
+                IgnitionOptionsError::CompoundError {
+                    errors: errors.into_iter().map(IgnitionOptionsError::from).collect()
+                },
+            ClosetBuilderError::MultipleFamiliesRegistered(item, families) =>
+                IgnitionOptionsError::MultipleFamiliesRegistered {
+                    item: String::from(item),
+                    families: families.into_iter().map(String::from).collect(),
+                },
+            ClosetBuilderError::InclusionFamilyConflict(family, items) =>
+                IgnitionOptionsError::InclusionFamilyConflict {
+                    family: String::from(family),
+                    items: items.into_iter().map(String::from).collect(),
+                },
+            ClosetBuilderError::ExclusionFamilyConflict(family, items) =>
+                IgnitionOptionsError::ExclusionFamilyConflict {
+                    family: String::from(family),
+                    items: items.into_iter().map(String::from).collect(),
+                },
+            ClosetBuilderError::InclusionMissingFamily(item) =>
+                IgnitionOptionsError::InclusionMissingFamily {
+                    item: String::from(item)
+                },
+            ClosetBuilderError::ExclusionMissingFamily(item) =>
+                IgnitionOptionsError::ExclusionMissingFamily {
+                    item: String::from(item)
+                },
         }
     }
 }

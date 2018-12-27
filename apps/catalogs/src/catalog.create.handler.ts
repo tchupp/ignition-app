@@ -4,17 +4,17 @@ import {CatalogContents, ItemStatus} from "@ignition/wasm";
 import {Catalog, CreateCatalogRequest, FamilyOptions, ItemOption} from "../generated/catalogs_pb";
 
 import {defer, Observable} from "rxjs";
+import {status} from "grpc";
 import {Either} from "fp-ts/lib/Either";
 import {ReaderTaskEither, readerTaskEither} from "fp-ts/lib/ReaderTaskEither";
 
+import {badRequestDetail, debugInfoDetail, GrpcServiceError, GrpcServiceErrorDetail, serviceError} from "./errors.pb";
 import {
     CatalogRules,
     createCatalog as createCatalogInner,
     SaveCatalogError,
     SaveCatalogResponse
 } from "./catalog.create";
-import {status} from "grpc";
-import {GrpcServiceError, serviceError} from "./errors.pb";
 
 export function createCatalog(req: CreateCatalogRequest, datastore: Datastore, timestamp = new Date()): Observable<Either<GrpcServiceError, Catalog>> {
     return defer(() => {
@@ -84,11 +84,151 @@ function toSuccessResponse(response: SaveCatalogResponse): Catalog {
     return grpcResponse;
 }
 
-function toErrorResponse(_error: SaveCatalogError): GrpcServiceError {
-    console.error(_error);
+function toErrorResponseDetails(error: SaveCatalogError): GrpcServiceErrorDetail[] {
+    switch (error.type) {
+        case "Datastore":
+            return [];
 
+        case "MissingFamilies":
+            return [
+                badRequestDetail({
+                    fieldViolationsList: [{
+                        field: "families",
+                        description: `field is required`
+                    }]
+                })
+            ];
+
+        case "CompoundError":
+            return ([] as GrpcServiceErrorDetail[])
+                .concat(...error.errors.map(toErrorResponseDetails));
+
+        case "MultipleFamiliesRegistered":
+            return [
+                badRequestDetail({
+                    fieldViolationsList: [{
+                        field: "families",
+                        description: `Item '${error.item}' has multiple families: ${JSON.stringify(error.families)}`
+                    }]
+                })
+            ];
+
+        case "InclusionFamilyConflict":
+            return [
+                badRequestDetail({
+                    fieldViolationsList: [{
+                        field: "inclusions",
+                        description: `Inclusion rule has multiple items ${JSON.stringify(error.items)} from the same family '${error.family}'`
+                    }]
+                })
+            ];
+
+        case "ExclusionFamilyConflict":
+            return [
+                badRequestDetail({
+                    fieldViolationsList: [{
+                        field: "exclusions",
+                        description: `Exclusion rule has multiple items ${JSON.stringify(error.items)} from the same family '${error.family}'`
+                    }]
+                })
+            ];
+
+        case "InclusionMissingFamily":
+            return [
+                badRequestDetail({
+                    fieldViolationsList: [{
+                        field: "inclusions",
+                        description: `Item is not registered to any family: '${error.item}'`
+                    }]
+                })
+            ];
+
+        case "ExclusionMissingFamily":
+            return [
+                badRequestDetail({
+                    fieldViolationsList: [{
+                        field: "exclusions",
+                        description: `Item is not registered to any family: '${error.item}'`
+                    }]
+                })
+            ];
+
+        case "UnknownSelections":
+            return [
+                debugInfoDetail({
+                    detail: `We should have no selections when creating a catalog, but had: ${JSON.stringify(error.items)}`,
+                    stackEntriesList: []
+                })
+            ];
+    }
+}
+
+function toErrorResponse(error: SaveCatalogError): GrpcServiceError {
+    switch (error.type) {
+        case "Datastore":
+            return serviceError(
+                "Datastore Error",
+                status.INTERNAL,
+                toErrorResponseDetails(error));
+
+        case "MissingFamilies":
+            return serviceError(
+                "Families are required to build a catalog",
+                status.INVALID_ARGUMENT,
+                toErrorResponseDetails(error));
+
+        case "CompoundError":
+            return serviceError(
+                "Multiple invalid request parameters",
+                status.INVALID_ARGUMENT,
+                ([] as GrpcServiceErrorDetail[])
+                    .concat(...error.errors.map(toErrorResponseDetails)));
+
+        case "MultipleFamiliesRegistered":
+            return serviceError(
+                "Items may only be registered to one family",
+                status.INVALID_ARGUMENT,
+                toErrorResponseDetails(error));
+
+        case "InclusionFamilyConflict":
+            return serviceError(
+                "Inclusion rules may only include items from other families",
+                status.INVALID_ARGUMENT,
+                toErrorResponseDetails(error));
+
+        case "ExclusionFamilyConflict":
+            return serviceError(
+                "Exclusion rules may only exclude items from other families",
+                status.INVALID_ARGUMENT,
+                toErrorResponseDetails(error));
+
+        case "InclusionMissingFamily":
+            return serviceError(
+                "Selections and inclusions in rules must be registered to one family",
+                status.INVALID_ARGUMENT,
+                toErrorResponseDetails(error));
+
+        case "ExclusionMissingFamily":
+            return serviceError(
+                "Selections and exclusions in rules must be registered to one family",
+                status.INVALID_ARGUMENT,
+                toErrorResponseDetails(error));
+
+        case "UnknownSelections":
+            return serviceError(
+                "Error should not have occurred",
+                status.INTERNAL,
+                toErrorResponseDetails(error));
+    }
+
+    console.error(JSON.stringify(error, null, 2));
     return serviceError(
-        "",
-        status.INTERNAL
-    );
+        "Unhandled error",
+        status.INTERNAL,
+        [
+            debugInfoDetail({
+                detail: JSON.stringify(error),
+                stackEntriesList: []
+            })
+        ]);
 }

@@ -70,13 +70,13 @@ test("retrieveCatalog returns error, when request contains unknown selection", a
 
     t.deepEqual(result, left(
         serviceError(
-            "UnknownItems",
+            "Unknown Selections",
             status.INVALID_ARGUMENT,
             [
                 badRequestDetail({
                     fieldViolationsList: [{
                         field: "selections",
-                        description: "Selected items are unknown: [\"shirts:blue\"]"
+                        description: `Selected items are unknown: ["shirts:blue"]`
                     }]
                 })
             ])

@@ -15,7 +15,7 @@ import {Duration} from "google-protobuf/google/protobuf/duration_pb";
 import {Any} from "google-protobuf/google/protobuf/any_pb";
 import {Status} from "../generated/google/rpc/status_pb";
 
-type GrpcServiceErrorDetail =
+export type GrpcServiceErrorDetail =
     { type: "DebugInfo", detail: DebugInfo }
     | { type: "RetryInfo", detail: RetryInfo }
     | { type: "QuotaFailure", detail: QuotaFailure }

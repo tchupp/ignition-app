@@ -2,14 +2,16 @@ import {TaskEither, tryCatch} from "fp-ts/lib/TaskEither";
 
 export type Catalog = string;
 
-export interface IgnitionError {
-    readonly error: string;
-    readonly description: string;
-    readonly details: IgnitionError[] | string;
-}
+export type IgnitionCreateCatalogError =
+    { type: "CompoundError", errors: IgnitionCreateCatalogError[] }
+    | { type: "MultipleFamiliesRegistered", item: string, families: string[] }
+    | { type: "InclusionFamilyConflict", family: string, items: string[] }
+    | { type: "ExclusionFamilyConflict", family: string, items: string[] }
+    | { type: "InclusionMissingFamily", item: string }
+    | { type: "ExclusionMissingFamily", item: string }
 
 export type IgnitionOptionsError =
-    { error: "UnknownItems", description: string, details: string }
+    { type: "UnknownSelections", items: string[] }
 
 export interface CatalogContents {
     readonly [key: string]: Item[];
@@ -31,7 +33,7 @@ export function buildCatalog(
     families: CatalogContents,
     exclusions: CatalogContents = {},
     inclusions: CatalogContents = {}
-): TaskEither<IgnitionError, Catalog> {
+): TaskEither<IgnitionCreateCatalogError, Catalog> {
     let contents = {families: families, exclusions: exclusions, inclusions: inclusions};
 
     return tryCatch(
@@ -57,7 +59,7 @@ export function findOutfits(
     catalog: Catalog,
     selections: Item[] = [],
     exclusions: Item[] = []
-): TaskEither<IgnitionError, Item[][]> {
+): TaskEither<IgnitionCreateCatalogError, Item[][]> {
     return tryCatch(
         () => import("../crate/pkg")
             .then(m => m.findOutfitsWasm(catalog, selections, exclusions)),

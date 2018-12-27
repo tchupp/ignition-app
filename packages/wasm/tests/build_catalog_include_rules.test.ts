@@ -1,5 +1,5 @@
 import test from "ava";
-import {buildCatalog} from "../src";
+import {buildCatalog, IgnitionCreateCatalogError} from "../src";
 import {left} from "fp-ts/lib/Either";
 
 test("build, when inclusion rule has the same family as the selection, gives an error", async t => {
@@ -13,10 +13,10 @@ test("build, when inclusion rule has the same family as the selection, gives an 
 
     const error = await buildCatalog(families, {}, inclusions).run();
 
-    let expectedError = {
-        error: "InclusionError",
-        description: "Inclusion rules may only contain items from other families",
-        details: "Inclusion rule has multiple items [Item(\"shirts:blue\"), Item(\"shirts:red\")] from the same family Family(\"shirts\")",
+    let expectedError: IgnitionCreateCatalogError = {
+        type: "InclusionFamilyConflict",
+        family: "shirts",
+        items: ["shirts:blue", "shirts:red"]
     };
     t.deepEqual(error, left(expectedError));
 });
@@ -32,10 +32,9 @@ test("build, when inclusion rule has unknown item as selection, gives an error",
 
     const error = await buildCatalog(families, {}, inclusions).run();
 
-    let expectedError = {
-        error: "MissingFamily",
-        description: "Items must be registered to exactly one family",
-        details: "Item is not registered to any family: Item(\"shirts:black\")",
+    let expectedError: IgnitionCreateCatalogError = {
+        type: "InclusionMissingFamily",
+        item: "shirts:black"
     };
     t.deepEqual(error, left(expectedError));
 });
@@ -51,10 +50,9 @@ test("build, when inclusion rule has unknown item in inclusions, gives an error"
 
     const error = await buildCatalog(families, {}, inclusions).run();
 
-    let expectedError = {
-        error: "MissingFamily",
-        description: "Items must be registered to exactly one family",
-        details: "Item is not registered to any family: Item(\"pants:ripped\")",
+    let expectedError: IgnitionCreateCatalogError = {
+        type: "InclusionMissingFamily",
+        item: "pants:ripped"
     };
     t.deepEqual(error, left(expectedError));
 });
