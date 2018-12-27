@@ -4,7 +4,7 @@ import {DatastorePayload} from "@google-cloud/datastore/entity";
 
 import {
     buildCatalog,
-    Catalog,
+    CatalogToken,
     CatalogContents,
     findOptions as findOptionsInner,
     IgnitionCreateCatalogError,
@@ -45,7 +45,7 @@ export interface CatalogRules {
 export function createCatalog(rules: CatalogRules): ReaderTaskEither<[Datastore, Date], SaveCatalogError, SaveCatalogResponse> {
     if (isEmptyObject(rules.families)) return fromLeft({type: "MissingFamilies"} as SaveCatalogError);
 
-    return fromTaskEither<[Datastore, Date], IgnitionCreateCatalogError, Catalog>(buildCatalog(rules.families, rules.exclusions, rules.inclusions))
+    return fromTaskEither<[Datastore, Date], IgnitionCreateCatalogError, CatalogToken>(buildCatalog(rules.families, rules.exclusions, rules.inclusions))
         .mapLeft(fromIgnitionError)
         .chain(catalog => fromReader<[Datastore, Date], SaveCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(rules.id, catalog))
             .chain(entity =>
@@ -90,10 +90,10 @@ function saveCatalogEntity(
 }
 
 function findOptions<Ctx>(
-    catalog: Catalog
+    catalogToken: CatalogToken
 ): ReaderTaskEither<Ctx, SaveCatalogError, Options> {
     return fromTaskEither(
-        findOptionsInner(catalog)
+        findOptionsInner(catalogToken)
             .mapLeft((err): SaveCatalogError => {
                 switch (err.type) {
                     case "UnknownSelections":

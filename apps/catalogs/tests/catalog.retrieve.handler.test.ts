@@ -7,7 +7,7 @@ import {right} from "fp-ts/lib/Either";
 import {CatalogEntity} from "../src/catalog.entity";
 import {retrieveCatalog} from "../src/catalog.retrieve.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
-import {Catalog, ItemOption, RetrieveCatalogRequest} from "../generated/catalogs_pb";
+import {CatalogOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
 import {map} from "rxjs/operators";
 
 const timestamp = new Date();
@@ -16,7 +16,7 @@ type Scenario = {
     description: string
     catalogId: string
     selections: string[]
-    expected: Catalog.AsObject
+    expected: CatalogOptions.AsObject
 };
 
 const scenarios: Scenario[] = [
@@ -187,7 +187,7 @@ scenarios.forEach(({description, catalogId, selections, expected}) => {
         when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
         when(datastoreStub.get(deepEqual(catalogKey))).thenResolve([entity]);
 
-        const req = new RetrieveCatalogRequest();
+        const req = new RetrieveCatalogOptionsRequest();
         req.setCatalogId(catalogId);
         req.setSelectionsList(selections);
 

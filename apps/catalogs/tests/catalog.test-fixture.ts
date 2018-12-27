@@ -1,8 +1,8 @@
-import {buildCatalog, Catalog, CatalogContents} from "@ignition/wasm";
+import {buildCatalog, CatalogToken, CatalogContents} from "@ignition/wasm";
 
 import {CatalogEntity} from "../src/catalog.entity";
 
-const EMPTY_CATALOG: Catalog = "";
+const EMPTY_CATALOG_TOKEN: CatalogToken = "";
 
 export async function buildTestCatalogEntity(
     id: string,
@@ -11,11 +11,11 @@ export async function buildTestCatalogEntity(
     exclusions: CatalogContents = {},
     inclusions: CatalogContents = {}
 ): Promise<CatalogEntity> {
-    let catalogOrError = await buildCatalog(families, exclusions, inclusions).run();
+    const catalogOrError = await buildCatalog(families, exclusions, inclusions).run();
 
     return {
         id: id,
-        serialized: catalogOrError.getOrElse(EMPTY_CATALOG),
+        token: catalogOrError.getOrElse(EMPTY_CATALOG_TOKEN),
         created: timestamp
     };
 }

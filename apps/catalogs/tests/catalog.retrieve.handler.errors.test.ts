@@ -8,7 +8,7 @@ import {status} from "grpc";
 import {CatalogEntity} from "../src/catalog.entity";
 import {retrieveCatalog} from "../src/catalog.retrieve.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
-import {Catalog, RetrieveCatalogRequest} from "../generated/catalogs_pb";
+import {CatalogOptions, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
 import {badRequestDetail, GrpcServiceError, serviceError} from "../src/errors.pb";
 
 const timestamp = new Date();
@@ -16,10 +16,10 @@ const timestamp = new Date();
 test("retrieveCatalog returns error, when request is missing catalogId", async (t) => {
     const datastoreStub: Datastore = mock(Datastore);
 
-    const req = new RetrieveCatalogRequest();
+    const req = new RetrieveCatalogOptionsRequest();
 
     const datastore = instance(datastoreStub);
-    const result: Either<GrpcServiceError, Catalog> = await retrieveCatalog(req, datastore)
+    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalog(req, datastore)
         .toPromise();
 
     t.deepEqual(result, left(
@@ -60,12 +60,12 @@ test("retrieveCatalog returns error, when request contains unknown selection", a
     when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
     when(datastoreStub.get(deepEqual(catalogKey))).thenResolve([entity]);
 
-    const req = new RetrieveCatalogRequest();
+    const req = new RetrieveCatalogOptionsRequest();
     req.setCatalogId(catalogId);
     req.setSelectionsList(selections);
 
     const datastore = instance(datastoreStub);
-    const result: Either<GrpcServiceError, Catalog> = await retrieveCatalog(req, datastore)
+    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalog(req, datastore)
         .toPromise();
 
     t.deepEqual(result, left(
@@ -96,11 +96,11 @@ test("retrieveCatalog returns error, when catalog does not exist", async (t) => 
     when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
     when(datastoreStub.get(deepEqual(catalogKey))).thenResolve([undefined]);
 
-    const req = new RetrieveCatalogRequest();
+    const req = new RetrieveCatalogOptionsRequest();
     req.setCatalogId(catalogId);
 
     const datastore = instance(datastoreStub);
-    const result: Either<GrpcServiceError, Catalog> = await retrieveCatalog(req, datastore)
+    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalog(req, datastore)
         .toPromise();
 
     t.deepEqual(result, left(

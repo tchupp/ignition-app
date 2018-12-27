@@ -5,12 +5,12 @@ import "google/api/annotations.proto";
 package catalogs;
 
 service CatalogManager {
-    rpc RetrieveCatalog (RetrieveCatalogRequest) returns (Catalog) {
+    rpc RetrieveCatalogOptions (RetrieveCatalogOptionsRequest) returns (CatalogOptions) {
         option (google.api.http) = {
-          get: "/v1/projects/{project_id}/catalogs/{catalog_id}"
+          get: "/v1/projects/{project_id}/catalogs/{catalog_id}/options"
         };
     }
-    rpc CreateCatalog (CreateCatalogRequest) returns (Catalog) {
+    rpc CreateCatalog (CreateCatalogRequest) returns (CatalogOptions) {
         option (google.api.http) = {
           put: "/v1/projects/{project_id}/catalogs/{catalog_id}"
           body: "*"
@@ -18,7 +18,7 @@ service CatalogManager {
     }
 }
 
-message RetrieveCatalogRequest {
+message RetrieveCatalogOptionsRequest {
     string project_id = 4;
     string catalog_id = 1;
     repeated string selections = 2;
@@ -48,7 +48,7 @@ message Inclusion {
     repeated string inclusions = 2;
 }
 
-message Catalog {
+message CatalogOptions {
     string catalog_id = 1;
     repeated FamilyOptions options = 2;
 }

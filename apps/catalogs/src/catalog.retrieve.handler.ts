@@ -1,6 +1,6 @@
 import Datastore = require("@google-cloud/datastore");
 import {Item, ItemStatus} from "@ignition/wasm";
-import {Catalog, FamilyOptions, ItemOption, RetrieveCatalogRequest} from "../generated/catalogs_pb";
+import {CatalogOptions, FamilyOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
 
 import {Either} from "fp-ts/lib/Either";
 import {readerTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
@@ -14,7 +14,7 @@ import {
 } from "./catalog.retrieve";
 import {badRequestDetail, GrpcServiceError, serviceError} from "./errors.pb";
 
-export function retrieveCatalog(req: RetrieveCatalogRequest, datastore: Datastore): Observable<Either<GrpcServiceError, Catalog>> {
+export function retrieveCatalog(req: RetrieveCatalogOptionsRequest, datastore: Datastore): Observable<Either<GrpcServiceError, CatalogOptions>> {
     return defer(() => {
         return fromRequest(req)
             .chain(([catalogId, selections]) => retrieveCatalogInner(catalogId, selections))
@@ -23,7 +23,7 @@ export function retrieveCatalog(req: RetrieveCatalogRequest, datastore: Datastor
     });
 }
 
-function fromRequest(req: RetrieveCatalogRequest): ReaderTaskEither<Datastore, RetrieveCatalogError, [string, Item[]]> {
+function fromRequest(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, RetrieveCatalogError, [string, Item[]]> {
     const catalogId = req.getCatalogId();
 
     const selections_matrix = req.getSelectionsList()
@@ -33,7 +33,7 @@ function fromRequest(req: RetrieveCatalogRequest): ReaderTaskEither<Datastore, R
     return readerTaskEither.of([catalogId, selections] as [string, Item[]]);
 }
 
-function toSuccessResponse(response: RetrieveCatalogResponse): Catalog {
+function toSuccessResponse(response: RetrieveCatalogResponse): CatalogOptions {
     function toItem(status: ItemStatus): ItemOption {
         const item = new ItemOption();
         switch (status.type) {
@@ -69,10 +69,10 @@ function toSuccessResponse(response: RetrieveCatalogResponse): Catalog {
         Object.keys(response.options)
             .map(familyId => toFamilyOptions(familyId, response.options[familyId]));
 
-    const catalog = new Catalog();
-    catalog.setCatalogId(response.id);
-    catalog.setOptionsList(familyOptions);
-    return catalog;
+    const catalogOptions = new CatalogOptions();
+    catalogOptions.setCatalogId(response.id);
+    catalogOptions.setOptionsList(familyOptions);
+    return catalogOptions;
 }
 
 function toErrorResponse(error: RetrieveCatalogError): GrpcServiceError {

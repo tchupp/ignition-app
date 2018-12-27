@@ -30,11 +30,11 @@ function handleError<Res>(callback: grpc.sendUnaryData<Res>): (error: any) => vo
 
 
 const service: grpc.UntypedServiceImplementation = {
-    retrieveCatalog: (call: grpc.ServerUnaryCall<messages.RetrieveCatalogRequest>, callback: grpc.sendUnaryData<messages.Catalog>) =>
+    retrieveCatalogOptions: (call: grpc.ServerUnaryCall<messages.RetrieveCatalogOptionsRequest>, callback: grpc.sendUnaryData<messages.CatalogOptions>) =>
         retrieveCatalogInner(call.request, datastore)
             .subscribe(handleResult(callback), handleError(callback)),
 
-    createCatalog: (call: grpc.ServerUnaryCall<messages.CreateCatalogRequest>, callback: grpc.sendUnaryData<messages.Catalog>) =>
+    createCatalog: (call: grpc.ServerUnaryCall<messages.CreateCatalogRequest>, callback: grpc.sendUnaryData<messages.CatalogOptions>) =>
         createCatalogInner(call.request, datastore)
             .subscribe(handleResult(callback), handleError(callback))
 };

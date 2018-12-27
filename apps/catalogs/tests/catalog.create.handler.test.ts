@@ -46,7 +46,7 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
     }];
     const entity = {
         key: catalogKey,
-        excludeFromIndexes: ["serialized"],
+        excludeFromIndexes: ["token"],
         data: await buildTestCatalogEntity(
             catalogId,
             timestamp,

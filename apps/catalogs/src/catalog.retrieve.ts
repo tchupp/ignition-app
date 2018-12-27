@@ -51,7 +51,7 @@ function findOptions<Ctx>(
     selections: Item[]
 ): ReaderTaskEither<Ctx, RetrieveCatalogError, Options> {
     return fromTaskEither(
-        findOptionsInner(entity.serialized, selections)
+        findOptionsInner(entity.token, selections)
             .mapLeft((err): RetrieveCatalogError => {
                 switch (err.type) {
                     case "UnknownSelections":

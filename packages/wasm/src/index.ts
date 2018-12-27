@@ -1,6 +1,6 @@
 import {TaskEither, tryCatch} from "fp-ts/lib/TaskEither";
 
-export type Catalog = string;
+export type CatalogToken = string;
 
 export type IgnitionCreateCatalogError =
     { type: "CompoundError", errors: IgnitionCreateCatalogError[] }
@@ -33,7 +33,7 @@ export function buildCatalog(
     families: CatalogContents,
     exclusions: CatalogContents = {},
     inclusions: CatalogContents = {}
-): TaskEither<IgnitionCreateCatalogError, Catalog> {
+): TaskEither<IgnitionCreateCatalogError, CatalogToken> {
     let contents = {families: families, exclusions: exclusions, inclusions: inclusions};
 
     return tryCatch(
@@ -44,25 +44,25 @@ export function buildCatalog(
 }
 
 export function findOptions(
-    catalog: Catalog,
+    catalogToken: CatalogToken,
     selections: Item[] = [],
     exclusions: Item[] = []
 ): TaskEither<IgnitionOptionsError, Options> {
     return tryCatch(
         () => import("../crate/pkg")
-            .then(m => m.findOptionsWasm(catalog, selections, exclusions)),
+            .then(m => m.findOptionsWasm(catalogToken, selections, exclusions)),
         (err: any) => err
     );
 }
 
 export function findOutfits(
-    catalog: Catalog,
+    catalogToken: CatalogToken,
     selections: Item[] = [],
     exclusions: Item[] = []
 ): TaskEither<IgnitionCreateCatalogError, Item[][]> {
     return tryCatch(
         () => import("../crate/pkg")
-            .then(m => m.findOutfitsWasm(catalog, selections, exclusions)),
+            .then(m => m.findOutfitsWasm(catalogToken, selections, exclusions)),
         (err: any) => err
     );
 }

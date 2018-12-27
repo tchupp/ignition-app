@@ -1,7 +1,7 @@
 import Datastore = require("@google-cloud/datastore");
 import {CatalogContents, ItemStatus} from "@ignition/wasm";
 
-import {Catalog, CreateCatalogRequest, FamilyOptions, ItemOption} from "../generated/catalogs_pb";
+import {CatalogOptions, CreateCatalogRequest, FamilyOptions, ItemOption} from "../generated/catalogs_pb";
 
 import {defer, Observable} from "rxjs";
 import {status} from "grpc";
@@ -16,7 +16,7 @@ import {
     SaveCatalogResponse
 } from "./catalog.create";
 
-export function createCatalog(req: CreateCatalogRequest, datastore: Datastore, timestamp = new Date()): Observable<Either<GrpcServiceError, Catalog>> {
+export function createCatalog(req: CreateCatalogRequest, datastore: Datastore, timestamp = new Date()): Observable<Either<GrpcServiceError, CatalogOptions>> {
     return defer(() => {
         return fromRequest<[Datastore, Date]>(req)
             .chain(rules => createCatalogInner(rules))
@@ -42,7 +42,7 @@ function fromRequest<Ctx>(req: CreateCatalogRequest): ReaderTaskEither<Ctx, Save
     });
 }
 
-function toSuccessResponse(response: SaveCatalogResponse): Catalog {
+function toSuccessResponse(response: SaveCatalogResponse): CatalogOptions {
     function toItem(status: ItemStatus): ItemOption {
         const item = new ItemOption();
         switch (status.type) {
@@ -78,7 +78,7 @@ function toSuccessResponse(response: SaveCatalogResponse): Catalog {
         Object.keys(response.options)
             .map(familyId => toFamilyOptions(familyId, response.options[familyId]));
 
-    let grpcResponse = new Catalog();
+    const grpcResponse = new CatalogOptions();
     grpcResponse.setCatalogId(response.id);
     grpcResponse.setOptionsList(familyOptions);
     return grpcResponse;
