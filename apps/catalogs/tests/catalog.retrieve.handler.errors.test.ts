@@ -1,6 +1,6 @@
 import Datastore = require("@google-cloud/datastore");
 import test from "ava";
-import {instance, mock, when} from "ts-mockito";
+import {deepEqual, instance, mock, when} from "ts-mockito";
 
 import {Either, left} from "fp-ts/lib/Either";
 import {status} from "grpc";
@@ -50,15 +50,15 @@ test("retrieveCatalog returns error, when request contains unknown selection", a
         }
     );
 
-    const queryStub = mock(Datastore.Query);
-    const query = instance(queryStub);
-
-    when(queryStub.filter("id", catalogId)).thenReturn(query);
-    when(queryStub.limit(1)).thenReturn(query);
+    const catalogKey = {
+        name: catalogId,
+        kind: "Catalog",
+        path: ["Catalog", catalogId]
+    };
 
     const datastoreStub: Datastore = mock(Datastore);
-    when(datastoreStub.createQuery("Catalog")).thenReturn(query);
-    when(datastoreStub.runQuery(query)).thenResolve([[entity], {moreResults: 'NO_MORE_RESULTS'}]);
+    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+    when(datastoreStub.get(deepEqual(catalogKey))).thenResolve([entity]);
 
     const req = new RetrieveCatalogRequest();
     req.setCatalogId(catalogId);
@@ -86,15 +86,15 @@ test("retrieveCatalog returns error, when request contains unknown selection", a
 test("retrieveCatalog returns error, when catalog does not exist", async (t) => {
     const catalogId = "catalog-5";
 
-    const queryStub = mock(Datastore.Query);
-    const query = instance(queryStub);
-
-    when(queryStub.filter("id", catalogId)).thenReturn(query);
-    when(queryStub.limit(1)).thenReturn(query);
+    const catalogKey = {
+        name: catalogId,
+        kind: "Catalog",
+        path: ["Catalog", catalogId]
+    };
 
     const datastoreStub: Datastore = mock(Datastore);
-    when(datastoreStub.createQuery("Catalog")).thenReturn(query);
-    when(datastoreStub.runQuery(query)).thenResolve([[], {moreResults: 'NO_MORE_RESULTS'}]);
+    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+    when(datastoreStub.get(deepEqual(catalogKey))).thenResolve([undefined]);
 
     const req = new RetrieveCatalogRequest();
     req.setCatalogId(catalogId);

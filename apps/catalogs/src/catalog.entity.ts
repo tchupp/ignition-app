@@ -13,7 +13,7 @@ export interface CatalogEntity {
 
 export function buildCatalogEntity(catalogId: string, catalog: Catalog): Reader<[Datastore, Date], DatastorePayload<CatalogEntity>> {
     return asks(([datastore, timestamp]) => ({
-        key: datastore.key({path: ["Catalog"]}),
+        key: datastore.key({path: ["Catalog", catalogId]}),
         excludeFromIndexes: ["serialized"],
         data: {
             id: catalogId,

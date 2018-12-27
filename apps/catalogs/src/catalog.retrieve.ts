@@ -37,14 +37,11 @@ function findCatalog(catalogId: string): ReaderTaskEither<Datastore, RetrieveCat
     });
 
     return new ReaderTaskEither(datastore => {
-            const query = datastore
-                .createQuery("Catalog")
-                .filter("id", catalogId)
-                .limit(1);
+            const key = datastore.key({path: ["Catalog", catalogId]});
 
-            return tryCatch(() => datastore.runQuery(query), (err: any) => err as DatastoreError)
+            return tryCatch(() => datastore.get(key), (err: any) => err as DatastoreError)
                 .mapLeft((err): RetrieveCatalogError => ({type: "Datastore", error: err}))
-                .chain(([entities]) => entities.length > 0 ? taskEither.of(entities[0] as CatalogEntity) : notFoundError);
+                .chain(([entity]) => (entity ? taskEither.of(entity as CatalogEntity) : notFoundError));
         }
     );
 }

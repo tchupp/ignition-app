@@ -30,9 +30,9 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
     const req = rulesToRequest(catalogRules);
 
     const catalogKey = {
-        id: catalogId,
+        name: catalogId,
         kind: "Catalog",
-        path: ["Catalog", "5710353417"]
+        path: ["Catalog", catalogId]
     };
     const commitResult: CommitResult = [{
         mutationResults: [
@@ -56,7 +56,7 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
 
     const datastoreStub: Datastore = mock(Datastore);
 
-    when(datastoreStub.key(deepEqual({path: ["Catalog"]}))).thenReturn(catalogKey);
+    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
     when(datastoreStub.upsert(deepEqual(entity))).thenResolve(commitResult);
 
     const datastore = instance(datastoreStub);
