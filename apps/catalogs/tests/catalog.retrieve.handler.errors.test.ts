@@ -76,7 +76,7 @@ test("retrieveCatalog returns error, when request contains unknown selection", a
                 badRequestDetail({
                     fieldViolationsList: [{
                         field: "selections",
-                        description: `Selected items are unknown: ["shirts:blue"]`
+                        description: `Selected items are unknown: [shirts:blue]`
                     }]
                 })
             ])

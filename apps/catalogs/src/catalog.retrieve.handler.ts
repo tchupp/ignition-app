@@ -111,7 +111,7 @@ function toErrorResponse(error: RetrieveCatalogError): GrpcServiceError {
                     badRequestDetail({
                         fieldViolationsList: [{
                             field: "selections",
-                            description: `Selected items are unknown: ${JSON.stringify(error.items)}`
+                            description: `Selected items are unknown: [${error.items}]`
                         }]
                     })
                 ]);

@@ -108,7 +108,7 @@ function toErrorResponseDetails(error: SaveCatalogError): GrpcServiceErrorDetail
                 badRequestDetail({
                     fieldViolationsList: [{
                         field: "families",
-                        description: `Item '${error.item}' has multiple families: ${JSON.stringify(error.families)}`
+                        description: `Item '${error.item}' has multiple families: [${error.families}]`
                     }]
                 })
             ];
@@ -118,7 +118,7 @@ function toErrorResponseDetails(error: SaveCatalogError): GrpcServiceErrorDetail
                 badRequestDetail({
                     fieldViolationsList: [{
                         field: "inclusions",
-                        description: `Inclusion rule has multiple items ${JSON.stringify(error.items)} from the same family '${error.family}'`
+                        description: `Inclusion rule has multiple items [${error.items}] from the same family '${error.family}'`
                     }]
                 })
             ];
@@ -128,7 +128,7 @@ function toErrorResponseDetails(error: SaveCatalogError): GrpcServiceErrorDetail
                 badRequestDetail({
                     fieldViolationsList: [{
                         field: "exclusions",
-                        description: `Exclusion rule has multiple items ${JSON.stringify(error.items)} from the same family '${error.family}'`
+                        description: `Exclusion rule has multiple items [${error.items}] from the same family '${error.family}'`
                     }]
                 })
             ];
@@ -156,7 +156,7 @@ function toErrorResponseDetails(error: SaveCatalogError): GrpcServiceErrorDetail
         case "UnknownSelections":
             return [
                 debugInfoDetail({
-                    detail: `We should have no selections when creating a catalog, but had: ${JSON.stringify(error.items)}`,
+                    detail: `We should have no selections when creating a catalog, but had: [${error.items}]`,
                     stackEntriesList: []
                 })
             ];

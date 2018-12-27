@@ -142,7 +142,7 @@ test("createCatalog returns error when item is registered to multiple families",
                 badRequestDetail({
                     fieldViolationsList: [{
                         field: "families",
-                        description: `Item 'blue' has multiple families: ["shirts","pants"]`
+                        description: `Item 'blue' has multiple families: [shirts,pants]`
                     }]
                 })
             ])
@@ -202,7 +202,7 @@ test("createCatalog returns error when an exclusion rule contain a selection and
                 badRequestDetail({
                     fieldViolationsList: [{
                         field: "exclusions",
-                        description: `Exclusion rule has multiple items ["shirts:black","shirts:red"] from the same family 'shirts'`
+                        description: `Exclusion rule has multiple items [shirts:black,shirts:red] from the same family 'shirts'`
                     }]
                 })
             ])
@@ -262,7 +262,7 @@ test("createCatalog returns error when an inclusion rule contain a selection and
                 badRequestDetail({
                     fieldViolationsList: [{
                         field: "inclusions",
-                        description: `Inclusion rule has multiple items ["shirts:black","shirts:red"] from the same family 'shirts'`
+                        description: `Inclusion rule has multiple items [shirts:black,shirts:red] from the same family 'shirts'`
                     }]
                 })
             ])
@@ -295,7 +295,7 @@ test("createCatalog returns error when there are multiple errors in the request"
                 badRequestDetail({
                     fieldViolationsList: [{
                         field: "families",
-                        description: `Item 'blue' has multiple families: ["pants","shirts"]`
+                        description: `Item 'blue' has multiple families: [pants,shirts]`
                     }]
                 }),
                 badRequestDetail({
