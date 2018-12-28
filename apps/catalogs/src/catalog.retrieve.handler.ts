@@ -1,11 +1,8 @@
 import Datastore = require("@google-cloud/datastore");
 import {Item, ItemStatus} from "@ignition/wasm";
 import {CatalogOptions, FamilyOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
-
-import {Either} from "fp-ts/lib/Either";
 import {readerTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
 import {status} from "grpc";
-import {defer, Observable} from "rxjs";
 
 import {
     retrieveCatalog as retrieveCatalogInner,
@@ -14,13 +11,10 @@ import {
 } from "./catalog.retrieve";
 import {badRequestDetail, GrpcServiceError, serviceError} from "./errors.pb";
 
-export function retrieveCatalog(req: RetrieveCatalogOptionsRequest, datastore: Datastore): Observable<Either<GrpcServiceError, CatalogOptions>> {
-    return defer(() => {
-        return fromRequest(req)
-            .chain(([catalogId, selections]) => retrieveCatalogInner(catalogId, selections))
-            .bimap(toErrorResponse, toSuccessResponse)
-            .run(datastore);
-    });
+export function retrieveCatalogOptions(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, GrpcServiceError, CatalogOptions> {
+    return fromRequest(req)
+        .chain(([catalogId, selections]) => retrieveCatalogInner(catalogId, selections))
+        .bimap(toErrorResponse, toSuccessResponse);
 }
 
 function fromRequest(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, RetrieveCatalogError, [string, Item[]]> {

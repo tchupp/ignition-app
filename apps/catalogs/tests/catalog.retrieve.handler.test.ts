@@ -5,10 +5,9 @@ import {deepEqual, instance, mock, when} from "ts-mockito";
 import {right} from "fp-ts/lib/Either";
 
 import {CatalogEntity} from "../src/catalog.entity";
-import {retrieveCatalog} from "../src/catalog.retrieve.handler";
+import {retrieveCatalogOptions} from "../src/catalog.retrieve.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {CatalogOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
-import {map} from "rxjs/operators";
 
 const timestamp = new Date();
 
@@ -192,9 +191,9 @@ scenarios.forEach(({description, catalogId, selections, expected}) => {
         req.setSelectionsList(selections);
 
         const datastore = instance(datastoreStub);
-        const result = await retrieveCatalog(req, datastore)
-            .pipe(map(res => res.map(catalog => catalog.toObject())))
-            .toPromise();
+        const result = await retrieveCatalogOptions(req)
+            .map(catalog => catalog.toObject())
+            .run(datastore);
 
         t.deepEqual(result, right(expected));
     });

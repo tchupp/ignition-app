@@ -36,7 +36,7 @@ function findCatalog(catalogId: string): ReaderTaskEither<Datastore, RetrieveCat
         catalogId: catalogId
     });
 
-    return new ReaderTaskEither(datastore => {
+    return new ReaderTaskEither((datastore: Datastore) => {
             const key = datastore.key({path: ["Catalog", catalogId]});
 
             return tryCatch(() => datastore.get(key), (err: any) => err as DatastoreError)

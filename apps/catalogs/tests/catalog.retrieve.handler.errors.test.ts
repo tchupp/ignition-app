@@ -6,7 +6,7 @@ import {Either, left} from "fp-ts/lib/Either";
 import {status} from "grpc";
 
 import {CatalogEntity} from "../src/catalog.entity";
-import {retrieveCatalog} from "../src/catalog.retrieve.handler";
+import {retrieveCatalogOptions} from "../src/catalog.retrieve.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {CatalogOptions, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
 import {badRequestDetail, GrpcServiceError, serviceError} from "../src/errors.pb";
@@ -19,8 +19,8 @@ test("retrieveCatalog returns error, when request is missing catalogId", async (
     const req = new RetrieveCatalogOptionsRequest();
 
     const datastore = instance(datastoreStub);
-    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalog(req, datastore)
-        .toPromise();
+    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalogOptions(req)
+        .run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -65,8 +65,8 @@ test("retrieveCatalog returns error, when request contains unknown selection", a
     req.setSelectionsList(selections);
 
     const datastore = instance(datastoreStub);
-    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalog(req, datastore)
-        .toPromise();
+    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalogOptions(req)
+        .run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -100,8 +100,8 @@ test("retrieveCatalog returns error, when catalog does not exist", async (t) => 
     req.setCatalogId(catalogId);
 
     const datastore = instance(datastoreStub);
-    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalog(req, datastore)
-        .toPromise();
+    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalogOptions(req)
+        .run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
