@@ -2,10 +2,7 @@ import Datastore = require("@google-cloud/datastore");
 import {CatalogContents, ItemStatus} from "@ignition/wasm";
 
 import {CatalogOptions, CreateCatalogRequest, FamilyOptions, ItemOption} from "../generated/catalogs_pb";
-
-import {defer, Observable} from "rxjs";
 import {status} from "grpc";
-import {Either} from "fp-ts/lib/Either";
 import {ReaderTaskEither, readerTaskEither} from "fp-ts/lib/ReaderTaskEither";
 
 import {badRequestDetail, debugInfoDetail, GrpcServiceError, GrpcServiceErrorDetail, serviceError} from "./errors.pb";
@@ -16,13 +13,10 @@ import {
     SaveCatalogResponse
 } from "./catalog.create";
 
-export function createCatalog(req: CreateCatalogRequest, datastore: Datastore, timestamp = new Date()): Observable<Either<GrpcServiceError, CatalogOptions>> {
-    return defer(() => {
-        return fromRequest<[Datastore, Date]>(req)
-            .chain(rules => createCatalogInner(rules))
-            .bimap(toErrorResponse, toSuccessResponse)
-            .run([datastore, timestamp]);
-    });
+export function createCatalog(req: CreateCatalogRequest): ReaderTaskEither<[Datastore, Date], GrpcServiceError, CatalogOptions> {
+    return fromRequest<[Datastore, Date]>(req)
+        .chain(rules => createCatalogInner(rules))
+        .bimap(toErrorResponse, toSuccessResponse);
 }
 
 function fromRequest<Ctx>(req: CreateCatalogRequest): ReaderTaskEither<Ctx, SaveCatalogError, CatalogRules> {

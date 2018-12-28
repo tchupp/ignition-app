@@ -39,8 +39,10 @@ const service: grpc.UntypedServiceImplementation = {
 
     createCatalog: (call: grpc.ServerUnaryCall<messages.CreateCatalogRequest>,
                     callback: grpc.sendUnaryData<messages.CatalogOptions>) =>
-        createCatalogInner(call.request, datastore)
-            .subscribe(handleResult(callback), handleError(callback))
+        createCatalogInner(call.request)
+            .run([datastore, new Date()])
+            .then(handleResult(callback))
+            .catch(handleError(callback)),
 };
 
 
