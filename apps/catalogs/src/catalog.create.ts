@@ -31,12 +31,12 @@ export type SaveCatalogError =
     | { type: "UnknownSelections", items: string[] }
     | { type: "BadToken", token: string, detail: string }
 
-export interface SaveCatalogResponse {
+export type SaveCatalogResponse = {
     readonly id: string;
     readonly options: Options;
 }
 
-export interface CatalogRules {
+export type CatalogRules = {
     readonly id: string;
     readonly families: CatalogContents;
     readonly exclusions: CatalogContents;

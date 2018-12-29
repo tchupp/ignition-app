@@ -15,7 +15,7 @@ export type RetrieveCatalogOptionsError =
     | { type: "UnknownSelections", items: string[] }
     | { type: "BadToken", catalogId: string, token: string, detail: string }
 
-export interface RetrieveCatalogOptionsResponse {
+export type RetrieveCatalogOptionsResponse = {
     readonly id: string;
     readonly options: Options;
 }

@@ -5,7 +5,7 @@ import {CatalogToken} from "@ignition/wasm";
 
 import {asks, Reader} from "fp-ts/lib/Reader";
 
-export interface CatalogEntity {
+export type CatalogEntity = {
     readonly id: string;
     readonly token: CatalogToken;
     readonly created: Date;

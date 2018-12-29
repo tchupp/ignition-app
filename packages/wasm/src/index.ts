@@ -14,11 +14,11 @@ export type IgnitionOptionsError =
     { type: "UnknownSelections", items: string[] }
     | { type: "BadToken", token: string, detail: string }
 
-export interface CatalogContents {
+export type CatalogContents = {
     readonly [key: string]: Item[];
 }
 
-export interface Options {
+export type Options = {
     readonly [key: string]: ItemStatus[];
 }
 

@@ -11,7 +11,7 @@ export type DatastoreErrorStatus =
     | "UNAUTHENTICATED"
     | "UNAVAILABLE";
 
-export interface DatastoreError {
+export type DatastoreError = {
     readonly code: number;
     readonly message: string;
     readonly status: DatastoreErrorStatus;
