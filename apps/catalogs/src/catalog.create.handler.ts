@@ -154,6 +154,9 @@ function toErrorResponseDetails(error: SaveCatalogError): GrpcServiceErrorDetail
                     stackEntriesList: []
                 })
             ];
+
+        case "BadToken":
+            return [];
     }
 }
 
@@ -211,6 +214,12 @@ function toErrorResponse(error: SaveCatalogError): GrpcServiceError {
         case "UnknownSelections":
             return serviceError(
                 "Error should not have occurred",
+                status.INTERNAL,
+                toErrorResponseDetails(error));
+
+        case "BadToken":
+            return serviceError(
+                "Catalog was not created correctly",
                 status.INTERNAL,
                 toErrorResponseDetails(error));
     }

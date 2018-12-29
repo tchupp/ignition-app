@@ -12,6 +12,7 @@ export type IgnitionCreateCatalogError =
 
 export type IgnitionOptionsError =
     { type: "UnknownSelections", items: string[] }
+    | { type: "BadToken", token: string, detail: string }
 
 export interface CatalogContents {
     readonly [key: string]: Item[];

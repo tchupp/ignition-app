@@ -29,6 +29,7 @@ export type SaveCatalogError =
     | { type: "ExclusionMissingFamily", item: string }
     // Ignition options errors
     | { type: "UnknownSelections", items: string[] }
+    | { type: "BadToken", token: string, detail: string }
 
 export interface SaveCatalogResponse {
     readonly id: string;
@@ -96,6 +97,8 @@ function findOptions<Ctx>(
         findOptionsInner(catalogToken)
             .mapLeft((err): SaveCatalogError => {
                 switch (err.type) {
+                    case "BadToken":
+                        return err;
                     case "UnknownSelections":
                         return err;
                 }

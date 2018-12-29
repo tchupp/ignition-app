@@ -9,7 +9,7 @@ import {CatalogEntity} from "../src/catalog.entity";
 import {retrieveCatalogOptions} from "../src/catalog.retrieve.options.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {CatalogOptions, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
-import {badRequestDetail, GrpcServiceError, serviceError} from "../src/errors.pb";
+import {badRequestDetail, GrpcServiceError, preconditionFailureDetail, serviceError} from "../src/errors.pb";
 
 const timestamp = new Date();
 
@@ -77,6 +77,50 @@ test("retrieveCatalogOptions returns error, when request contains unknown select
                     fieldViolationsList: [{
                         field: "selections",
                         description: `Selected items are unknown: [shirts:blue]`
+                    }]
+                })
+            ])
+    ));
+});
+
+test("retrieveCatalogOptions returns error, when catalog token is empty", async (t) => {
+    const catalogId = "catalog-4";
+    const selections = ["shirts:blue"];
+
+    const entity: CatalogEntity = {
+        id: catalogId,
+        token: "",
+        created: timestamp
+    };
+
+    const catalogKey = {
+        name: catalogId,
+        kind: "Catalog",
+        path: ["Catalog", catalogId]
+    };
+
+    const datastoreStub: Datastore = mock(Datastore);
+    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+    when(datastoreStub.get(deepEqual(catalogKey))).thenResolve([entity]);
+
+    const req = new RetrieveCatalogOptionsRequest();
+    req.setCatalogId(catalogId);
+    req.setSelectionsList(selections);
+
+    const datastore = instance(datastoreStub);
+    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalogOptions(req)
+        .run(datastore);
+
+    t.deepEqual(result, left(
+        serviceError(
+            "Malformed catalog token, catalog must be re-created",
+            status.FAILED_PRECONDITION,
+            [
+                preconditionFailureDetail({
+                    violationsList: [{
+                        type: "CatalogToken",
+                        subject: catalogId,
+                        description: "Catalog token is malformed",
                     }]
                 })
             ])

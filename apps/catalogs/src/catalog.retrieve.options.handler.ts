@@ -9,7 +9,7 @@ import {
     RetrieveCatalogOptionsError,
     RetrieveCatalogOptionsResponse
 } from "./catalog.retrieve.options";
-import {badRequestDetail, GrpcServiceError, serviceError} from "./errors.pb";
+import {badRequestDetail, GrpcServiceError, preconditionFailureDetail, serviceError} from "./errors.pb";
 
 export function retrieveCatalogOptions(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, GrpcServiceError, CatalogOptions> {
     return fromRequest(req)
@@ -97,7 +97,7 @@ function toErrorResponse(error: RetrieveCatalogOptionsError): GrpcServiceError {
                 `No catalog found with id '${error.catalogId}'`,
                 status.NOT_FOUND);
 
-        case "UnknownSelections": {
+        case "UnknownSelections":
             return serviceError(
                 "Unknown Selections",
                 status.INVALID_ARGUMENT,
@@ -109,6 +109,19 @@ function toErrorResponse(error: RetrieveCatalogOptionsError): GrpcServiceError {
                         }]
                     })
                 ]);
-        }
+
+        case "BadToken":
+            return serviceError(
+                "Malformed catalog token, catalog must be re-created",
+                status.FAILED_PRECONDITION,
+                [
+                    preconditionFailureDetail({
+                        violationsList: [{
+                            type: "CatalogToken",
+                            subject: error.catalogId,
+                            description: "Catalog token is malformed",
+                        }]
+                    })
+                ]);
     }
 }

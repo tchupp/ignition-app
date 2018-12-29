@@ -13,6 +13,7 @@ export type RetrieveCatalogOptionsError =
     | { type: "CatalogNotFound", catalogId: string }
     // Ignition options errors
     | { type: "UnknownSelections", items: string[] }
+    | { type: "BadToken", catalogId: string, token: string, detail: string }
 
 export interface RetrieveCatalogOptionsResponse {
     readonly id: string;
@@ -25,7 +26,7 @@ export function retrieveCatalogOptions(catalogId: string, selections: Item[]): R
     }
 
     return findCatalog(catalogId)
-        .chain(entity => findOptions(entity.token, selections))
+        .chain(entity => findOptions(entity.token, catalogId, selections))
         .map(options => ({id: catalogId, options: options}));
 }
 
@@ -47,12 +48,15 @@ function findCatalog(catalogId: string): ReaderTaskEither<Datastore, RetrieveCat
 
 function findOptions<Ctx>(
     token: CatalogToken,
+    catalogId: string,
     selections: Item[]
 ): ReaderTaskEither<Ctx, RetrieveCatalogOptionsError, Options> {
     return fromTaskEither(
         findOptionsInner(token, selections)
             .mapLeft((err): RetrieveCatalogOptionsError => {
                 switch (err.type) {
+                    case "BadToken":
+                        return {...err, catalogId: catalogId};
                     case "UnknownSelections":
                         return err;
                 }
