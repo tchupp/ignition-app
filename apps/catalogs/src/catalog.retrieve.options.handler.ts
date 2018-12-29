@@ -5,19 +5,19 @@ import {readerTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
 import {status} from "grpc";
 
 import {
-    retrieveCatalog as retrieveCatalogInner,
-    RetrieveCatalogError,
-    RetrieveCatalogResponse
-} from "./catalog.retrieve";
+    retrieveCatalogOptions as retrieveCatalogOptionsInner,
+    RetrieveCatalogOptionsError,
+    RetrieveCatalogOptionsResponse
+} from "./catalog.retrieve.options";
 import {badRequestDetail, GrpcServiceError, serviceError} from "./errors.pb";
 
 export function retrieveCatalogOptions(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, GrpcServiceError, CatalogOptions> {
     return fromRequest(req)
-        .chain(([catalogId, selections]) => retrieveCatalogInner(catalogId, selections))
+        .chain(([catalogId, selections]) => retrieveCatalogOptionsInner(catalogId, selections))
         .bimap(toErrorResponse, toSuccessResponse);
 }
 
-function fromRequest(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, RetrieveCatalogError, [string, Item[]]> {
+function fromRequest(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, RetrieveCatalogOptionsError, [string, Item[]]> {
     const catalogId = req.getCatalogId();
 
     const selections_matrix = req.getSelectionsList()
@@ -27,7 +27,7 @@ function fromRequest(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datas
     return readerTaskEither.of([catalogId, selections] as [string, Item[]]);
 }
 
-function toSuccessResponse(response: RetrieveCatalogResponse): CatalogOptions {
+function toSuccessResponse(response: RetrieveCatalogOptionsResponse): CatalogOptions {
     function toItem(status: ItemStatus): ItemOption {
         const item = new ItemOption();
         switch (status.type) {
@@ -69,7 +69,7 @@ function toSuccessResponse(response: RetrieveCatalogResponse): CatalogOptions {
     return catalogOptions;
 }
 
-function toErrorResponse(error: RetrieveCatalogError): GrpcServiceError {
+function toErrorResponse(error: RetrieveCatalogOptionsError): GrpcServiceError {
     console.error(error);
 
     switch (error.type) {

@@ -5,7 +5,7 @@ import {deepEqual, instance, mock, when} from "ts-mockito";
 import {right} from "fp-ts/lib/Either";
 
 import {CatalogEntity} from "../src/catalog.entity";
-import {retrieveCatalogOptions} from "../src/catalog.retrieve.handler";
+import {retrieveCatalogOptions} from "../src/catalog.retrieve.options.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {CatalogOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
 
@@ -20,7 +20,7 @@ type Scenario = {
 
 const scenarios: Scenario[] = [
     {
-        description: "retrieveCatalog returns catalog options, when request contains valid catalog id",
+        description: "retrieveCatalogOptions returns catalog options, when request contains valid catalog id",
         catalogId: "catalog-1",
         selections: [],
         expected: {
@@ -44,7 +44,7 @@ const scenarios: Scenario[] = [
         }
     },
     {
-        description: "retrieveCatalog returns catalog options, when request contains an empty selection",
+        description: "retrieveCatalogOptions returns catalog options, when request contains an empty selection",
         catalogId: "catalog-2",
         selections: [" "],
         expected: {
@@ -68,7 +68,7 @@ const scenarios: Scenario[] = [
         }
     },
     {
-        description: "retrieveCatalog returns catalog options, when there is one selection",
+        description: "retrieveCatalogOptions returns catalog options, when there is one selection",
         catalogId: "catalog-3",
         selections: [" shirts:red   "],
         expected: {
@@ -92,7 +92,7 @@ const scenarios: Scenario[] = [
         }
     },
     {
-        description: "retrieveCatalog returns catalog options, when request contains an multiple selections",
+        description: "retrieveCatalogOptions returns catalog options, when request contains an multiple selections",
         catalogId: "catalog-4",
         selections: ["shirts:red", "pants:slacks"],
         expected: {
@@ -116,7 +116,7 @@ const scenarios: Scenario[] = [
         }
     },
     {
-        description: "retrieveCatalog returns catalog options, when request contains an multiple selections as a string",
+        description: "retrieveCatalogOptions returns catalog options, when request contains an multiple selections as a string",
         catalogId: "catalog-5",
         selections: ["  shirts:red,  pants:slacks  "],
         expected: {
@@ -140,7 +140,7 @@ const scenarios: Scenario[] = [
         }
     },
     {
-        description: "retrieveCatalog returns all excluded, when request contains two selections in the same family",
+        description: "retrieveCatalogOptions returns all excluded, when request contains two selections in the same family",
         catalogId: "catalog-6",
         selections: ["shirts:red", "  shirts:black"],
         expected: {

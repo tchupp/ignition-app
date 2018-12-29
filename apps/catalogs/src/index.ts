@@ -6,7 +6,7 @@ import * as messages from "../generated/catalogs_pb";
 
 import {Either} from "fp-ts/lib/Either";
 
-import {retrieveCatalogOptions as retrieveCatalogOptionsInner} from "./catalog.retrieve.handler";
+import {retrieveCatalogOptions as retrieveCatalogOptionsInner} from "./catalog.retrieve.options.handler";
 import {createCatalog as createCatalogInner} from "./catalog.create.handler";
 import {GrpcServiceError, serviceError} from "./errors.pb";
 

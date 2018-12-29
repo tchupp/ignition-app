@@ -6,14 +6,14 @@ import {Either, left} from "fp-ts/lib/Either";
 import {status} from "grpc";
 
 import {CatalogEntity} from "../src/catalog.entity";
-import {retrieveCatalogOptions} from "../src/catalog.retrieve.handler";
+import {retrieveCatalogOptions} from "../src/catalog.retrieve.options.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {CatalogOptions, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
 import {badRequestDetail, GrpcServiceError, serviceError} from "../src/errors.pb";
 
 const timestamp = new Date();
 
-test("retrieveCatalog returns error, when request is missing catalogId", async (t) => {
+test("retrieveCatalogOptions returns error, when request is missing catalogId", async (t) => {
     const datastoreStub: Datastore = mock(Datastore);
 
     const req = new RetrieveCatalogOptionsRequest();
@@ -37,7 +37,7 @@ test("retrieveCatalog returns error, when request is missing catalogId", async (
     ));
 });
 
-test("retrieveCatalog returns error, when request contains unknown selection", async (t) => {
+test("retrieveCatalogOptions returns error, when request contains unknown selection", async (t) => {
     const catalogId = "catalog-4";
     const selections = ["shirts:blue"];
 
@@ -83,7 +83,7 @@ test("retrieveCatalog returns error, when request contains unknown selection", a
     ));
 });
 
-test("retrieveCatalog returns error, when catalog does not exist", async (t) => {
+test("retrieveCatalogOptions returns error, when catalog does not exist", async (t) => {
     const catalogId = "catalog-5";
 
     const catalogKey = {
