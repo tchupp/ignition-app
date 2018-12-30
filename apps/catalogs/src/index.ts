@@ -7,7 +7,9 @@ import * as messages from "../generated/catalogs_pb";
 import {Either} from "fp-ts/lib/Either";
 
 import {retrieveCatalogOptions as retrieveCatalogOptionsInner} from "./catalog.retrieve.options.handler";
+import {retrieveCatalog as retrieveCatalogInner} from "./catalog.retrieve.handler";
 import {createCatalog as createCatalogInner} from "./catalog.create.handler";
+import {listCatalogs as listCatalogsInner} from "./catalog.list.handler";
 import {GrpcServiceError, serviceError} from "./errors.pb";
 
 const datastore = new Datastore();
@@ -41,6 +43,20 @@ const service: grpc.UntypedServiceImplementation = {
                     callback: grpc.sendUnaryData<messages.CatalogOptions>) =>
         createCatalogInner(call.request)
             .run([datastore, new Date()])
+            .then(handleResult(callback))
+            .catch(handleError(callback)),
+
+    retrieveCatalog: (call: grpc.ServerUnaryCall<messages.RetrieveCatalogRequest>,
+                      callback: grpc.sendUnaryData<messages.Catalog>) =>
+        retrieveCatalogInner(call.request)
+            .run(datastore)
+            .then(handleResult(callback))
+            .catch(handleError(callback)),
+
+    listCatalogs: (call: grpc.ServerUnaryCall<messages.ListCatalogsRequest>,
+                   callback: grpc.sendUnaryData<messages.ListCatalogsResponse>) =>
+        listCatalogsInner(call.request)
+            .run(datastore)
             .then(handleResult(callback))
             .catch(handleError(callback)),
 };
