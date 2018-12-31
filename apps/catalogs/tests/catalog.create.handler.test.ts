@@ -10,7 +10,8 @@ import {createCatalog} from "../src/catalog.create.handler";
 import {CatalogRules} from "../src/catalog.create";
 import {CreateCatalogRequest, Exclusion, Family, Inclusion, ItemOption} from "../generated/catalogs_pb";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
-import {badRequestDetail, serviceError} from "../src/errors.pb";
+import {badRequestDetail, resourceInfoDetail, serviceError} from "../src/errors.pb";
+import {DatastoreError, DatastoreErrorCode} from "../src/datastore.error";
 
 const timestamp = new Date();
 
@@ -56,7 +57,7 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
     const datastoreStub: Datastore = mock(Datastore);
 
     when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
-    when(datastoreStub.upsert(deepEqual(entity))).thenResolve(commitResult);
+    when(datastoreStub.insert(deepEqual(entity))).thenResolve(commitResult);
 
     const datastore = instance(datastoreStub);
     const result = await createCatalog(req, timestamp)
@@ -83,6 +84,64 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
         ]
     };
     t.deepEqual(result, right(expected));
+});
+
+test("createCatalog returns error when catalog already exists", async (t) => {
+    const catalogId = "catalog-1";
+    const catalogRules = {
+        id: catalogId,
+        families: {
+            "shirts": ["shirts:red", "shirts:black"],
+            "pants": ["pants:jeans", "pants:slacks"]
+        },
+        exclusions: {},
+        inclusions: {}
+    };
+
+    const req = rulesToRequest(catalogRules);
+
+    const catalogKey = {
+        name: catalogId,
+        kind: "Catalog",
+        path: ["Catalog", catalogId]
+    };
+    const entity = {
+        key: catalogKey,
+        excludeFromIndexes: ["token"],
+        data: await buildTestCatalogEntity(
+            catalogId,
+            timestamp,
+            catalogRules.families
+        )
+    };
+    const insertError: DatastoreError = {
+        code: DatastoreErrorCode.ALREADY_EXISTS,
+        details: ""
+    };
+
+    const datastoreStub: Datastore = mock(Datastore);
+
+    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+    when(datastoreStub.insert(deepEqual(entity))).thenReject(insertError);
+
+    const datastore = instance(datastoreStub);
+    const result = await createCatalog(req, timestamp)
+        .map(catalog => catalog.toObject())
+        .run(datastore);
+
+    t.deepEqual(result, left(
+        serviceError(
+            "Catalog already exists",
+            status.ALREADY_EXISTS,
+            [
+                resourceInfoDetail({
+                    resourceType: "Catalog",
+                    resourceName: catalogId,
+                    owner: "",
+                    description: "Catalogs may not be re-created, use UpdateCatalog to modify an existing Catalog",
+                })
+            ])
+    ));
 });
 
 test("createCatalog returns error when families are empty in request", async (t) => {

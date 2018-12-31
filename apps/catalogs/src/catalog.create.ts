@@ -15,11 +15,12 @@ import {fromLeft, fromReader, fromTaskEither, ReaderTaskEither} from "fp-ts/lib/
 import {tryCatch} from "fp-ts/lib/TaskEither";
 
 import {buildCatalogEntity, CatalogEntity} from "./catalog.entity";
-import {DatastoreError} from "./datastore.error";
+import {DatastoreError, DatastoreErrorCode} from "./datastore.error";
 
 export type SaveCatalogError =
     { type: "Datastore", error: DatastoreError }
     | { type: "MissingFamilies" }
+    | { type: "CatalogAlreadyExists", catalogId: string }
     // Ignition catalog creation errors
     | { type: "CompoundError", errors: SaveCatalogError[] }
     | { type: "MultipleFamiliesRegistered", item: string, families: string[] }
@@ -77,12 +78,15 @@ function saveCatalogEntity(
     entity: DatastorePayload<CatalogEntity>
 ): ReaderTaskEither<Datastore, SaveCatalogError, CommitResult> {
     function fromDatastoreError(err: DatastoreError): SaveCatalogError {
+        if (err.code === DatastoreErrorCode.ALREADY_EXISTS) {
+            return {type: "CatalogAlreadyExists", catalogId: (entity.data as CatalogEntity).id};
+        }
         return {type: "Datastore", error: err};
     }
 
-    return new ReaderTaskEither(datastore =>
+    return new ReaderTaskEither((datastore: Datastore) =>
         tryCatch(
-            () => datastore.upsert(entity),
+            () => datastore.insert(entity),
             (err: any) => fromDatastoreError(err)
         )
     );

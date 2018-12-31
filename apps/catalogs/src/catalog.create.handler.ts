@@ -5,7 +5,14 @@ import {CatalogOptions, CreateCatalogRequest, FamilyOptions, ItemOption} from ".
 import {status} from "grpc";
 import {ReaderTaskEither, readerTaskEither} from "fp-ts/lib/ReaderTaskEither";
 
-import {badRequestDetail, debugInfoDetail, GrpcServiceError, GrpcServiceErrorDetail, serviceError} from "./errors.pb";
+import {
+    badRequestDetail,
+    debugInfoDetail,
+    GrpcServiceError,
+    GrpcServiceErrorDetail,
+    resourceInfoDetail,
+    serviceError
+} from "./errors.pb";
 import {
     CatalogRules,
     createCatalog as createCatalogInner,
@@ -82,6 +89,16 @@ function toErrorResponseDetails(error: SaveCatalogError): GrpcServiceErrorDetail
     switch (error.type) {
         case "Datastore":
             return [];
+
+        case "CatalogAlreadyExists":
+            return [
+                resourceInfoDetail({
+                    owner: "",
+                    resourceType: "Catalog",
+                    resourceName: error.catalogId,
+                    description: "Catalogs may not be re-created, use UpdateCatalog to modify an existing Catalog"
+                })
+            ];
 
         case "MissingFamilies":
             return [
@@ -166,6 +183,12 @@ function toErrorResponse(error: SaveCatalogError): GrpcServiceError {
             return serviceError(
                 "Datastore Error",
                 status.INTERNAL,
+                toErrorResponseDetails(error));
+
+        case "CatalogAlreadyExists":
+            return serviceError(
+                "Catalog already exists",
+                status.ALREADY_EXISTS,
                 toErrorResponseDetails(error));
 
         case "MissingFamilies":
