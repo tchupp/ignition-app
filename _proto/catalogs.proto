@@ -54,6 +54,8 @@ message RetrieveCatalogOptionsRequest {
     string catalog_id = 1;
     repeated string selections = 2;
     repeated string exclusions = 3;
+
+    string token = 5;
 }
 
 message CreateCatalogRequest {

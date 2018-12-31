@@ -14,20 +14,28 @@ export type RetrieveCatalogOptionsError =
     // Ignition options errors
     | { type: "UnknownSelections", items: string[] }
     | { type: "BadToken", catalogId: string, token: string, detail: string }
+    | { type: "BadUserToken", catalogId: string, token: string, detail: string }
 
 export type RetrieveCatalogOptionsResponse = {
     readonly id: string;
     readonly options: Options;
 }
 
-export function retrieveCatalogOptions(catalogId: string, selections: Item[]): ReaderTaskEither<Datastore, RetrieveCatalogOptionsError, RetrieveCatalogOptionsResponse> {
+export function retrieveCatalogOptions(catalogId: string, token: CatalogToken, selections: Item[]): ReaderTaskEither<Datastore, RetrieveCatalogOptionsError, RetrieveCatalogOptionsResponse> {
     if (catalogId.length === 0) {
         return readerTaskEitherFromLeft({type: "MissingCatalogId"} as RetrieveCatalogOptionsError);
     }
 
-    return findCatalog(catalogId)
-        .chain(entity => findOptions(entity.token, catalogId, selections))
-        .map(options => ({id: catalogId, options: options}));
+    switch (token.length) {
+        case 0:
+            return findCatalog(catalogId)
+                .chain(entity => findOptions(entity.token, catalogId, selections))
+                .map(options => ({id: catalogId, options: options}));
+
+        default:
+            return findOptions2<Datastore>(token, catalogId, selections)
+                .map(options => ({id: catalogId, options: options}));
+    }
 }
 
 function findCatalog(catalogId: string): ReaderTaskEither<Datastore, RetrieveCatalogOptionsError, CatalogEntity> {
@@ -57,6 +65,24 @@ function findOptions<Ctx>(
                 switch (err.type) {
                     case "BadToken":
                         return {...err, catalogId: catalogId};
+                    case "UnknownSelections":
+                        return err;
+                }
+            })
+    );
+}
+
+function findOptions2<Ctx>(
+    token: CatalogToken,
+    catalogId: string,
+    selections: Item[]
+): ReaderTaskEither<Ctx, RetrieveCatalogOptionsError, Options> {
+    return fromTaskEither(
+        findOptionsInner(token, selections)
+            .mapLeft((err): RetrieveCatalogOptionsError => {
+                switch (err.type) {
+                    case "BadToken":
+                        return {...err, type: "BadUserToken", catalogId: catalogId};
                     case "UnknownSelections":
                         return err;
                 }

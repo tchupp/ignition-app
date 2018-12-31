@@ -83,7 +83,7 @@ test("retrieveCatalogOptions returns error, when request contains unknown select
     ));
 });
 
-test("retrieveCatalogOptions returns error, when catalog token is empty", async (t) => {
+test("retrieveCatalogOptions returns error, when datastore has an empty catalog token", async (t) => {
     const catalogId = "catalog-4";
     const selections = ["shirts:blue"];
 
@@ -151,5 +151,36 @@ test("retrieveCatalogOptions returns error, when catalog does not exist", async 
         serviceError(
             "No catalog found with id 'catalog-5'",
             status.NOT_FOUND)
+    ));
+});
+
+test("retrieveCatalogOptions returns error, when request contains bad token", async (t) => {
+    const catalogId = "catalog-7";
+    const token = "MwAAAAAAAAAoMCA";
+
+    const datastoreStub: Datastore = mock(Datastore);
+
+    const req = new RetrieveCatalogOptionsRequest();
+    req.setCatalogId(catalogId);
+
+    req.setToken(token);
+
+    const datastore = instance(datastoreStub);
+    const result = await retrieveCatalogOptions(req)
+        .map(catalog => catalog.toObject())
+        .run(datastore);
+
+    t.deepEqual(result, left(
+        serviceError(
+            "Request contains bad catalog token",
+            status.INVALID_ARGUMENT,
+            [
+                badRequestDetail({
+                    fieldViolationsList: [{
+                        field: "token",
+                        description: `token: ${token}`
+                    }]
+                })
+            ])
     ));
 });

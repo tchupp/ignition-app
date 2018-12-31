@@ -1,5 +1,5 @@
 import Datastore = require("@google-cloud/datastore");
-import {Item, ItemStatus} from "@ignition/wasm";
+import {CatalogToken, Item, ItemStatus} from "@ignition/wasm";
 import {CatalogOptions, FamilyOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
 import {readerTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
 import {status} from "grpc";
@@ -13,18 +13,19 @@ import {badRequestDetail, GrpcServiceError, preconditionFailureDetail, serviceEr
 
 export function retrieveCatalogOptions(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, GrpcServiceError, CatalogOptions> {
     return fromRequest(req)
-        .chain(([catalogId, selections]) => retrieveCatalogOptionsInner(catalogId, selections))
+        .chain(([catalogId, token, selections]) => retrieveCatalogOptionsInner(catalogId, token, selections))
         .bimap(toErrorResponse, toSuccessResponse);
 }
 
-function fromRequest(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, RetrieveCatalogOptionsError, [string, Item[]]> {
+function fromRequest(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, RetrieveCatalogOptionsError, [string, CatalogToken, Item[]]> {
     const catalogId = req.getCatalogId();
+    const token = req.getToken();
 
     const selections_matrix = req.getSelectionsList()
         .map(selection => selection.split(","));
     const selections: string[] = ([] as string[]).concat(...selections_matrix);
 
-    return readerTaskEither.of([catalogId, selections] as [string, Item[]]);
+    return readerTaskEither.of([catalogId, token, selections] as [string, CatalogToken, Item[]]);
 }
 
 function toSuccessResponse(response: RetrieveCatalogOptionsResponse): CatalogOptions {
@@ -120,6 +121,19 @@ function toErrorResponse(error: RetrieveCatalogOptionsError): GrpcServiceError {
                             type: "CatalogToken",
                             subject: error.catalogId,
                             description: "Catalog token is malformed",
+                        }]
+                    })
+                ]);
+
+        case "BadUserToken":
+            return serviceError(
+                "Request contains bad catalog token",
+                status.INVALID_ARGUMENT,
+                [
+                    badRequestDetail({
+                        fieldViolationsList: [{
+                            field: "token",
+                            description: `token: ${error.token}`
                         }]
                     })
                 ]);

@@ -8,6 +8,7 @@ import {CatalogEntity} from "../src/catalog.entity";
 import {retrieveCatalogOptions} from "../src/catalog.retrieve.options.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {CatalogOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
+import {buildCatalog} from "@ignition/wasm";
 
 const timestamp = new Date();
 
@@ -68,7 +69,7 @@ const scenarios: Scenario[] = [
         }
     },
     {
-        description: "retrieveCatalogOptions returns catalog options, when there is one selection",
+        description: "retrieveCatalogOptions returns catalog options, when request contains one selection",
         catalogId: "catalog-3",
         selections: [" shirts:red   "],
         expected: {
@@ -197,4 +198,86 @@ scenarios.forEach(({description, catalogId, selections, expected}) => {
 
         t.deepEqual(result, right(expected));
     });
+});
+
+test("retrieveCatalogOptions returns catalog options, when request contains token and no selections", async (t) => {
+    const catalogId = "catalog-7";
+    const token = await buildCatalog({
+        "shirts": ["shirts:red", "shirts:black"],
+        "pants": ["pants:jeans", "pants:slacks"]
+    }).run();
+
+    const req = new RetrieveCatalogOptionsRequest();
+    req.setCatalogId(catalogId);
+    req.setToken(token.getOrElse(""));
+
+    const datastoreStub: Datastore = mock(Datastore);
+    const datastore = instance(datastoreStub);
+    const result = await retrieveCatalogOptions(req)
+        .map(catalog => catalog.toObject())
+        .run(datastore);
+
+    const expected = {
+        catalogId: catalogId,
+        optionsList: [
+            {
+                familyId: "pants",
+                optionsList: [
+                    {"itemStatus": ItemOption.Status.AVAILABLE, "itemId": "pants:jeans"},
+                    {"itemStatus": ItemOption.Status.AVAILABLE, "itemId": "pants:slacks"},
+                ]
+            },
+            {
+                familyId: "shirts",
+                optionsList: [
+                    {"itemStatus": ItemOption.Status.AVAILABLE, "itemId": "shirts:black"},
+                    {"itemStatus": ItemOption.Status.AVAILABLE, "itemId": "shirts:red"},
+                ]
+            }
+        ]
+    };
+
+    t.deepEqual(result, right(expected));
+});
+
+test("retrieveCatalogOptions returns catalog options, when request contains one selection", async (t) => {
+    const catalogId = "catalog-8";
+    const selections = [" shirts:red   "];
+    const token = await buildCatalog({
+        "shirts": ["shirts:red", "shirts:black"],
+        "pants": ["pants:jeans", "pants:slacks"]
+    }).run();
+
+    const req = new RetrieveCatalogOptionsRequest();
+    req.setCatalogId(catalogId);
+    req.setToken(token.getOrElse(""));
+    req.setSelectionsList(selections);
+
+    const datastoreStub: Datastore = mock(Datastore);
+    const datastore = instance(datastoreStub);
+    const result = await retrieveCatalogOptions(req)
+        .map(catalog => catalog.toObject())
+        .run(datastore);
+
+    const expected = {
+        catalogId: catalogId,
+        optionsList: [
+            {
+                familyId: "pants",
+                optionsList: [
+                    {"itemStatus": ItemOption.Status.AVAILABLE, "itemId": "pants:jeans"},
+                    {"itemStatus": ItemOption.Status.AVAILABLE, "itemId": "pants:slacks"},
+                ]
+            },
+            {
+                familyId: "shirts",
+                optionsList: [
+                    {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
+                    {"itemStatus": ItemOption.Status.SELECTED, "itemId": "shirts:red"},
+                ]
+            }
+        ]
+    };
+
+    t.deepEqual(result, right(expected));
 });
