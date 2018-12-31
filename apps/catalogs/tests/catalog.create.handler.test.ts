@@ -59,9 +59,9 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
     when(datastoreStub.upsert(deepEqual(entity))).thenResolve(commitResult);
 
     const datastore = instance(datastoreStub);
-    const result = await createCatalog(req)
+    const result = await createCatalog(req, timestamp)
         .map(catalog => catalog.toObject())
-        .run([datastore, timestamp]);
+        .run(datastore);
 
     const expected = {
         catalogId: catalogId,
@@ -97,7 +97,7 @@ test("createCatalog returns error when families are empty in request", async (t)
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const result = await createCatalog(req).run([datastore, timestamp]);
+    const result = await createCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -129,7 +129,7 @@ test("createCatalog returns error when item is registered to multiple families",
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const result = await createCatalog(req).run([datastore, timestamp]);
+    const result = await createCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -158,7 +158,7 @@ test("createCatalog returns error when an exclusion rule contain an item that do
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const result = await createCatalog(req).run([datastore, timestamp]);
+    const result = await createCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -187,7 +187,7 @@ test("createCatalog returns error when an exclusion rule contain a selection and
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const result = await createCatalog(req).run([datastore, timestamp]);
+    const result = await createCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -216,7 +216,7 @@ test("createCatalog returns error when an inclusion rule contain an item that do
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const result = await createCatalog(req).run([datastore, timestamp]);
+    const result = await createCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -245,7 +245,7 @@ test("createCatalog returns error when an inclusion rule contain a selection and
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const result = await createCatalog(req).run([datastore, timestamp]);
+    const result = await createCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -277,7 +277,7 @@ test("createCatalog returns error when there are multiple errors in the request"
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const result = await createCatalog(req).run([datastore, timestamp]);
+    const result = await createCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(

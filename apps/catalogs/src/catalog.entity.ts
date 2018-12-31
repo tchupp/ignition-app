@@ -11,8 +11,8 @@ export type CatalogEntity = {
     readonly created: Date;
 }
 
-export function buildCatalogEntity(catalogId: string, catalogToken: CatalogToken): Reader<[Datastore, Date], DatastorePayload<CatalogEntity>> {
-    return asks(([datastore, timestamp]) => ({
+export function buildCatalogEntity(catalogId: string, catalogToken: CatalogToken, timestamp: Date): Reader<Datastore, DatastorePayload<CatalogEntity>> {
+    return asks((datastore) => ({
         key: datastore.key({path: ["Catalog", catalogId]}),
         excludeFromIndexes: ["token"],
         data: {

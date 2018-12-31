@@ -13,9 +13,9 @@ import {
     SaveCatalogResponse
 } from "./catalog.create";
 
-export function createCatalog(req: CreateCatalogRequest): ReaderTaskEither<[Datastore, Date], GrpcServiceError, CatalogOptions> {
-    return fromRequest<[Datastore, Date]>(req)
-        .chain(rules => createCatalogInner(rules))
+export function createCatalog(req: CreateCatalogRequest, timestamp: Date = new Date()): ReaderTaskEither<Datastore, GrpcServiceError, CatalogOptions> {
+    return fromRequest<Datastore>(req)
+        .chain(rules => createCatalogInner(rules, timestamp))
         .bimap(toErrorResponse, toSuccessResponse);
 }
 

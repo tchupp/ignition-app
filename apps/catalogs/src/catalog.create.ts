@@ -4,8 +4,8 @@ import {DatastorePayload} from "@google-cloud/datastore/entity";
 
 import {
     buildCatalog,
-    CatalogToken,
     CatalogContents,
+    CatalogToken,
     findOptions as findOptionsInner,
     IgnitionCreateCatalogError,
     Options,
@@ -43,18 +43,16 @@ export type CatalogRules = {
     readonly inclusions: CatalogContents;
 }
 
-export function createCatalog(rules: CatalogRules): ReaderTaskEither<[Datastore, Date], SaveCatalogError, SaveCatalogResponse> {
+export function createCatalog(rules: CatalogRules, timestamp: Date): ReaderTaskEither<Datastore, SaveCatalogError, SaveCatalogResponse> {
     if (isEmptyObject(rules.families)) return fromLeft({type: "MissingFamilies"} as SaveCatalogError);
 
-    return fromTaskEither<[Datastore, Date], IgnitionCreateCatalogError, CatalogToken>(buildCatalog(rules.families, rules.exclusions, rules.inclusions))
+    return fromTaskEither<Datastore, IgnitionCreateCatalogError, CatalogToken>(buildCatalog(rules.families, rules.exclusions, rules.inclusions))
         .mapLeft(fromIgnitionError)
-        .chain(catalog => fromReader<[Datastore, Date], SaveCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(rules.id, catalog))
-            .chain(entity =>
-                saveCatalogEntity(entity)
-                    .local(([datastore]) => datastore))
+        .chain(catalog => fromReader<Datastore, SaveCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(rules.id, catalog, timestamp))
+            .chain(saveCatalogEntity)
             .map(() => catalog)
         )
-        .chain(catalog => findOptions(catalog))
+        .chain(findOptions)
         .map(options => ({id: rules.id, options: options}));
 }
 
