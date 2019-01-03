@@ -31,21 +31,19 @@ function fromRequest(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datas
 function toSuccessResponse(response: RetrieveCatalogOptionsResponse): CatalogOptions {
     function toItem(status: ItemStatus): ItemOption {
         const item = new ItemOption();
+        item.setItemId(status.item);
+
         switch (status.type) {
             case "Available":
-                item.setItemId(status.item);
                 item.setItemStatus(ItemOption.Status.AVAILABLE);
                 return item;
             case "Excluded":
-                item.setItemId(status.item);
                 item.setItemStatus(ItemOption.Status.EXCLUDED);
                 return item;
             case "Selected":
-                item.setItemId(status.item);
                 item.setItemStatus(ItemOption.Status.SELECTED);
                 return item;
             case "Required":
-                item.setItemId(status.item);
                 item.setItemStatus(ItemOption.Status.REQUIRED);
                 return item;
         }

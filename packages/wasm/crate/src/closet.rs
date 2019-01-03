@@ -7,20 +7,16 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(js_name = findOutfitsWasm)]
 pub fn find_outfits(closet_token: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
-    let closet: Closet = closet_token.as_string()
-        .map(|bytes| base64::decode(bytes.as_str()).unwrap())
-        .map(|bytes| bincode::deserialize(&bytes[..]).unwrap())
-        .unwrap();
-
     let selections: Vec<Item> = to_items(selections);
     let exclusions: Vec<Item> = to_items(exclusions);
 
-    let outfits = closet.outfits_with(&selections[..], &exclusions[..]);
+    let closet = to_closet(closet_token).unwrap();
+    let outfits = closet.outfits(&selections[..], &exclusions[..]).unwrap();
 
     js_sys::Promise::resolve(&JsValue::from_serde(&outfits).unwrap())
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum IgnitionOptionsError {
     UnknownSelections { items: Vec<String> },
@@ -46,14 +42,16 @@ impl From<ClosetError> for IgnitionOptionsError {
 
 #[wasm_bindgen(js_name = findOptionsWasm)]
 pub fn find_options(closet_token: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
-    let closet = to_closet(closet_token);
-
     let selections: Vec<Item> = to_items(selections);
     let exclusions: Vec<Item> = to_items(exclusions);
 
-    closet.and_then(|closet|
-        closet.options(&selections[..], &exclusions[..])
+    let closet = to_closet(closet_token);
+    closet.and_then(|c|
+        c.select(&selections[..])
             .map_err(|err| IgnitionOptionsError::from(err)))
+        .and_then(|closet|
+            closet.options(&selections[..], &exclusions[..])
+                .map_err(|err| IgnitionOptionsError::from(err)))
         .map(|options| JsValue::from_serde(&options).unwrap())
         .map(|options| js_sys::Promise::resolve(&options))
         .map_err(|err| JsValue::from_serde(&err).unwrap())

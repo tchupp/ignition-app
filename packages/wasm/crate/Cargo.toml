@@ -26,7 +26,7 @@ itertools = "0.7"
 
 cfg-if = "0.1.2"
 
-ignition = { git = "https://github.com/tchupp/ignition", rev = "876d010da8006c3b68ff90a59f46735f2f70b39f" }
+ignition = { git = "https://github.com/tchupp/ignition", rev = "93bf249cb4ad3cdc39c8bba3c93f9c275d048a1a" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
