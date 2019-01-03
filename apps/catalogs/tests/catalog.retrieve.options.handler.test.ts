@@ -6,7 +6,7 @@ import {right} from "fp-ts/lib/Either";
 
 import {CatalogEntity} from "../src/catalog.entity";
 import {retrieveCatalogOptions} from "../src/catalog.retrieve.options.handler";
-import {buildTestCatalogEntity} from "./catalog.test-fixture";
+import {buildTestCatalogEntity, buildTestCatalogToken} from "./catalog.test-fixture";
 import {CatalogOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
 import {buildCatalog} from "@ignition/wasm";
 
@@ -16,7 +16,12 @@ type Scenario = {
     description: string
     catalogId: string
     selections: string[]
-    expected: CatalogOptions.AsObject
+    expected: (catalogId: string, token: string) => CatalogOptions.AsObject
+};
+
+const families = {
+    "shirts": ["shirts:red", "shirts:black"],
+    "pants": ["pants:jeans", "pants:slacks"]
 };
 
 const scenarios: Scenario[] = [
@@ -24,8 +29,9 @@ const scenarios: Scenario[] = [
         description: "retrieveCatalogOptions returns catalog options, when request contains valid catalog id",
         catalogId: "catalog-1",
         selections: [],
-        expected: {
-            catalogId: "catalog-1",
+        expected: (catalogId, token) => ({
+            catalogId: catalogId,
+            token: token,
             optionsList: [
                 {
                     familyId: "pants",
@@ -42,14 +48,15 @@ const scenarios: Scenario[] = [
                     ]
                 }
             ]
-        }
+        })
     },
     {
         description: "retrieveCatalogOptions returns catalog options, when request contains an empty selection",
         catalogId: "catalog-2",
         selections: [" "],
-        expected: {
-            catalogId: "catalog-2",
+        expected: (catalogId, token) => ({
+            catalogId: catalogId,
+            token: token,
             optionsList: [
                 {
                     familyId: "pants",
@@ -66,14 +73,15 @@ const scenarios: Scenario[] = [
                     ]
                 }
             ]
-        }
+        })
     },
     {
         description: "retrieveCatalogOptions returns catalog options, when request contains one selection",
         catalogId: "catalog-3",
         selections: [" shirts:red   "],
-        expected: {
-            catalogId: "catalog-3",
+        expected: (catalogId, token) => ({
+            catalogId: catalogId,
+            token: token,
             optionsList: [
                 {
                     familyId: "pants",
@@ -90,14 +98,15 @@ const scenarios: Scenario[] = [
                     ]
                 }
             ]
-        }
+        })
     },
     {
         description: "retrieveCatalogOptions returns catalog options, when request contains an multiple selections",
         catalogId: "catalog-4",
         selections: ["shirts:red", "pants:slacks"],
-        expected: {
-            catalogId: "catalog-4",
+        expected: (catalogId, token) => ({
+            catalogId: catalogId,
+            token: token,
             optionsList: [
                 {
                     familyId: "pants",
@@ -114,14 +123,15 @@ const scenarios: Scenario[] = [
                     ]
                 }
             ]
-        }
+        })
     },
     {
         description: "retrieveCatalogOptions returns catalog options, when request contains an multiple selections as a string",
         catalogId: "catalog-5",
         selections: ["  shirts:red,  pants:slacks  "],
-        expected: {
-            catalogId: "catalog-5",
+        expected: (catalogId, token) => ({
+            catalogId: catalogId,
+            token: token,
             optionsList: [
                 {
                     familyId: "pants",
@@ -138,14 +148,15 @@ const scenarios: Scenario[] = [
                     ]
                 }
             ]
-        }
+        })
     },
     {
         description: "retrieveCatalogOptions returns all excluded, when request contains two selections in the same family",
         catalogId: "catalog-6",
         selections: ["shirts:red", "  shirts:black"],
-        expected: {
-            catalogId: "catalog-6",
+        expected: (catalogId, token) => ({
+            catalogId: catalogId,
+            token: token,
             optionsList: [
                 {
                     familyId: "pants",
@@ -162,7 +173,7 @@ const scenarios: Scenario[] = [
                     ]
                 }
             ]
-        }
+        })
     },
 ];
 
@@ -171,10 +182,7 @@ scenarios.forEach(({description, catalogId, selections, expected}) => {
         const entity: CatalogEntity = await buildTestCatalogEntity(
             catalogId,
             timestamp,
-            {
-                "shirts": ["shirts:red", "shirts:black"],
-                "pants": ["pants:jeans", "pants:slacks"]
-            }
+            families
         );
 
         const catalogKey = {
@@ -196,20 +204,18 @@ scenarios.forEach(({description, catalogId, selections, expected}) => {
             .map(catalog => catalog.toObject())
             .run(datastore);
 
-        t.deepEqual(result, right(expected));
+        const expectedToken = await buildTestCatalogToken(families, selections);
+        t.deepEqual(result, right(expected(catalogId, expectedToken)));
     });
 });
 
 test("retrieveCatalogOptions returns catalog options, when request contains token and no selections", async (t) => {
     const catalogId = "catalog-7";
-    const token = await buildCatalog({
-        "shirts": ["shirts:red", "shirts:black"],
-        "pants": ["pants:jeans", "pants:slacks"]
-    }).run();
+    const initialToken = await buildTestCatalogToken(families);
 
     const req = new RetrieveCatalogOptionsRequest();
     req.setCatalogId(catalogId);
-    req.setToken(token.getOrElse(""));
+    req.setToken(initialToken);
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
@@ -219,6 +225,7 @@ test("retrieveCatalogOptions returns catalog options, when request contains toke
 
     const expected = {
         catalogId: catalogId,
+        token: initialToken,
         optionsList: [
             {
                 familyId: "pants",
@@ -243,14 +250,13 @@ test("retrieveCatalogOptions returns catalog options, when request contains toke
 test("retrieveCatalogOptions returns catalog options, when request contains one selection", async (t) => {
     const catalogId = "catalog-8";
     const selections = [" shirts:red   "];
-    const token = await buildCatalog({
-        "shirts": ["shirts:red", "shirts:black"],
-        "pants": ["pants:jeans", "pants:slacks"]
-    }).run();
+    const initialToken = await buildCatalog(families)
+        .fold(() => "", res => res)
+        .run();
 
     const req = new RetrieveCatalogOptionsRequest();
     req.setCatalogId(catalogId);
-    req.setToken(token.getOrElse(""));
+    req.setToken(initialToken);
     req.setSelectionsList(selections);
 
     const datastoreStub: Datastore = mock(Datastore);
@@ -259,8 +265,10 @@ test("retrieveCatalogOptions returns catalog options, when request contains one 
         .map(catalog => catalog.toObject())
         .run(datastore);
 
+    const expectedToken = await buildTestCatalogToken(families, selections);
     const expected = {
         catalogId: catalogId,
+        token: expectedToken,
         optionsList: [
             {
                 familyId: "pants",

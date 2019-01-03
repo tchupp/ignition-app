@@ -42,13 +42,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "ignition"
 version = "0.1.0"
-source = "git+https://github.com/tchupp/ignition?rev=93bf249cb4ad3cdc39c8bba3c93f9c275d048a1a#93bf249cb4ad3cdc39c8bba3c93f9c275d048a1a"
+source = "git+https://github.com/tchupp/ignition?rev=20c6242e78b83a9292df476fe709b9d88c3c695d#20c6242e78b83a9292df476fe709b9d88c3c695d"
 dependencies = [
  "itertools 0.7.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "maplit 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.82 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.82 (registry+https://github.com/rust-lang/crates.io-index)",
- "weave 0.1.0 (git+https://github.com/tchupp/ignition?rev=93bf249cb4ad3cdc39c8bba3c93f9c275d048a1a)",
+ "weave 0.1.0 (git+https://github.com/tchupp/ignition?rev=20c6242e78b83a9292df476fe709b9d88c3c695d)",
 ]
 
 [[package]]
@@ -59,12 +59,13 @@ dependencies = [
  "bincode 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "console_error_panic_hook 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "ignition 0.1.0 (git+https://github.com/tchupp/ignition?rev=93bf249cb4ad3cdc39c8bba3c93f9c275d048a1a)",
+ "ignition 0.1.0 (git+https://github.com/tchupp/ignition?rev=20c6242e78b83a9292df476fe709b9d88c3c695d)",
  "itertools 0.7.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "js-sys 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.82 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.82 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasm-bindgen 0.2.29 (registry+https://github.com/rust-lang/crates.io-index)",
+ "weave 0.1.0 (git+https://github.com/tchupp/ignition?rev=20c6242e78b83a9292df476fe709b9d88c3c695d)",
  "wee_alloc 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -266,7 +267,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "weave"
 version = "0.1.0"
-source = "git+https://github.com/tchupp/ignition?rev=93bf249cb4ad3cdc39c8bba3c93f9c275d048a1a#93bf249cb4ad3cdc39c8bba3c93f9c275d048a1a"
+source = "git+https://github.com/tchupp/ignition?rev=20c6242e78b83a9292df476fe709b9d88c3c695d#20c6242e78b83a9292df476fe709b9d88c3c695d"
 dependencies = [
  "itertools 0.7.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -314,7 +315,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum cfg-if 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "082bb9b28e00d3c9d39cc03e64ce4cea0f1bb9b3fde493f0cbc008472d22bdf4"
 "checksum console_error_panic_hook 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "6c5dd2c094474ec60a6acaf31780af270275e3153bafff2db5995b715295762e"
 "checksum either 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3be565ca5c557d7f59e7cfcf1844f9e3033650c929c6566f511e8005f205c1d0"
-"checksum ignition 0.1.0 (git+https://github.com/tchupp/ignition?rev=93bf249cb4ad3cdc39c8bba3c93f9c275d048a1a)" = "<none>"
+"checksum ignition 0.1.0 (git+https://github.com/tchupp/ignition?rev=20c6242e78b83a9292df476fe709b9d88c3c695d)" = "<none>"
 "checksum itertools 0.7.11 (registry+https://github.com/rust-lang/crates.io-index)" = "0d47946d458e94a1b7bcabbf6521ea7c037062c81f534615abcad76e84d4970d"
 "checksum itoa 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)" = "1306f3464951f30e30d12373d31c79fbd52d236e5e896fd92f96ec7babbbe60b"
 "checksum js-sys 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)" = "e498c857d4a88b67902c79628d09333ebef2f2be3246b385f0b690bd6e69b49d"
@@ -341,7 +342,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum wasm-bindgen-macro 0.2.29 (registry+https://github.com/rust-lang/crates.io-index)" = "6e353f83716dec9a3597b5719ef88cb6c9e461ec16528f38aa023d3224b4e569"
 "checksum wasm-bindgen-macro-support 0.2.29 (registry+https://github.com/rust-lang/crates.io-index)" = "3cc90b65fe69c3dd5a09684517dc79f42b847baa2d479c234d125e0a629d9b0a"
 "checksum wasm-bindgen-shared 0.2.29 (registry+https://github.com/rust-lang/crates.io-index)" = "a71a37df4f5845025f96f279d20bbe5b19cbcb77f5410a3a90c6c544d889a162"
-"checksum weave 0.1.0 (git+https://github.com/tchupp/ignition?rev=93bf249cb4ad3cdc39c8bba3c93f9c275d048a1a)" = "<none>"
+"checksum weave 0.1.0 (git+https://github.com/tchupp/ignition?rev=20c6242e78b83a9292df476fe709b9d88c3c695d)" = "<none>"
 "checksum wee_alloc 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "27875be1daf838fa18f3e94fd19fd12638e34615b42f56da2610c8f46be80cc6"
 "checksum winapi 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)" = "92c1eb33641e276cfa214a0522acad57be5c56b10cb348b3c5117db75f3ac4b0"
 "checksum winapi-i686-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"

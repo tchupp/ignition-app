@@ -79,10 +79,11 @@ function toSuccessResponse(response: SaveCatalogResponse): CatalogOptions {
         Object.keys(response.options)
             .map(familyId => toFamilyOptions(familyId, response.options[familyId]));
 
-    const grpcResponse = new CatalogOptions();
-    grpcResponse.setCatalogId(response.id);
-    grpcResponse.setOptionsList(familyOptions);
-    return grpcResponse;
+    const catalogOptions = new CatalogOptions();
+    catalogOptions.setCatalogId(response.id);
+    catalogOptions.setOptionsList(familyOptions);
+    catalogOptions.setToken(response.token);
+    return catalogOptions;
 }
 
 function toErrorResponseDetails(error: SaveCatalogError): GrpcServiceErrorDetail[] {

@@ -7,6 +7,7 @@ extern crate js_sys;
 #[macro_use]
 extern crate serde_derive;
 extern crate wasm_bindgen;
+extern crate weave;
 
 pub use closet::*;
 pub use closet_builder::*;

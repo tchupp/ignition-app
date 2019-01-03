@@ -20,10 +20,7 @@ export function retrieveCatalogOptions(req: RetrieveCatalogOptionsRequest): Read
 function fromRequest(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, RetrieveCatalogOptionsError, [string, CatalogToken, Item[]]> {
     const catalogId = req.getCatalogId();
     const token = req.getToken();
-
-    const selections_matrix = req.getSelectionsList()
-        .map(selection => selection.split(","));
-    const selections: string[] = ([] as string[]).concat(...selections_matrix);
+    const selections = req.getSelectionsList();
 
     return readerTaskEither.of([catalogId, token, selections] as [string, CatalogToken, Item[]]);
 }
@@ -65,6 +62,7 @@ function toSuccessResponse(response: RetrieveCatalogOptionsResponse): CatalogOpt
     const catalogOptions = new CatalogOptions();
     catalogOptions.setCatalogId(response.id);
     catalogOptions.setOptionsList(familyOptions);
+    catalogOptions.setToken(response.token);
     return catalogOptions;
 }
 

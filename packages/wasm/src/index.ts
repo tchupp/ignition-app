@@ -48,7 +48,7 @@ export function findOptions(
     catalogToken: CatalogToken,
     selections: Item[] = [],
     exclusions: Item[] = []
-): TaskEither<IgnitionOptionsError, Options> {
+): TaskEither<IgnitionOptionsError, [Options, CatalogToken]> {
     return tryCatch(
         () => import("../crate/pkg")
             .then(m => m.findOptionsWasm(catalogToken, selections, exclusions)),

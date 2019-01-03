@@ -19,6 +19,7 @@ export type RetrieveCatalogOptionsError =
 export type RetrieveCatalogOptionsResponse = {
     readonly id: string;
     readonly options: Options;
+    readonly token: string;
 }
 
 export function retrieveCatalogOptions(catalogId: string, token: CatalogToken, selections: Item[]): ReaderTaskEither<Datastore, RetrieveCatalogOptionsError, RetrieveCatalogOptionsResponse> {
@@ -30,11 +31,11 @@ export function retrieveCatalogOptions(catalogId: string, token: CatalogToken, s
         case 0:
             return findCatalog(catalogId)
                 .chain(entity => findOptions(entity.token, catalogId, selections))
-                .map(options => ({id: catalogId, options: options}));
+                .map(([options, token]) => ({id: catalogId, options: options, token: token}));
 
         default:
             return findOptions2<Datastore>(token, catalogId, selections)
-                .map(options => ({id: catalogId, options: options}));
+                .map(([options, token]) => ({id: catalogId, options: options, token: token}));
     }
 }
 
@@ -58,7 +59,7 @@ function findOptions<Ctx>(
     token: CatalogToken,
     catalogId: string,
     selections: Item[]
-): ReaderTaskEither<Ctx, RetrieveCatalogOptionsError, Options> {
+): ReaderTaskEither<Ctx, RetrieveCatalogOptionsError, [Options, CatalogToken]> {
     return fromTaskEither(
         findOptionsInner(token, selections)
             .mapLeft((err): RetrieveCatalogOptionsError => {
@@ -76,7 +77,7 @@ function findOptions2<Ctx>(
     token: CatalogToken,
     catalogId: string,
     selections: Item[]
-): ReaderTaskEither<Ctx, RetrieveCatalogOptionsError, Options> {
+): ReaderTaskEither<Ctx, RetrieveCatalogOptionsError, [Options, CatalogToken]> {
     return fromTaskEither(
         findOptionsInner(token, selections)
             .mapLeft((err): RetrieveCatalogOptionsError => {

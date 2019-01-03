@@ -35,6 +35,7 @@ export type SaveCatalogError =
 export type SaveCatalogResponse = {
     readonly id: string;
     readonly options: Options;
+    readonly token: string;
 }
 
 export type CatalogRules = {
@@ -54,7 +55,7 @@ export function createCatalog(rules: CatalogRules, timestamp: Date): ReaderTaskE
             .map(() => catalog)
         )
         .chain(findOptions)
-        .map(options => ({id: rules.id, options: options}));
+        .map(([options, token]) => ({id: rules.id, options: options, token: token}));
 }
 
 function fromIgnitionError(err: IgnitionCreateCatalogError): SaveCatalogError {
@@ -94,7 +95,7 @@ function saveCatalogEntity(
 
 function findOptions<Ctx>(
     catalogToken: CatalogToken
-): ReaderTaskEither<Ctx, SaveCatalogError, Options> {
+): ReaderTaskEither<Ctx, SaveCatalogError, [Options, CatalogToken]> {
     return fromTaskEither(
         findOptionsInner(catalogToken)
             .mapLeft((err): SaveCatalogError => {

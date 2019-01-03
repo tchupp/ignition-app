@@ -84,6 +84,8 @@ message Inclusion {
 message CatalogOptions {
     string catalog_id = 1;
     repeated FamilyOptions options = 2;
+
+    string token = 3;
 }
 
 message FamilyOptions {

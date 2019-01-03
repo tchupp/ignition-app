@@ -1,20 +1,21 @@
 import test from "ava";
-import {buildCatalog, findOptions, IgnitionOptionsError, Options} from "../src";
+import {buildCatalog, CatalogToken, findOptions, IgnitionOptionsError, Options} from "../src";
 import {left, right} from "fp-ts/lib/Either";
 
 const families = {
     "shirts": ["shirts:red", "shirts:blue"],
     "pants": ["pants:jeans", "pants:slacks"],
 };
-const catalogToken = buildCatalog(families)
-    .mapLeft(err => err as unknown as IgnitionOptionsError);
+const catalogToken: Promise<CatalogToken> = buildCatalog(families)
+    .mapLeft(err => err as unknown as IgnitionOptionsError)
+    .fold(() => "", e => e)
+    .run();
 
 test("findOptions with no rules, and no selections", async t => {
-    const options = await catalogToken
-        .chain(catalog => findOptions(catalog))
-        .run();
+    const options = await findOptions(await catalogToken).run();
+    const newCatalogToken = await catalogToken;
 
-    const expected: Options = {
+    const expectedOptions: Options = {
         "shirts": [
             {type: "Available", item: "shirts:blue"},
             {type: "Available", item: "shirts:red"}
@@ -24,15 +25,16 @@ test("findOptions with no rules, and no selections", async t => {
             {type: "Available", item: "pants:slacks"},
         ]
     };
-    t.deepEqual(options, right(expected));
+    t.deepEqual(options, right([expectedOptions, newCatalogToken]));
 });
 
 test("findOptions with no rules, and one selection", async t => {
-    const options = await catalogToken
-        .chain(catalog => findOptions(catalog, ["shirts:red"]))
-        .run();
+    const result1 = await findOptions(await catalogToken, ["shirts:red"]).run();
 
-    const expected: Options = {
+    const newCatalogToken = result1.map(e => e[1]).getOrElse("");
+    const result2 = await findOptions(newCatalogToken, []).run();
+
+    const expectedOptions: Options = {
         "shirts": [
             {type: "Excluded", item: "shirts:blue"},
             {type: "Selected", item: "shirts:red"}
@@ -42,15 +44,17 @@ test("findOptions with no rules, and one selection", async t => {
             {type: "Available", item: "pants:slacks"},
         ]
     };
-    t.deepEqual(options, right(expected));
+    t.deepEqual(result1.map(e => e[0]), right(expectedOptions));
+    t.deepEqual(result1, result2);
 });
 
 test("findOptions with no rules, and all selections", async t => {
-    const options = await catalogToken
-        .chain(catalog => findOptions(catalog, ["pants:slacks", "shirts:red"]))
-        .run();
+    const result1 = await findOptions(await catalogToken, ["pants:slacks,   shirts:red"]).run();
 
-    const expected: Options = {
+    const newCatalogToken = result1.map(e => e[1]).getOrElse("");
+    const result2 = await findOptions(newCatalogToken, []).run();
+
+    const expectedOptions: Options = {
         "shirts": [
             {type: "Excluded", item: "shirts:blue"},
             {type: "Selected", item: "shirts:red"}
@@ -60,13 +64,12 @@ test("findOptions with no rules, and all selections", async t => {
             {type: "Selected", item: "pants:slacks"},
         ]
     };
-    t.deepEqual(options, right(expected));
+    t.deepEqual(result1.map(e => e[0]), right(expectedOptions));
+    t.deepEqual(result1, result2);
 });
 
 test("findOptions with no rules, with unknown selection", async t => {
-    const error = await catalogToken
-        .chain(catalog => findOptions(catalog, ["shirts:black"]))
-        .run();
+    const error = await findOptions(await catalogToken, ["shirts:black"]).run();
 
     const expectedError: IgnitionOptionsError = {
         items: ["shirts:black"],

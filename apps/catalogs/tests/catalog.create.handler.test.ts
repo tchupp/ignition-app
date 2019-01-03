@@ -66,6 +66,7 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
 
     const expected = {
         catalogId: catalogId,
+        token: entity.data.token,
         optionsList: [
             {
                 familyId: "pants",

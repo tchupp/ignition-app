@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 use std::str;
 
-use bincode;
 use ignition::ClosetBuilder;
 use ignition::ClosetBuilderError;
 use ignition::Family;
 use ignition::Item;
 use wasm_bindgen::prelude::*;
+
+use super::closet::ClosetToken;
 
 #[derive(Serialize, Deserialize)]
 struct ClosetContents {
@@ -65,9 +66,8 @@ pub fn build_closet(contents: &JsValue) -> js_sys::Promise {
         .fold(closet_builder, |closet_builder, (selection, inclusions)| closet_builder.add_inclusion_rules(&selection, inclusions));
 
     closet_builder.build()
-        .map(|closet| bincode::serialize(&closet).unwrap())
-        .map(|closet| base64::encode(&closet[..]))
-        .map(|closet| JsValue::from_str(closet.as_str()))
+        .map(|closet| ClosetToken::from(closet))
+        .map(|token| token.into())
         .map(|closet| js_sys::Promise::resolve(&closet))
         .map_err(|err| IgnitionOptionsError::from(err))
         .map_err(|err| JsValue::from_serde(&err).unwrap())
