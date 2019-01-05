@@ -1,53 +1,8 @@
 // @ts-ignore
 import {CatalogManagerClient} from "../generated/catalogs_grpc_pb";
 import * as grpc from "grpc";
-// @ts-ignore
-import {
-    CatalogOptions,
-    CreateCatalogRequest,
-    Exclusion,
-    Family,
-    Inclusion,
-    ItemOption,
-    RetrieveCatalogOptionsRequest
-} from "../generated/catalogs_pb";
-
-// Builder functions for gRPC requests
-
-function buildFamily(f: Family.AsObject): Family {
-    const family = new Family();
-    family.setFamilyId(f.familyId);
-    family.setItemsList(f.itemsList);
-
-    return family;
-}
-
-function buildExclusion(e: Exclusion.AsObject): Exclusion {
-    const exclusion = new Exclusion();
-    exclusion.setSelectedItem(e.selectedItem);
-    exclusion.setExclusionsList(e.exclusionsList);
-
-    return exclusion;
-}
-
-function buildInclusion(e: Inclusion.AsObject): Inclusion {
-    const inclusion = new Inclusion();
-    inclusion.setSelectedItem(e.selectedItem);
-    inclusion.setInclusionsList(e.inclusionsList);
-
-    return inclusion;
-}
-
-function buildRequest(r: CreateCatalogRequest.AsObject) {
-    const req = new CreateCatalogRequest();
-    req.setProjectId(r.projectId);
-    req.setCatalogId(r.catalogId);
-    req.setFamiliesList(r.familiesList.map(buildFamily));
-    req.setInclusionsList(r.inclusionsList.map(buildInclusion));
-    req.setExclusionsList(r.exclusionsList.map(buildExclusion));
-
-    return req;
-}
+import {CatalogOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
+import {buildRequest} from "./grpc.helpers";
 
 // gRPC client calls
 
@@ -123,7 +78,9 @@ function retrieveGranolaIngredientsOptions(client: CatalogManagerClient, project
     retrieveOptionsRequest.setSelectionsList(selections);
 
     return new Promise<CatalogOptions>((resolve, reject) => {
+        console.time("Request");
         client.retrieveCatalogOptions(retrieveOptionsRequest, (err: any, res: any) => {
+            console.timeEnd("Request");
             if (err !== null) {
                 reject(err);
             } else {
@@ -135,23 +92,23 @@ function retrieveGranolaIngredientsOptions(client: CatalogManagerClient, project
 
 // Business logic
 
-function findFirstAvailableOption(options: CatalogOptions): ItemOption.AsObject | undefined {
-    let item_matrix = options.getOptionsList()
+function findFirstAvailableIngredient(options: CatalogOptions): ItemOption.AsObject | undefined {
+    let ingredient_matrix = options.getOptionsList()
         .map(family => family.getOptionsList());
 
     return ([] as ItemOption[])
-        .concat(...item_matrix)
+        .concat(...ingredient_matrix)
         .sort(() => 0.5 - Math.random()) // Shuffle the list
         .map((item: ItemOption) => item.toObject())
         .find((item: ItemOption.AsObject) => item.itemStatus == ItemOption.Status.AVAILABLE);
 }
 
 function findRecipe(options: CatalogOptions): string[] {
-    let item_matrix = options.getOptionsList()
+    let ingredient_matrix = options.getOptionsList()
         .map(family => family.getOptionsList());
 
     return ([] as ItemOption[])
-        .concat(...item_matrix)
+        .concat(...ingredient_matrix)
         .map((item: ItemOption) => item.toObject())
         .filter((item: ItemOption.AsObject) => item.itemStatus == ItemOption.Status.SELECTED || item.itemStatus == ItemOption.Status.REQUIRED)
         .map((item: ItemOption.AsObject) => item.itemId);
@@ -170,7 +127,7 @@ async function main() {
         .catch((_err: any) => retrieveGranolaIngredientsOptions(client, projectId, catalogId));
 
     // Find the first available ingredient
-    let ingredient = findFirstAvailableOption(ingredientsOptions);
+    let ingredient = findFirstAvailableIngredient(ingredientsOptions);
 
     // While there is an available ingredient...
     while (ingredient !== undefined) {
@@ -181,10 +138,10 @@ async function main() {
         ingredientsOptions = await retrieveGranolaIngredientsOptions(client, projectId, catalogId, ingredientsOptions.getToken(), [ingredient.itemId]);
 
         // Find the first available ingredient
-        ingredient = findFirstAvailableOption(ingredientsOptions);
+        ingredient = findFirstAvailableIngredient(ingredientsOptions);
     }
 
-    console.log(`Here is your granola recipe: ${JSON.stringify(findRecipe(ingredientsOptions))}`);
+    console.log(`Here is your completed granola recipe: ${JSON.stringify(findRecipe(ingredientsOptions))}`);
 }
 
 main()
