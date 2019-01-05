@@ -115,7 +115,7 @@ function createGranolaCatalog(client: CatalogManagerClient, projectId: string, c
     });
 }
 
-function retrieveGranolaOptions(client: CatalogManagerClient, projectId: string, catalogId: string, token: string = "", selections: string[] = []): Promise<CatalogOptions> {
+function retrieveGranolaIngredientsOptions(client: CatalogManagerClient, projectId: string, catalogId: string, token: string = "", selections: string[] = []): Promise<CatalogOptions> {
     const retrieveOptionsRequest = new RetrieveCatalogOptionsRequest();
     retrieveOptionsRequest.setProjectId(projectId);
     retrieveOptionsRequest.setCatalogId(catalogId);
@@ -141,6 +141,7 @@ function findFirstAvailableOption(options: CatalogOptions): ItemOption.AsObject 
 
     return ([] as ItemOption[])
         .concat(...item_matrix)
+        .sort(() => 0.5 - Math.random()) // Shuffle the list
         .map((item: ItemOption) => item.toObject())
         .find((item: ItemOption.AsObject) => item.itemStatus == ItemOption.Status.AVAILABLE);
 }
@@ -165,25 +166,25 @@ async function main() {
     const client = new CatalogManagerClient('ignition-app.xyz:443', grpc.credentials.createSsl());
 
     // Start by creating the catalog, or just getting the options if the catalog exists
-    let options = await createGranolaCatalog(client, projectId, catalogId)
-        .catch((_err: any) => retrieveGranolaOptions(client, projectId, catalogId));
+    let ingredientsOptions = await createGranolaCatalog(client, projectId, catalogId)
+        .catch((_err: any) => retrieveGranolaIngredientsOptions(client, projectId, catalogId));
 
-    // Find the first available option
-    let item = findFirstAvailableOption(options);
+    // Find the first available ingredient
+    let ingredient = findFirstAvailableOption(ingredientsOptions);
 
-    // While there is an available item...
-    while (item !== undefined) {
-        console.log(`So far we have: ${JSON.stringify(findRecipe(options))}`);
-        console.log(`Selecting: ${item.itemId}\n`);
+    // While there is an available ingredient...
+    while (ingredient !== undefined) {
+        console.log(`So far we have: ${JSON.stringify(findRecipe(ingredientsOptions))}`);
+        console.log(`Selecting: ${ingredient.itemId}\n`);
 
-        // Add the item to the recipe
-        options = await retrieveGranolaOptions(client, projectId, catalogId, options.getToken(), [item.itemId]);
+        // Add the ingredient to the recipe
+        ingredientsOptions = await retrieveGranolaIngredientsOptions(client, projectId, catalogId, ingredientsOptions.getToken(), [ingredient.itemId]);
 
-        // Find the first available option
-        item = findFirstAvailableOption(options);
+        // Find the first available ingredient
+        ingredient = findFirstAvailableOption(ingredientsOptions);
     }
 
-    console.log(`Here is your granola recipe: ${JSON.stringify(findRecipe(options))}`);
+    console.log(`Here is your granola recipe: ${JSON.stringify(findRecipe(ingredientsOptions))}`);
 }
 
 main()
