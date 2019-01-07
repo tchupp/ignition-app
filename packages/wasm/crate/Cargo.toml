@@ -15,19 +15,19 @@ crate-type = ["cdylib"]
 default-features = ["console_error_panic_hook", "wee_alloc"]
 
 [dependencies]
-js-sys = "^0.2"
+js-sys = "^0.3"
 
 serde = "^1.0"
 serde_derive = "^1.0"
 bincode = "1.0"
 base64 = "0.10"
 
-itertools = "0.7"
+itertools = "0.8"
 
-cfg-if = "0.1.2"
+cfg-if = "0.1"
 
-ignition = { git = "https://github.com/tchupp/ignition", rev = "20c6242e78b83a9292df476fe709b9d88c3c695d" }
-weave = { git = "https://github.com/tchupp/ignition", rev = "20c6242e78b83a9292df476fe709b9d88c3c695d" }
+ignition = { git = "https://github.com/tchupp/ignition", rev = "ae35cd1da2885ab393249e27f00ff998d3c9c773" }
+weave = { git = "https://github.com/tchupp/ignition", rev = "ae35cd1da2885ab393249e27f00ff998d3c9c773" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
@@ -41,5 +41,5 @@ console_error_panic_hook = { version = "0.1.1", optional = true }
 wee_alloc = { version = "0.4.1", optional = true }
 
 [dependencies.wasm-bindgen]
-version = "^0.2.22"
+version = "^0.2.29"
 features = ["serde-serialize"]
