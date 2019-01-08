@@ -3,6 +3,7 @@
     "baseUrl": "./packages",
     "paths": {
       "@ignition/*": [
+        "./*/dist",
         "./*/src"
       ]
     },
