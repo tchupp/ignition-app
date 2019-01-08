@@ -1,4 +1,5 @@
-import {TaskEither, tryCatch} from "fp-ts/lib/TaskEither";
+import {tryCatch} from "fp-ts/lib/TaskEither";
+import {NomadTE, timedTE} from "@ignition/nomad";
 
 export type CatalogToken = string;
 
@@ -34,7 +35,7 @@ export function buildCatalog(
     families: CatalogContents,
     exclusions: CatalogContents = {},
     inclusions: CatalogContents = {}
-): TaskEither<IgnitionCreateCatalogError, CatalogToken> {
+): NomadTE<IgnitionCreateCatalogError, CatalogToken> {
     let contents = {families: families, exclusions: exclusions, inclusions: inclusions};
 
     return tryCatch(
@@ -48,22 +49,30 @@ export function findOptions(
     catalogToken: CatalogToken,
     selections: Item[] = [],
     exclusions: Item[] = []
-): TaskEither<IgnitionOptionsError, [Options, CatalogToken]> {
-    return tryCatch(
-        () => import("../crate/pkg")
-            .then(m => m.findOptionsWasm(catalogToken, selections, exclusions)),
-        (err: any) => err
-    );
+): NomadTE<IgnitionOptionsError, [Options, CatalogToken]> {
+    return timedTE(`findOptions: ${hashToken(catalogToken)}`, () =>
+        tryCatch(
+            () => import("../crate/pkg")
+                .then(m => m.findOptionsWasm(catalogToken, selections, exclusions)),
+            (err: any) => err
+        ));
 }
 
 export function findOutfits(
     catalogToken: CatalogToken,
     selections: Item[] = [],
     exclusions: Item[] = []
-): TaskEither<IgnitionCreateCatalogError, Item[][]> {
+): NomadTE<IgnitionCreateCatalogError, Item[][]> {
     return tryCatch(
         () => import("../crate/pkg")
             .then(m => m.findOutfitsWasm(catalogToken, selections, exclusions)),
         (err: any) => err
     );
+}
+
+function hashToken(catalogToken: CatalogToken): string {
+    return require('crypto')
+        .createHash('sha1')
+        .update(catalogToken)
+        .digest('base64');
 }
