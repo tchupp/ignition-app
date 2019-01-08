@@ -6,7 +6,7 @@ use ignition::ClosetError;
 use ignition::Family;
 use ignition::Item;
 use wasm_bindgen::prelude::*;
-use weave::core::ItemStatus;
+use weave::ItemStatus;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ClosetToken(String);

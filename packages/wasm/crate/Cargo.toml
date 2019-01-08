@@ -26,8 +26,8 @@ itertools = "0.8"
 
 cfg-if = "0.1"
 
-ignition = { git = "https://github.com/tchupp/ignition", rev = "ae35cd1da2885ab393249e27f00ff998d3c9c773" }
-weave = { git = "https://github.com/tchupp/ignition", rev = "ae35cd1da2885ab393249e27f00ff998d3c9c773" }
+ignition = { git = "https://github.com/tchupp/ignition", rev = "20aec974591645d479d91cddbb315d2cdbd18d77" }
+weave = { git = "https://github.com/tchupp/ignition", rev = "20aec974591645d479d91cddbb315d2cdbd18d77" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
