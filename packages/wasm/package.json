@@ -5,13 +5,14 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "author": "theochupp <tclchiam@gmail.com>",
-  "license": "MIT",
+  "license": "BSD-3-Clause",
   "scripts": {
     "clean": "rimraf ./dist",
     "build": "yarn run clean && ./build.sh && tsc",
     "test": "yarn run build && ava-ts"
   },
   "dependencies": {
+    "@ignition/nomad": "^0.1.0",
     "fp-ts": "^1.11.2"
   },
   "devDependencies": {
