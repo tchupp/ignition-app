@@ -12,24 +12,29 @@ declare module "fp-ts/lib/HKT" {
 export class Nomad<L, A> {
     readonly _URI!: URI;
 
-    constructor(readonly inner: A, readonly effects: ReadonlyArray<L>) {
+    constructor(readonly effects: ReadonlyArray<L>, readonly value: A) {
     }
 
     concat(effect: L): Nomad<L, A> {
-        return new Nomad(this.inner, this.effects.concat(effect));
+        return new Nomad(this.effects.concat(effect), this.value);
+    }
+
+    concatL(effectL: () => L): Nomad<L, A> {
+        return new Nomad(this.effects.concat(effectL()), this.value);
     }
 
     map<B>(f: (a: A) => B): Nomad<L, B> {
-        return new Nomad(f(this.inner), this.effects);
+        return new Nomad(this.effects, f(this.value));
     }
 
     ap<B>(fab: Nomad<L, (a: A) => B>): Nomad<L, B> {
-        return new Nomad(fab.inner(this.inner), this.effects);
+        let b = fab.value(this.value);
+        return new Nomad(this.effects, b);
     }
 
     chain<B>(f: (a: A) => Nomad<L, B>): Nomad<L, B> {
-        const af = f(this.inner);
-        return new Nomad(af.inner, this.effects.concat(af.effects));
+        const b = f(this.value);
+        return new Nomad(this.effects.concat(b.effects), b.value);
     }
 }
 
@@ -37,7 +42,7 @@ const map = <L, A, B>(fa: Nomad<L, A>, f: (a: A) => B): Nomad<L, B> =>
     fa.map(f);
 
 const of = <L, A>(value: A): Nomad<L, A> =>
-    new Nomad<L, A>(value, []);
+    new Nomad<L, A>([], value);
 
 const ap = <L, A, B>(fab: Nomad<L, (a: A) => B>, fa: Nomad<L, A>): Nomad<L, B> =>
     fa.ap(fab);

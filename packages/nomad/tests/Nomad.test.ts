@@ -3,10 +3,10 @@ import {Nomad} from "../src";
 import {nomad} from "../src/Nomad";
 
 test("concat", t => {
-    const actual = new Nomad("hold dis", [1])
+    const actual = new Nomad([1], "hold dis")
         .concat(2);
 
-    const expected = new Nomad("hold dis", [1, 2]);
+    const expected = new Nomad([1, 2], "hold dis");
     t.deepEqual(actual, expected);
 });
 
@@ -17,8 +17,8 @@ test("Nomad is a functor: URI", t => {
 });
 
 test("Nomad is a functor: map", t => {
-    const initial = new Nomad("hold dis", []);
-    const expected = new Nomad(8, []);
+    const initial = new Nomad([], "hold dis");
+    const expected = new Nomad([], 8);
 
     {
         const actual = initial.map(a => a.length);
@@ -33,7 +33,7 @@ test("Nomad is a functor: map", t => {
 test("Nomad is applicative: of", t => {
     const actual = nomad.of("hold dis");
 
-    const expected = new Nomad("hold dis", []);
+    const expected = new Nomad([], "hold dis");
     t.deepEqual(expected, actual);
 });
 
@@ -48,16 +48,16 @@ test("Nomad is applicative: ap", t => {
 });
 
 test("Nomad is a chain: chain", t => {
-    const initial = new Nomad("world", [1]);
+    const initial = new Nomad([1], "world");
 
-    const expected = new Nomad("hello, world!", [1, 2]);
+    const expected = new Nomad([1, 2], "hello, world!");
 
     {
-        let actual = initial.chain(a => new Nomad(`hello, ${a}!`, [2]));
+        let actual = initial.chain(a => new Nomad([2], `hello, ${a}!`));
         t.deepEqual(expected, actual);
     }
     {
-        let actual = nomad.chain(initial, a => new Nomad(`hello, ${a}!`, [2]));
+        let actual = nomad.chain(initial, a => new Nomad([2], `hello, ${a}!`));
         t.deepEqual(expected, actual);
     }
     {

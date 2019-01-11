@@ -1,7 +1,7 @@
 import {Nomad} from "./Nomad";
-import {NomadTE, timedTE} from "./NomadTE";
-import {NomadRTE, timedRTE} from "./NomadRTE";
+import {fromTaskEither, nomadTE, NomadTE} from "./NomadTE";
+import {fromLeft, fromNomad, fromNomadTE, fromReader, NomadRTE, nomadRTE} from "./NomadRTE";
 
 export {Nomad};
-export {NomadTE, timedTE};
-export {NomadRTE, timedRTE};
+export {fromTaskEither, nomadTE, NomadTE};
+export {fromLeft, fromNomad, fromNomadTE, fromReader, NomadRTE, nomadRTE};
