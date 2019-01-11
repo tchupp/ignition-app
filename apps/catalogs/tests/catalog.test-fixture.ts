@@ -11,7 +11,7 @@ export async function buildTestCatalogEntity(
     exclusions: CatalogContents = {},
     inclusions: CatalogContents = {}
 ): Promise<CatalogEntity> {
-    const catalogOrError = await buildCatalog(families, exclusions, inclusions).run();
+    const [catalogOrError] = await buildCatalog(families, exclusions, inclusions).run();
 
     return {
         id: id,
@@ -28,9 +28,11 @@ export async function buildTestCatalogToken(
 ): Promise<CatalogToken> {
     const token = await buildCatalog(families, exclusions, inclusions)
         .fold(() => EMPTY_CATALOG_TOKEN, res => res)
+        .value
         .run();
 
     return await findOptions(token, selections)
         .fold(() => EMPTY_CATALOG_TOKEN, ([_, token]) => token)
+        .value
         .run();
 }

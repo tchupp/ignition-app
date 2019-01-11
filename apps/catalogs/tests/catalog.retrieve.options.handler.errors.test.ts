@@ -2,14 +2,14 @@ import Datastore = require("@google-cloud/datastore");
 import test from "ava";
 import {deepEqual, instance, mock, when} from "ts-mockito";
 
-import {Either, left} from "fp-ts/lib/Either";
+import {left} from "fp-ts/lib/Either";
 import {status} from "grpc";
 
 import {CatalogEntity} from "../src/catalog.entity";
 import {retrieveCatalogOptions} from "../src/catalog.retrieve.options.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
-import {CatalogOptions, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
-import {badRequestDetail, GrpcServiceError, preconditionFailureDetail, serviceError} from "../src/errors.pb";
+import {RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
+import {badRequestDetail, preconditionFailureDetail, serviceError} from "../src/errors.pb";
 
 const timestamp = new Date();
 
@@ -19,7 +19,7 @@ test("retrieveCatalogOptions returns error, when request is missing catalogId", 
     const req = new RetrieveCatalogOptionsRequest();
 
     const datastore = instance(datastoreStub);
-    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalogOptions(req)
+    const [result] = await retrieveCatalogOptions(req)
         .run(datastore);
 
     t.deepEqual(result, left(
@@ -65,7 +65,7 @@ test("retrieveCatalogOptions returns error, when request contains unknown select
     req.setSelectionsList(selections);
 
     const datastore = instance(datastoreStub);
-    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalogOptions(req)
+    const [result] = await retrieveCatalogOptions(req)
         .run(datastore);
 
     t.deepEqual(result, left(
@@ -108,7 +108,7 @@ test("retrieveCatalogOptions returns error, when datastore has an empty catalog 
     req.setSelectionsList(selections);
 
     const datastore = instance(datastoreStub);
-    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalogOptions(req)
+    const [result] = await retrieveCatalogOptions(req)
         .run(datastore);
 
     t.deepEqual(result, left(
@@ -144,7 +144,7 @@ test("retrieveCatalogOptions returns error, when catalog does not exist", async 
     req.setCatalogId(catalogId);
 
     const datastore = instance(datastoreStub);
-    const result: Either<GrpcServiceError, CatalogOptions> = await retrieveCatalogOptions(req)
+    const [result] = await retrieveCatalogOptions(req)
         .run(datastore);
 
     t.deepEqual(result, left(
@@ -166,7 +166,7 @@ test("retrieveCatalogOptions returns error, when request contains bad token", as
     req.setToken(token);
 
     const datastore = instance(datastoreStub);
-    const result = await retrieveCatalogOptions(req)
+    const [result] = await retrieveCatalogOptions(req)
         .map(catalog => catalog.toObject())
         .run(datastore);
 

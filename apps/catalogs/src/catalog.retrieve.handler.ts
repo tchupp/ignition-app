@@ -1,5 +1,7 @@
 import Datastore = require("@google-cloud/datastore");
-import {readerTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
+import {nomadRTE, NomadRTE} from "@ignition/nomad";
+
+import {status} from "grpc";
 
 import {
     retrieveCatalog as retrieveCatalogInner,
@@ -8,18 +10,20 @@ import {
 } from "./catalog.retrieve";
 import {Catalog, RetrieveCatalogRequest} from "../generated/catalogs_pb";
 import {badRequestDetail, GrpcServiceError, serviceError} from "./errors.pb";
-import {status} from "grpc";
+import {CatalogsEffect} from "./effects";
+import {CatalogsResult} from "./result";
 
-export function retrieveCatalog(req: RetrieveCatalogRequest): ReaderTaskEither<Datastore, GrpcServiceError, Catalog> {
+export function retrieveCatalog(req: RetrieveCatalogRequest): CatalogsResult<GrpcServiceError, Catalog> {
     return fromRequest<Datastore>(req)
         .chain(catalogId => retrieveCatalogInner(catalogId))
-        .bimap(toErrorResponse, toSuccessResponse);
+        .mapLeft(toErrorResponse)
+        .map(toSuccessResponse);
 }
 
-function fromRequest<Ctx>(req: RetrieveCatalogRequest): ReaderTaskEither<Ctx, RetrieveCatalogError, string> {
+function fromRequest<Ctx>(req: RetrieveCatalogRequest): NomadRTE<Ctx, CatalogsEffect, RetrieveCatalogError, string> {
     const catalogId = req.getCatalogId();
 
-    return readerTaskEither.of(catalogId);
+    return nomadRTE.of(catalogId);
 }
 
 function toSuccessResponse(response: RetrieveCatalogResponse): Catalog {

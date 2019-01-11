@@ -11,11 +11,12 @@ import {retrieveCatalog as retrieveCatalogInner} from "./catalog.retrieve.handle
 import {createCatalog as createCatalogInner} from "./catalog.create.handler";
 import {listCatalogs as listCatalogsInner} from "./catalog.list.handler";
 import {GrpcServiceError, serviceError} from "./errors.pb";
+import {CatalogsEffect} from "./effects";
 
 const datastore = new Datastore();
 
-function handleResult<Res>(callback: grpc.sendUnaryData<Res>): (either: Either<GrpcServiceError, Res>) => void {
-    return (either: Either<GrpcServiceError, Res>) =>
+function handleResult<Res>(callback: grpc.sendUnaryData<Res>): ([either, _effects]: [Either<GrpcServiceError, Res>, ReadonlyArray<CatalogsEffect>]) => void {
+    return ([either, _effects]) =>
         either.fold(
             (error: GrpcServiceError) => callback(error as grpc.ServiceError, null),
             (res: Res) => callback(null, res),

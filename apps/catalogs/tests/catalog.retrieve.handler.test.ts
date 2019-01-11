@@ -38,7 +38,7 @@ test("retrieveCatalog returns catalog with correct token, when catalog exists", 
     req.setCatalogId(catalogId);
 
     const datastore = instance(datastoreStub);
-    const result = await retrieveCatalog(req)
+    const [result] = await retrieveCatalog(req)
         .map(catalog => catalog.toObject())
         .run(datastore);
 
@@ -67,7 +67,7 @@ test("retrieveCatalog returns error, when catalog does not exist", async (t) => 
     req.setCatalogId(catalogId);
 
     const datastore = instance(datastoreStub);
-    const result = await retrieveCatalog(req)
+    const [result] = await retrieveCatalog(req)
         .map(catalog => catalog.toObject())
         .run(datastore);
 
@@ -84,7 +84,7 @@ test("retrieveCatalog returns error, when request is missing catalogId", async (
     const req = new RetrieveCatalogRequest();
 
     const datastore = instance(datastoreStub);
-    const result = await retrieveCatalog(req)
+    const [result] = await retrieveCatalog(req)
         .run(datastore);
 
     t.deepEqual(result, left(

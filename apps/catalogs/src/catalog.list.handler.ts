@@ -1,19 +1,23 @@
 import Datastore = require("@google-cloud/datastore");
-import {readerTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
+import {nomadRTE, NomadRTE} from "@ignition/nomad";
 
-import {ListCatalogResponseItem, listCatalogs as listCatalogsInner, ListCatalogsError} from "./catalog.list";
-import {Catalog, ListCatalogsRequest, ListCatalogsResponse} from "../generated/catalogs_pb";
-import {GrpcServiceError, serviceError} from "./errors.pb";
 import {status} from "grpc";
 
-export function listCatalogs(req: ListCatalogsRequest): ReaderTaskEither<Datastore, GrpcServiceError, ListCatalogsResponse> {
+import {Catalog, ListCatalogsRequest, ListCatalogsResponse} from "../generated/catalogs_pb";
+import {ListCatalogResponseItem, listCatalogs as listCatalogsInner, ListCatalogsError} from "./catalog.list";
+import {GrpcServiceError, serviceError} from "./errors.pb";
+import {CatalogsEffect} from "./effects";
+import {CatalogsResult} from "./result";
+
+export function listCatalogs(req: ListCatalogsRequest): CatalogsResult<GrpcServiceError, ListCatalogsResponse> {
     return fromRequest<Datastore>(req)
         .chain(() => listCatalogsInner())
-        .bimap(toErrorResponse, toSuccessResponse);
+        .mapLeft(toErrorResponse)
+        .map(toSuccessResponse);
 }
 
-function fromRequest<Ctx>(_req: ListCatalogsRequest): ReaderTaskEither<Ctx, ListCatalogsError, any[]> {
-    return readerTaskEither.of([]);
+function fromRequest<Ctx>(_req: ListCatalogsRequest): NomadRTE<Ctx, CatalogsEffect, ListCatalogsError, any[]> {
+    return nomadRTE.of([]);
 }
 
 function toSuccessResponse(items: ListCatalogResponseItem[]): ListCatalogsResponse {

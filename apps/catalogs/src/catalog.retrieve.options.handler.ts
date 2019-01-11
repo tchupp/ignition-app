@@ -1,7 +1,7 @@
-import Datastore = require("@google-cloud/datastore");
+import {nomadRTE} from "@ignition/nomad";
 import {CatalogToken, Item, ItemStatus} from "@ignition/wasm";
+
 import {CatalogOptions, FamilyOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
-import {readerTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
 import {status} from "grpc";
 
 import {
@@ -10,19 +10,21 @@ import {
     RetrieveCatalogOptionsResponse
 } from "./catalog.retrieve.options";
 import {badRequestDetail, GrpcServiceError, preconditionFailureDetail, serviceError} from "./errors.pb";
+import {CatalogsResult} from "./result";
 
-export function retrieveCatalogOptions(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, GrpcServiceError, CatalogOptions> {
+export function retrieveCatalogOptions(req: RetrieveCatalogOptionsRequest): CatalogsResult<GrpcServiceError, CatalogOptions> {
     return fromRequest(req)
         .chain(([catalogId, token, selections]) => retrieveCatalogOptionsInner(catalogId, token, selections))
-        .bimap(toErrorResponse, toSuccessResponse);
+        .mapLeft(toErrorResponse)
+        .map(toSuccessResponse);
 }
 
-function fromRequest(req: RetrieveCatalogOptionsRequest): ReaderTaskEither<Datastore, RetrieveCatalogOptionsError, [string, CatalogToken, Item[]]> {
+function fromRequest(req: RetrieveCatalogOptionsRequest): CatalogsResult<RetrieveCatalogOptionsError, [string, CatalogToken, Item[]]> {
     const catalogId = req.getCatalogId();
     const token = req.getToken();
     const selections = req.getSelectionsList();
 
-    return readerTaskEither.of([catalogId, token, selections] as [string, CatalogToken, Item[]]);
+    return nomadRTE.of([catalogId, token, selections] as [string, CatalogToken, Item[]]);
 }
 
 function toSuccessResponse(response: RetrieveCatalogOptionsResponse): CatalogOptions {

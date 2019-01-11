@@ -200,7 +200,7 @@ scenarios.forEach(({description, catalogId, selections, expected}) => {
         req.setSelectionsList(selections);
 
         const datastore = instance(datastoreStub);
-        const result = await retrieveCatalogOptions(req)
+        const [result] = await retrieveCatalogOptions(req)
             .map(catalog => catalog.toObject())
             .run(datastore);
 
@@ -219,7 +219,7 @@ test("retrieveCatalogOptions returns catalog options, when request contains toke
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const result = await retrieveCatalogOptions(req)
+    const [result] = await retrieveCatalogOptions(req)
         .map(catalog => catalog.toObject())
         .run(datastore);
 
@@ -252,6 +252,7 @@ test("retrieveCatalogOptions returns catalog options, when request contains one 
     const selections = [" shirts:red   "];
     const initialToken = await buildCatalog(families)
         .fold(() => "", res => res)
+        .value
         .run();
 
     const req = new RetrieveCatalogOptionsRequest();
@@ -261,7 +262,7 @@ test("retrieveCatalogOptions returns catalog options, when request contains one 
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const result = await retrieveCatalogOptions(req)
+    const [result] = await retrieveCatalogOptions(req)
         .map(catalog => catalog.toObject())
         .run(datastore);
 

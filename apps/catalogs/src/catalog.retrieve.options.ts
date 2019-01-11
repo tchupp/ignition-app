@@ -1,12 +1,13 @@
 import Datastore = require("@google-cloud/datastore");
 import {CatalogToken, findOptions as findOptionsInner, Item, Options} from "@ignition/wasm";
-import {timedRTE} from "@ignition/nomad";
+import {fromLeft as nomadFromLeft, fromTaskEither, NomadRTE} from "@ignition/nomad";
 
-import {fromLeft as readerTaskEitherFromLeft, fromTaskEither, ReaderTaskEither} from "fp-ts/lib/ReaderTaskEither";
 import {fromLeft, taskEither, tryCatch} from "fp-ts/lib/TaskEither";
 
 import {CatalogEntity} from "./catalog.entity";
 import {DatastoreError} from "./datastore.error";
+import {CatalogsEffect, timedRTE} from "./effects";
+import {CatalogsResult} from "./result";
 
 export type RetrieveCatalogOptionsError =
     { type: "Datastore", error: DatastoreError }
@@ -23,9 +24,9 @@ export type RetrieveCatalogOptionsResponse = {
     readonly token: string;
 }
 
-export function retrieveCatalogOptions(catalogId: string, token: CatalogToken, selections: Item[]): ReaderTaskEither<Datastore, RetrieveCatalogOptionsError, RetrieveCatalogOptionsResponse> {
+export function retrieveCatalogOptions(catalogId: string, token: CatalogToken, selections: Item[]): CatalogsResult<RetrieveCatalogOptionsError, RetrieveCatalogOptionsResponse> {
     if (catalogId.length === 0) {
-        return readerTaskEitherFromLeft({type: "MissingCatalogId"} as RetrieveCatalogOptionsError);
+        return nomadFromLeft({type: "MissingCatalogId"} as RetrieveCatalogOptionsError);
     }
 
     switch (token.length) {
@@ -40,56 +41,54 @@ export function retrieveCatalogOptions(catalogId: string, token: CatalogToken, s
     }
 }
 
-function retrieveCatalog(catalogId: string): ReaderTaskEither<Datastore, RetrieveCatalogOptionsError, CatalogEntity> {
+function retrieveCatalog(catalogId: string): CatalogsResult<RetrieveCatalogOptionsError, CatalogEntity> {
     const notFoundError = fromLeft<RetrieveCatalogOptionsError, CatalogEntity>({
         type: "CatalogNotFound",
         catalogId: catalogId
     });
 
-    return timedRTE(`retrieveCatalog: ${catalogId}`, () => {
-        return new ReaderTaskEither((datastore: Datastore) => {
-                const key = datastore.key({path: ["Catalog", catalogId]});
+    return timedRTE(`retrieveCatalog: ${catalogId}`, (datastore: Datastore) => {
+            const key = datastore.key({path: ["Catalog", catalogId]});
 
-                return tryCatch(() => datastore.get(key), (err: any) => err as DatastoreError)
+            return fromTaskEither(
+                tryCatch(() => datastore.get(key), (err: any) => err as DatastoreError)
                     .mapLeft((err): RetrieveCatalogOptionsError => ({type: "Datastore", error: err}))
-                    .chain(([entity]) => (entity ? taskEither.of(entity as CatalogEntity) : notFoundError));
-            }
-        );
-    });
+                    .chain(([entity]) => (entity ? taskEither.of(entity as CatalogEntity) : notFoundError))
+            );
+        }
+    );
 }
 
 function findOptions<Ctx>(
     token: CatalogToken,
     catalogId: string,
     selections: Item[]
-): ReaderTaskEither<Ctx, RetrieveCatalogOptionsError, [Options, CatalogToken]> {
-    return fromTaskEither(
-        findOptionsInner(token, selections)
-            .mapLeft((err): RetrieveCatalogOptionsError => {
-                switch (err.type) {
-                    case "BadToken":
-                        return {...err, catalogId: catalogId};
-                    case "UnknownSelections":
-                        return err;
-                }
-            })
-    );
+): NomadRTE<Ctx, CatalogsEffect, RetrieveCatalogOptionsError, [Options, CatalogToken]> {
+    return findOptionsInner(token, selections)
+        .mapLeft((err): RetrieveCatalogOptionsError => {
+            switch (err.type) {
+                case "BadToken":
+                    return {...err, catalogId: catalogId};
+                case "UnknownSelections":
+                    return err;
+            }
+        })
+        .toNomadRTE();
 }
 
 function findOptions2<Ctx>(
     token: CatalogToken,
     catalogId: string,
     selections: Item[]
-): ReaderTaskEither<Ctx, RetrieveCatalogOptionsError, [Options, CatalogToken]> {
-    return fromTaskEither(
-        findOptionsInner(token, selections)
-            .mapLeft((err): RetrieveCatalogOptionsError => {
-                switch (err.type) {
-                    case "BadToken":
-                        return {...err, type: "BadUserToken", catalogId: catalogId};
-                    case "UnknownSelections":
-                        return err;
-                }
-            })
-    );
+): NomadRTE<Ctx, CatalogsEffect, RetrieveCatalogOptionsError, [Options, CatalogToken]> {
+    return findOptionsInner(token, selections)
+        .mapLeft((err): RetrieveCatalogOptionsError => {
+            switch (err.type) {
+                case "BadToken":
+                    return {...err, type: "BadUserToken", catalogId: catalogId};
+                case "UnknownSelections":
+                    return err;
+            }
+        })
+        .toNomadRTE();
 }

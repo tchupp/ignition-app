@@ -1,10 +1,12 @@
 import Datastore = require("@google-cloud/datastore");
+import {nomadRTE, NomadRTE} from "@ignition/nomad";
 import {CatalogContents, ItemStatus} from "@ignition/wasm";
 
 import {CatalogOptions, CreateCatalogRequest, FamilyOptions, ItemOption} from "../generated/catalogs_pb";
 import {status} from "grpc";
-import {ReaderTaskEither, readerTaskEither} from "fp-ts/lib/ReaderTaskEither";
 
+import {CatalogsEffect} from "./effects";
+import {CatalogsResult} from "./result";
 import {
     badRequestDetail,
     debugInfoDetail,
@@ -20,13 +22,14 @@ import {
     SaveCatalogResponse
 } from "./catalog.create";
 
-export function createCatalog(req: CreateCatalogRequest, timestamp: Date = new Date()): ReaderTaskEither<Datastore, GrpcServiceError, CatalogOptions> {
+export function createCatalog(req: CreateCatalogRequest, timestamp: Date = new Date()): CatalogsResult<GrpcServiceError, CatalogOptions> {
     return fromRequest<Datastore>(req)
         .chain(rules => createCatalogInner(rules, timestamp))
-        .bimap(toErrorResponse, toSuccessResponse);
+        .mapLeft(toErrorResponse)
+        .map(toSuccessResponse);
 }
 
-function fromRequest<Ctx>(req: CreateCatalogRequest): ReaderTaskEither<Ctx, SaveCatalogError, CatalogRules> {
+function fromRequest<Ctx>(req: CreateCatalogRequest): NomadRTE<Ctx, CatalogsEffect, SaveCatalogError, CatalogRules> {
     const catalogId = req.getCatalogId();
     const families = req.getFamiliesList()
         .reduce((acc, rule) => ({...acc, [rule.getFamilyId()]: rule.getItemsList()}), {} as CatalogContents);
@@ -35,7 +38,7 @@ function fromRequest<Ctx>(req: CreateCatalogRequest): ReaderTaskEither<Ctx, Save
     const inclusions = req.getInclusionsList()
         .reduce((acc, rule) => ({...acc, [rule.getSelectedItem()]: rule.getInclusionsList()}), {} as CatalogContents);
 
-    return readerTaskEither.of<Ctx, SaveCatalogError, CatalogRules>({
+    return nomadRTE.of({
         id: catalogId,
         families: families,
         exclusions: exclusions,

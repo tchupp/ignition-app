@@ -41,7 +41,7 @@ test("listCatalogs returns multiple catalogs", async (t) => {
     const req = new ListCatalogsRequest();
 
     const datastore = instance(datastoreStub);
-    const result = await listCatalogs(req)
+    const [result] = await listCatalogs(req)
         .map(catalogs => catalogs.getCatalogsList().map(c => c.toObject()))
         .run(datastore);
 
@@ -72,7 +72,7 @@ test("listCatalogs returns empty list when there are catalogs", async (t) => {
     const req = new ListCatalogsRequest();
 
     const datastore = instance(datastoreStub);
-    const result = await listCatalogs(req)
+    const [result] = await listCatalogs(req)
         .map(catalogs => catalogs.getCatalogsList().map(c => c.toObject()))
         .run(datastore);
 
