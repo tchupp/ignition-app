@@ -12,7 +12,7 @@ const inclusions = {
 const catalog = buildCatalog(families, {}, inclusions);
 
 test("findOutfits with one inclusion rule, and shirts selected", async t => {
-    const outfits1 = await catalog
+    const [outfits1] = await catalog
         .chain(catalog => findOutfits(catalog, ["shirts:red"]))
         .run();
 
@@ -23,7 +23,7 @@ test("findOutfits with one inclusion rule, and shirts selected", async t => {
 });
 
 test("findOutfits with one inclusion rule, and pants selected", async t => {
-    const outfits2 = await catalog
+    const [outfits2] = await catalog
         .chain(catalog => findOutfits(catalog, ["pants:jeans"]))
         .run();
 

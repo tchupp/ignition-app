@@ -9,7 +9,7 @@ const families = {
 const catalog = buildCatalog(families);
 
 test("findOutfits with no rules, no selections", async t => {
-    const outfit1 = await catalog
+    const [outfit1] = await catalog
         .chain(catalog => findOutfits(catalog))
         .run();
 
@@ -23,7 +23,7 @@ test("findOutfits with no rules, no selections", async t => {
 });
 
 test("findOutfits with no rules, shirts selected", async t => {
-    const outfit2 = await catalog
+    const [outfit2] = await catalog
         .chain(catalog => findOutfits(catalog, ["shirts:red"]))
         .run();
 
@@ -35,7 +35,7 @@ test("findOutfits with no rules, shirts selected", async t => {
 });
 
 test("findOutfits with no rules, pants selected", async t => {
-    const outfit3 = await catalog
+    const [outfit3] = await catalog
         .chain(catalog => findOutfits(catalog, ["pants:slacks"]))
         .run();
 
@@ -47,7 +47,7 @@ test("findOutfits with no rules, pants selected", async t => {
 });
 
 test("findOutfits with no rules, shirts and pants selected", async t => {
-    const outfit4 = await catalog
+    const [outfit4] = await catalog
         .chain(catalog => findOutfits(catalog, ["pants:slacks", "shirts:red"]))
         .run();
 

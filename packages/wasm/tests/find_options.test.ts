@@ -9,10 +9,23 @@ const families = {
 const catalogToken: Promise<CatalogToken> = buildCatalog(families)
     .mapLeft(err => err as unknown as IgnitionOptionsError)
     .fold(() => "", e => e)
+    .value
     .run();
 
+test("findOptions has two effects for timing", async t => {
+    // @ts-ignore
+    const [_, effects] = await findOptions(await catalogToken).run();
+
+    t.deepEqual(effects.length, 2);
+
+    t.deepEqual(effects[0].type, "Timing");
+    t.deepEqual(effects[0].label, "findOptions: 69SwDy6bPLrHCUs3MTrBszftEko=");
+    t.deepEqual(effects[1].type, "Timed");
+    t.deepEqual(effects[1].label, "findOptions: 69SwDy6bPLrHCUs3MTrBszftEko=");
+});
+
 test("findOptions with no rules, and no selections", async t => {
-    const options = await findOptions(await catalogToken).run();
+    const [options] = await findOptions(await catalogToken).run();
     const newCatalogToken = await catalogToken;
 
     const expectedOptions: Options = {
@@ -29,10 +42,10 @@ test("findOptions with no rules, and no selections", async t => {
 });
 
 test("findOptions with no rules, and one selection", async t => {
-    const result1 = await findOptions(await catalogToken, ["shirts:red"]).run();
+    const [result1] = await findOptions(await catalogToken, ["shirts:red"]).run();
 
     const newCatalogToken = result1.map(e => e[1]).getOrElse("");
-    const result2 = await findOptions(newCatalogToken, []).run();
+    const [result2] = await findOptions(newCatalogToken, []).run();
 
     const expectedOptions: Options = {
         "shirts": [
@@ -49,10 +62,10 @@ test("findOptions with no rules, and one selection", async t => {
 });
 
 test("findOptions with no rules, and all selections", async t => {
-    const result1 = await findOptions(await catalogToken, ["pants:slacks,   shirts:red"]).run();
+    const [result1] = await findOptions(await catalogToken, ["pants:slacks,   shirts:red"]).run();
 
     const newCatalogToken = result1.map(e => e[1]).getOrElse("");
-    const result2 = await findOptions(newCatalogToken, []).run();
+    const [result2] = await findOptions(newCatalogToken, []).run();
 
     const expectedOptions: Options = {
         "shirts": [
@@ -69,7 +82,7 @@ test("findOptions with no rules, and all selections", async t => {
 });
 
 test("findOptions with no rules, with unknown selection", async t => {
-    const error = await findOptions(await catalogToken, ["shirts:black"]).run();
+    const [error] = await findOptions(await catalogToken, ["shirts:black"]).run();
 
     const expectedError: IgnitionOptionsError = {
         items: ["shirts:black"],
@@ -81,7 +94,7 @@ test("findOptions with no rules, with unknown selection", async t => {
 test("findOptions returns error when the catalog token is blank", async t => {
     const token = "";
 
-    const error = await findOptions(token, ["shirts:black"]).run();
+    const [error] = await findOptions(token, ["shirts:black"]).run();
 
     const expectedError: IgnitionOptionsError = {
         type: "BadToken",
@@ -94,7 +107,7 @@ test("findOptions returns error when the catalog token is blank", async t => {
 test("findOptions returns error when the catalog token is the wrong length", async t => {
     const token = "MwAAAAAAAAAoM";
 
-    const error = await findOptions(token, ["shirts:black"]).run();
+    const [error] = await findOptions(token, ["shirts:black"]).run();
 
     const expectedError: IgnitionOptionsError = {
         type: "BadToken",
@@ -107,7 +120,7 @@ test("findOptions returns error when the catalog token is the wrong length", asy
 test("findOptions returns error when the catalog token is malformed", async t => {
     const token = "MwAAAAAAAAAoMCA";
 
-    const error = await findOptions(token, ["shirts:black"]).run();
+    const [error] = await findOptions(token, ["shirts:black"]).run();
 
     const expectedError: IgnitionOptionsError = {
         type: "BadToken",

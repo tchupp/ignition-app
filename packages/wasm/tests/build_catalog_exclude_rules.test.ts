@@ -12,7 +12,7 @@ test("build, when exclusion rule has the same family as the selection, gives an 
         "shirts:red": ["shirts:blue"]
     };
 
-    const error = await buildCatalog(families, exclusions).run();
+    const [error] = await buildCatalog(families, exclusions).run();
 
     const expectedError: IgnitionCreateCatalogError = {
         type: "ExclusionFamilyConflict",
@@ -27,7 +27,7 @@ test("build, when exclusion rule has unknown item as selection, gives an error",
         "shirts:black": ["pants:jeans"]
     };
 
-    const error = await buildCatalog(families, exclusions).run();
+    const [error] = await buildCatalog(families, exclusions).run();
 
     const expectedError: IgnitionCreateCatalogError = {
         type: "ExclusionMissingFamily",
@@ -41,7 +41,7 @@ test("build, when exclusion rule has unknown item in exclusions, gives an error"
         "shirts:blue": ["pants:ripped"]
     };
 
-    const error = await buildCatalog(families, exclusions).run();
+    const [error] = await buildCatalog(families, exclusions).run();
 
     const expectedError: IgnitionCreateCatalogError = {
         type: "ExclusionMissingFamily",

@@ -8,7 +8,7 @@ test("build, when one item is in two families, gives an error", async t => {
         "pants": ["shirts:blue"],
     };
 
-    const error = await buildCatalog(families).run();
+    const [error] = await buildCatalog(families).run();
 
     const expectedError: IgnitionCreateCatalogError = {
         type: "MultipleFamiliesRegistered",

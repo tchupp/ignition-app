@@ -12,7 +12,7 @@ const exclusions = {
 const catalog = buildCatalog(families, exclusions);
 
 test("findOutfits with one exclusion rule, no selections", async t => {
-    const outfits1 = await catalog
+    const [outfits1] = await catalog
         .chain(catalog => findOutfits(catalog, []))
         .run();
 
@@ -25,7 +25,7 @@ test("findOutfits with one exclusion rule, no selections", async t => {
 });
 
 test("findOutfits with one exclusion rule, shirts selected", async t => {
-    const outfits2 = await catalog
+    const [outfits2] = await catalog
         .chain(catalog => findOutfits(catalog, ["shirts:blue"]))
         .run();
 
@@ -36,7 +36,7 @@ test("findOutfits with one exclusion rule, shirts selected", async t => {
 });
 
 test("findOutfits with one exclusion rule, pants selected", async t => {
-    const outfits3 = await catalog
+    const [outfits3] = await catalog
         .chain(catalog => findOutfits(catalog, ["pants:jeans"]))
         .run();
 
@@ -47,7 +47,7 @@ test("findOutfits with one exclusion rule, pants selected", async t => {
 });
 
 test("findOutfits with one exclusion rule, conflicting selections", async t => {
-    const outfits4 = await catalog
+    const [outfits4] = await catalog
         .chain(catalog => findOutfits(catalog, ["pants:jeans", " shirts:blue  "]))
         .run();
 
