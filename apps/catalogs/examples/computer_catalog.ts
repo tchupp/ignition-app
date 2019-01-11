@@ -118,7 +118,9 @@ function createComputerCatalog(client: CatalogManagerClient, projectId: string, 
     });
 
     return new Promise<CatalogOptions>((resolve, reject) => {
+        console.time("createComputerCatalog");
         client.createCatalog(createRequest, (err: any, res: CatalogOptions) => {
+            console.timeEnd("createComputerCatalog");
             if (err !== null) {
                 reject(err);
             } else {
@@ -136,9 +138,9 @@ function retrievePartsOptions(client: CatalogManagerClient, projectId: string, c
     retrieveOptionsRequest.setSelectionsList(selections);
 
     return new Promise<CatalogOptions>((resolve, reject) => {
-        console.time("Request");
+        console.time("retrievePartsOptions");
         client.retrieveCatalogOptions(retrieveOptionsRequest, (err: any, res: any) => {
-            console.timeEnd("Request");
+            console.timeEnd("retrievePartsOptions");
             if (err !== null) {
                 reject(err);
             } else {
