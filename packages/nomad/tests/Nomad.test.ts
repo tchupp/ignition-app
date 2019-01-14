@@ -1,12 +1,22 @@
 import test from "ava";
-import {Nomad} from "../src";
-import {nomad} from "../src/Nomad";
+
+import {nomad, Nomad} from "../src/Nomad";
 
 test("concat", t => {
     const actual = new Nomad([1], "hold dis")
-        .concat(2);
+        .concat(2)
+        .concat([3, 4]);
 
-    const expected = new Nomad([1, 2], "hold dis");
+    const expected = new Nomad([1, 2, 3, 4], "hold dis");
+    t.deepEqual(actual, expected);
+});
+
+test("concatL", t => {
+    const actual = new Nomad([1], "hold dis")
+        .concatL(() => 2)
+        .concatL(() => [3, 4]);
+
+    const expected = new Nomad([1, 2, 3, 4], "hold dis");
     t.deepEqual(actual, expected);
 });
 

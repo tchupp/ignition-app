@@ -28,12 +28,12 @@ export class NomadTE<U, L, A> {
         return this.inner.value.run();
     }
 
-    concat(effect: U): NomadTE<U, L, A> {
+    concat(effect: U | ReadonlyArray<U>): NomadTE<U, L, A> {
         const newInner = this.inner.concat(effect);
         return new NomadTE(newInner);
     }
 
-    concatL(effectL: () => U): NomadTE<U, L, A> {
+    concatL(effectL: () => U | ReadonlyArray<U>): NomadTE<U, L, A> {
         const newInner = this.inner.concatL(effectL);
         return new NomadTE(newInner);
     }

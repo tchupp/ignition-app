@@ -28,11 +28,11 @@ export class NomadRTE<E, U, L, A> {
         return this.inner(e).eval();
     }
 
-    concat(effect: U): NomadRTE<E, U, L, A> {
+    concat(effect: U | ReadonlyArray<U>): NomadRTE<E, U, L, A> {
         return new NomadRTE(e => this.inner(e).concat(effect));
     }
 
-    concatL(effectL: () => U): NomadRTE<E, U, L, A> {
+    concatL(effectL: () => U | ReadonlyArray<U>): NomadRTE<E, U, L, A> {
         return new NomadRTE(e => this.inner(e).concatL(effectL));
     }
 

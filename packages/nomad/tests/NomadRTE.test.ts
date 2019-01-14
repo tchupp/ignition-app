@@ -6,17 +6,19 @@ import {fromLeft as taskEitherFromLeft, taskEither} from "fp-ts/lib/TaskEither";
 
 test("concat", async t => {
     const actual = new NomadRTE(() => new NomadTE(new Nomad([1], taskEither.of("hold dis"))))
-        .concat(2);
+        .concat(2)
+        .concat([3, 4]);
 
-    const expected = new NomadRTE(() => new NomadTE(new Nomad([1, 2], taskEither.of("hold dis"))));
+    const expected = new NomadRTE(() => new NomadTE(new Nomad([1, 2, 3, 4], taskEither.of("hold dis"))));
     t.deepEqual(await actual.run({}), await expected.run({}));
 });
 
 test("concatL", async t => {
     const actual = new NomadRTE(() => new NomadTE(new Nomad([1], taskEither.of("hold dis"))))
-        .concatL(() => 2);
+        .concatL(() => 2)
+        .concatL(() => [3, 4]);
 
-    const expected = new NomadRTE(() => new NomadTE(new Nomad([1, 2], taskEither.of("hold dis"))));
+    const expected = new NomadRTE(() => new NomadTE(new Nomad([1, 2, 3, 4], taskEither.of("hold dis"))));
     t.deepEqual(await actual.run({}), await expected.run({}));
 });
 

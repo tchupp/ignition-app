@@ -15,11 +15,11 @@ export class Nomad<L, A> {
     constructor(readonly effects: ReadonlyArray<L>, readonly value: A) {
     }
 
-    concat(effect: L): Nomad<L, A> {
+    concat(effect: L | ReadonlyArray<L>): Nomad<L, A> {
         return new Nomad(this.effects.concat(effect), this.value);
     }
 
-    concatL(effectL: () => L): Nomad<L, A> {
+    concatL(effectL: () => L | ReadonlyArray<L>): Nomad<L, A> {
         return new Nomad(this.effects.concat(effectL()), this.value);
     }
 
