@@ -29,7 +29,7 @@ export class Nomad<L, A> {
 
     ap<B>(fab: Nomad<L, (a: A) => B>): Nomad<L, B> {
         let b = fab.value(this.value);
-        return new Nomad(this.effects, b);
+        return new Nomad(this.effects.concat(fab.effects), b);
     }
 
     chain<B>(f: (a: A) => Nomad<L, B>): Nomad<L, B> {

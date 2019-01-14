@@ -48,10 +48,14 @@ test("Nomad is applicative: of", t => {
 });
 
 test("Nomad is applicative: ap", t => {
-    const fab = nomad.of<string, (n: number) => number>(n => n * 2);
+    const fab = nomad.of<string, (n: number) => number>(n => n * 2)
+        .concat("that effect");
 
-    const initial: Nomad<string, number> = nomad.of<string, number>(1);
-    const expected = nomad.of(2);
+    const initial: Nomad<string, number> = nomad.of<string, number>(1)
+        .concat("this effect");
+    const expected = nomad.of(2)
+        .concat("this effect")
+        .concat("that effect");
 
     t.deepEqual(expected, initial.ap<number>(fab));
     t.deepEqual(expected, nomad.ap(fab, initial));

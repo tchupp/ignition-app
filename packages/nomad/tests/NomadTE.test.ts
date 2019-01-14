@@ -68,10 +68,14 @@ test("fromTaskEither", async t => {
 });
 
 test("NomadTE is applicative: ap", async t => {
-    const fab = nomadTE.of<string, string, (n: number) => number>(n => n * 2);
+    const fab = nomadTE.of<string, string, (n: number) => number>(n => n * 2)
+        .concat("that effect");
 
-    const initial = nomadTE.of<string, string, number>(1);
-    const expected = nomadTE.of(2);
+    const initial = nomadTE.of<string, string, number>(1)
+        .concat("this effect");
+    const expected = nomadTE.of(2)
+        .concat("this effect")
+        .concat("that effect");
 
     t.deepEqual(await expected.run(), await initial.ap<number>(fab).run());
     t.deepEqual(await expected.run(), await nomadTE.ap(fab, initial).run());

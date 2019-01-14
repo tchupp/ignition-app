@@ -58,7 +58,9 @@ export class NomadTE<U, L, A> {
     }
 
     ap<B>(fab: NomadTE<U, L, (a: A) => B>): NomadTE<U, L, B> {
-        const newInner = this.inner.map(value => value.ap(fab.inner.value));
+        const newInner = this.inner
+            .map(value => value.ap(fab.inner.value))
+            .concat(fab.inner.effects);
         return new NomadTE(newInner);
     }
 
