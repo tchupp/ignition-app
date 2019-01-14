@@ -1,24 +1,22 @@
 import test from "ava";
-import {nomad, Nomad} from "../src/Nomad";
-import {NomadTE} from "../src/NomadTE";
-import {NomadRTE, nomadRTE} from "../src/NomadRTE";
-import {fromLeft as taskEitherFromLeft, taskEither} from "fp-ts/lib/TaskEither";
+import {left, nomadTE} from "../src/NomadTE";
+import {fromNomadTE, NomadRTE, nomadRTE} from "../src/NomadRTE";
 
 test("concat", async t => {
-    const actual = new NomadRTE(() => new NomadTE(new Nomad([1], taskEither.of("hold dis"))))
+    const actual = fromNomadTE(nomadTE.of("hold dis").concat(1))
         .concat(2)
         .concat([3, 4]);
 
-    const expected = new NomadRTE(() => new NomadTE(new Nomad([1, 2, 3, 4], taskEither.of("hold dis"))));
+    const expected = fromNomadTE(nomadTE.of("hold dis").concat([1, 2, 3, 4]));
     t.deepEqual(await actual.run({}), await expected.run({}));
 });
 
 test("concatL", async t => {
-    const actual = new NomadRTE(() => new NomadTE(new Nomad([1], taskEither.of("hold dis"))))
+    const actual = fromNomadTE(nomadTE.of("hold dis").concat(1))
         .concatL(() => 2)
         .concatL(() => [3, 4]);
 
-    const expected = new NomadRTE(() => new NomadTE(new Nomad([1, 2, 3, 4], taskEither.of("hold dis"))));
+    const expected = fromNomadTE(nomadTE.of("hold dis").concat([1, 2, 3, 4]));
     t.deepEqual(await actual.run({}), await expected.run({}));
 });
 
@@ -41,8 +39,8 @@ test("NomadRTE is a functor: map", async t => {
 });
 
 test("map does not affect 'left' eithers", async t => {
-    const initial = new NomadRTE(() => new NomadTE(nomad.of(taskEitherFromLeft<string, string>("hold dis, left"))));
-    const expected = new NomadRTE(() => new NomadTE(nomad.of(taskEitherFromLeft<string, number>("hold dis, left"))));
+    const initial: NomadRTE<{}, {}, string, string> = fromNomadTE(left("hold dis, left"));
+    const expected: NomadRTE<{}, {}, string, number> = fromNomadTE(left("hold dis, left"));
 
     {
         const actual = initial.map(a => a.length);
@@ -57,7 +55,7 @@ test("map does not affect 'left' eithers", async t => {
 test("NomadRTE is applicative: of", async t => {
     const actual = nomadRTE.of("hold dis");
 
-    const expected = new NomadRTE(() => new NomadTE(nomad.of(taskEither.of("hold dis"))));
+    const expected = fromNomadTE(nomadTE.of("hold dis"));
     t.deepEqual(await expected.run({}), await actual.run({}));
 });
 
@@ -72,21 +70,22 @@ test("NomadRTE is applicative: ap", async t => {
 });
 
 test("NomadRTE is a chain: chain", async t => {
-    const initial = new NomadRTE(() => new NomadTE(new Nomad([1], taskEither.of("world"))));
-    const expected = new NomadRTE(() => new NomadTE(new Nomad([1/*, 2*/], taskEither.of("hello, world!"))));
+    const initial = nomadRTE.of<{}, number, {}, string>("world").concat(1);
+    const expected = nomadRTE.of<{}, number, {}, string>("hello, world!").concat([1, 2]);
 
+    const f = (a: string) => nomadRTE.of<{}, number, {}, string>(`hello, ${a}!`).concat(2);
     {
-        let actual = initial.chain(a => nomadRTE.of<{}, number, {}, string>(`hello, ${a}!`).concat(2));
+        let actual = initial.chain(f);
         t.deepEqual(await expected.run({}), await actual.run({}));
     }
     {
-        let actual = nomadRTE.chain(initial, a => nomadRTE.of<{}, number, {}, string>(`hello, ${a}!`).concat(2));
+        let actual = nomadRTE.chain(initial, f);
         t.deepEqual(await expected.run({}), await actual.run({}));
     }
     {
         let actual = initial
-            .map(a => `hello, ${a}!`)/*
-            .concat(2)*/;
+            .map(a => `hello, ${a}!`)
+            .concat(2);
         t.deepEqual(await expected.run({}), await actual.run({}));
     }
 });

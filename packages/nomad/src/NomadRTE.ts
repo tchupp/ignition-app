@@ -1,7 +1,7 @@
-import {fromTaskEither, nomadTE, NomadTE} from "./NomadTE";
+import {fromNomad as teFromNomad, fromTaskEither, NomadTE, nomadTE} from "./NomadTE";
 import {Nomad} from "./Nomad";
 
-import {fromLeft as taskEitherFromLeft, taskEither} from "fp-ts/lib/TaskEither";
+import {fromLeft as taskEitherFromLeft} from "fp-ts/lib/TaskEither";
 import {Either} from "fp-ts/lib/Either";
 import {Reader} from "fp-ts/lib/Reader";
 
@@ -61,7 +61,7 @@ export const fromNomadTE = <X, U, L, A>(fa: NomadTE<U, L, A>): NomadRTE<X, U, L,
     new NomadRTE(() => fa);
 
 export const fromNomad = <X, U, L, A>(fa: Nomad<U, A>): NomadRTE<X, U, L, A> =>
-    new NomadRTE(() => new NomadTE(fa.map(a => taskEither.of(a))));
+    new NomadRTE(() => teFromNomad(fa));
 
 export const fromLeft = <X, U, L, A>(l: L): NomadRTE<X, U, L, A> =>
     fromNomadTE(fromTaskEither(taskEitherFromLeft(l)));

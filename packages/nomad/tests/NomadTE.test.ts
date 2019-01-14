@@ -1,23 +1,25 @@
 import test from "ava";
-import {nomad, Nomad} from "../src/Nomad";
-import {fromTaskEither, NomadTE, nomadTE} from "../src/NomadTE";
+
 import {fromLeft as taskEitherFromLeft, taskEither} from "fp-ts/lib/TaskEither";
 
+import {Nomad} from "../src/Nomad";
+import {fromNomad, fromTaskEither, nomadTE} from "../src/NomadTE";
+
 test("concat", async t => {
-    const actual = new NomadTE(new Nomad([1], taskEither.of("hold dis")))
+    const actual = fromNomad(new Nomad([1], "hold dis"))
         .concat(2)
         .concat([3, 4]);
 
-    const expected = new NomadTE(new Nomad([1, 2, 3, 4], taskEither.of("hold dis")));
+    const expected = fromNomad(new Nomad([1, 2, 3, 4], "hold dis"));
     t.deepEqual(await actual.run(), await expected.run());
 });
 
 test("concatL", async t => {
-    const actual = new NomadTE(new Nomad([1], taskEither.of("hold dis")))
+    const actual = fromNomad(new Nomad([1], "hold dis"))
         .concatL(() => 2)
         .concatL(() => [3, 4]);
 
-    const expected = new NomadTE(new Nomad([1, 2, 3, 4], taskEither.of("hold dis")));
+    const expected = fromNomad(new Nomad([1, 2, 3, 4], "hold dis"));
     t.deepEqual(await actual.run(), await expected.run());
 });
 
@@ -40,8 +42,8 @@ test("NomadTE is a functor: map", async t => {
 });
 
 test("map does not affect 'left' eithers", async t => {
-    const initial = new NomadTE(nomad.of(taskEitherFromLeft<string, string>("hold dis, left")));
-    const expected = new NomadTE(nomad.of(taskEitherFromLeft<string, number>("hold dis, left")));
+    const initial = fromTaskEither(taskEitherFromLeft<string, string>("hold dis, left"));
+    const expected = fromTaskEither(taskEitherFromLeft<string, number>("hold dis, left"));
 
     {
         const actual = initial.map(a => a.length);
@@ -56,14 +58,14 @@ test("map does not affect 'left' eithers", async t => {
 test("NomadTE is applicative: of", async t => {
     const actual = nomadTE.of("hold dis");
 
-    const expected = new NomadTE(nomad.of(taskEither.of("hold dis")));
+    const expected = fromTaskEither(taskEither.of("hold dis"));
     t.deepEqual(await expected.run(), await actual.run());
 });
 
 test("fromTaskEither", async t => {
     const actual = fromTaskEither(taskEither.of("hold dis"));
 
-    const expected = new NomadTE(nomad.of(taskEither.of("hold dis")));
+    const expected = fromTaskEither(taskEither.of("hold dis"));
     t.deepEqual(await expected.run(), await actual.run());
 });
 
@@ -82,21 +84,22 @@ test("NomadTE is applicative: ap", async t => {
 });
 
 test("NomadTE is a chain: chain", async t => {
-    const initial = new NomadTE(new Nomad([1], taskEither.of("world")));
-    const expected = new NomadTE(new Nomad([1/*, 2*/], taskEither.of("hello, world!")));
+    const initial = fromNomad(new Nomad([1], "world"));
+    const expected = fromNomad(new Nomad([1, 2], "hello, world!"));
 
+    const f = (a: string) => nomadTE.of<number, {}, string>(`hello, ${a}!`).concat(2);
     {
-        let actual = initial.chain(a => nomadTE.of<number, {}, string>(`hello, ${a}!`).concat(2));
+        let actual = initial.chain(f);
         t.deepEqual(await expected.run(), await actual.run());
     }
     {
-        let actual = nomadTE.chain(initial, a => nomadTE.of<number, {}, string>(`hello, ${a}!`).concat(2));
+        let actual = nomadTE.chain(initial, f);
         t.deepEqual(await expected.run(), await actual.run());
     }
     {
         let actual = initial
-            .map(a => `hello, ${a}!`)/*
-            .concat(2)*/;
+            .map(a => `hello, ${a}!`)
+            .concat(2);
         t.deepEqual(await expected.run(), await actual.run());
     }
 });

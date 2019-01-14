@@ -9,8 +9,8 @@ const families = {
 const catalogToken: Promise<CatalogToken> = buildCatalog(families)
     .mapLeft(err => err as unknown as IgnitionOptionsError)
     .fold(() => "", e => e)
-    .value
-    .run();
+    .run()
+    .then(n => n.value);
 
 test("findOptions has two effects for timing", async t => {
     // @ts-ignore

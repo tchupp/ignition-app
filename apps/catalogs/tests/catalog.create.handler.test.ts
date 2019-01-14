@@ -60,7 +60,7 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
     when(datastoreStub.insert(deepEqual(entity))).thenResolve(commitResult);
 
     const datastore = instance(datastoreStub);
-    const [result, effects] = await createCatalog(req, timestamp)
+    const [result] = await createCatalog(req, timestamp)
         .map(catalog => catalog.toObject())
         .run(datastore);
 
@@ -85,8 +85,6 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
         ]
     };
     t.deepEqual(result, right(expected));
-
-    t.deepEqual([], effects);
 });
 
 test("createCatalog returns error when catalog already exists", async (t) => {

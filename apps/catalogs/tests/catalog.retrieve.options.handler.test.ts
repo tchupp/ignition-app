@@ -252,8 +252,8 @@ test("retrieveCatalogOptions returns catalog options, when request contains one 
     const selections = [" shirts:red   "];
     const initialToken = await buildCatalog(families)
         .fold(() => "", res => res)
-        .value
-        .run();
+        .run()
+        .then(n => n.value);
 
     const req = new RetrieveCatalogOptionsRequest();
     req.setCatalogId(catalogId);

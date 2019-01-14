@@ -28,11 +28,11 @@ export async function buildTestCatalogToken(
 ): Promise<CatalogToken> {
     const token = await buildCatalog(families, exclusions, inclusions)
         .fold(() => EMPTY_CATALOG_TOKEN, res => res)
-        .value
-        .run();
+        .run()
+        .then(n => n.value);
 
     return await findOptions(token, selections)
         .fold(() => EMPTY_CATALOG_TOKEN, ([_, token]) => token)
-        .value
-        .run();
+        .run()
+        .then(n => n.value);
 }
