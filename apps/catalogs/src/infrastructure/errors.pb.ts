@@ -8,12 +8,12 @@ import {
     RequestInfo,
     ResourceInfo,
     RetryInfo
-} from "../generated/google/rpc/error_details_pb";
+} from "../../generated/google/rpc/error_details_pb";
 
 import {Metadata, status} from "grpc";
 import {Duration} from "google-protobuf/google/protobuf/duration_pb";
 import {Any} from "google-protobuf/google/protobuf/any_pb";
-import {Status} from "../generated/google/rpc/status_pb";
+import {Status} from "../../generated/google/rpc/status_pb";
 
 export type GrpcServiceErrorDetail =
     { type: "DebugInfo", detail: DebugInfo }

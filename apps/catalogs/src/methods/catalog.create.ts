@@ -1,7 +1,7 @@
 import Datastore = require("@google-cloud/datastore");
 import {CommitResult} from "@google-cloud/datastore/request";
 import {DatastorePayload} from "@google-cloud/datastore/entity";
-import {fromLeft, fromReader, fromTaskEither, NomadRTE} from "@ignition/nomad";
+import {fromLeft, fromTaskEither, NomadRTE} from "@ignition/nomad";
 
 import {
     buildCatalog,
@@ -15,10 +15,9 @@ import {
 import {tryCatch} from "fp-ts/lib/TaskEither";
 
 import {buildCatalogEntity, CatalogEntity} from "./catalog.entity";
-import {DatastoreError, DatastoreErrorCode} from "./datastore.error";
-import {CatalogsEffect} from "./effects";
 import {SaveCatalogError} from "./catalog.create";
-import {CatalogsResult} from "./result";
+import {DatastoreError, DatastoreErrorCode} from "../infrastructure/datastore.error";
+import {CatalogsResult, fromReader} from "../infrastructure/result";
 
 export type SaveCatalogError =
     { type: "Datastore", error: DatastoreError }
@@ -54,7 +53,7 @@ export function createCatalog(rules: CatalogRules, timestamp: Date): CatalogsRes
     return buildCatalog(rules.families, rules.exclusions, rules.inclusions)
         .toNomadRTE<Datastore>()
         .mapLeft(fromIgnitionError)
-        .chain(catalog => fromReader<Datastore, CatalogsEffect, SaveCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(rules.id, catalog, timestamp))
+        .chain(catalog => fromReader<SaveCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(rules.id, catalog, timestamp))
             .chain(saveCatalogEntity)
             .map(() => catalog)
         )
@@ -97,9 +96,9 @@ function saveCatalogEntity(
     );
 }
 
-function findOptions<Ctx>(
+function findOptions(
     catalogToken: CatalogToken
-): NomadRTE<Ctx, CatalogsEffect, SaveCatalogError, [Options, CatalogToken]> {
+): CatalogsResult<SaveCatalogError, [Options, CatalogToken]> {
     return findOptionsInner(catalogToken)
         .mapLeft((err): SaveCatalogError => {
             switch (err.type) {
@@ -109,7 +108,7 @@ function findOptions<Ctx>(
                     return err;
             }
         })
-        .toNomadRTE<Ctx>();
+        .toNomadRTE<Datastore>();
 }
 
 function isEmptyObject(obj: object): boolean {

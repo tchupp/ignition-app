@@ -3,11 +3,11 @@ import {nomadRTE, NomadRTE} from "@ignition/nomad";
 
 import {status} from "grpc";
 
-import {Catalog, ListCatalogsRequest, ListCatalogsResponse} from "../generated/catalogs_pb";
+import {Catalog, ListCatalogsRequest, ListCatalogsResponse} from "../../generated/catalogs_pb";
 import {ListCatalogResponseItem, listCatalogs as listCatalogsInner, ListCatalogsError} from "./catalog.list";
-import {GrpcServiceError, serviceError} from "./errors.pb";
-import {CatalogsEffect} from "./effects";
-import {CatalogsResult} from "./result";
+import {GrpcServiceError, serviceError} from "../infrastructure/errors.pb";
+import {CatalogsEffect} from "../infrastructure/effects";
+import {CatalogsResult} from "../infrastructure/result";
 
 export function listCatalogs(req: ListCatalogsRequest): CatalogsResult<GrpcServiceError, ListCatalogsResponse> {
     return fromRequest<Datastore>(req)

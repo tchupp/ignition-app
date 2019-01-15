@@ -1,13 +1,13 @@
 import Datastore = require("@google-cloud/datastore");
-import {CatalogToken, findOptions as findOptionsInner, Item, Options} from "@ignition/wasm";
-import {fromLeft as nomadFromLeft, fromTaskEither, NomadRTE} from "@ignition/nomad";
+import {CatalogToken, findOptions as findOptionsInner, IgnitionOptionsError, Item, Options} from "@ignition/wasm";
+import {fromLeft as nomadFromLeft, fromTaskEither} from "@ignition/nomad";
 
 import {fromLeft, taskEither, tryCatch} from "fp-ts/lib/TaskEither";
 
 import {CatalogEntity} from "./catalog.entity";
-import {DatastoreError} from "./datastore.error";
-import {CatalogsEffect, timedRTE} from "./effects";
-import {CatalogsResult} from "./result";
+import {DatastoreError} from "../infrastructure/datastore.error";
+import {timedRTE} from "../infrastructure/effects";
+import {CatalogsResult} from "../infrastructure/result";
 
 export type RetrieveCatalogOptionsError =
     { type: "Datastore", error: DatastoreError }
@@ -31,14 +31,39 @@ export function retrieveCatalogOptions(catalogId: string, token: CatalogToken, s
 
     switch (token.length) {
         case 0:
-            return retrieveCatalog(catalogId)
-                .chain(entity => findOptions(entity.token, catalogId, selections))
-                .map(([options, token]) => ({id: catalogId, options: options, token: token}));
-
+            return retrieveOptionsFromDatastore(catalogId, selections);
         default:
-            return findOptions2<Datastore>(token, catalogId, selections)
-                .map(([options, token]) => ({id: catalogId, options: options, token: token}));
+            return retrieveOptionsWithUserToken(catalogId, token, selections);
     }
+}
+
+function retrieveOptionsFromDatastore(catalogId: string, selections: Item[]) {
+    const errHandler = (err: IgnitionOptionsError): RetrieveCatalogOptionsError => {
+        switch (err.type) {
+            case "BadToken":
+                return {...err, catalogId: catalogId};
+            case "UnknownSelections":
+                return err;
+        }
+    };
+
+    return retrieveCatalog(catalogId)
+        .chain(entity => findOptions(entity.token, selections, errHandler))
+        .map(([options, token]) => ({id: catalogId, options: options, token: token}));
+}
+
+function retrieveOptionsWithUserToken(catalogId: string, token: CatalogToken, selections: Item[]) {
+    const errHandler = (err: IgnitionOptionsError): RetrieveCatalogOptionsError => {
+        switch (err.type) {
+            case "BadToken":
+                return {...err, type: "BadUserToken", catalogId: catalogId};
+            case "UnknownSelections":
+                return err;
+        }
+    };
+
+    return findOptions(token, selections, errHandler)
+        .map(([options, token]) => ({id: catalogId, options: options, token: token}));
 }
 
 function retrieveCatalog(catalogId: string): CatalogsResult<RetrieveCatalogOptionsError, CatalogEntity> {
@@ -59,36 +84,12 @@ function retrieveCatalog(catalogId: string): CatalogsResult<RetrieveCatalogOptio
     );
 }
 
-function findOptions<Ctx>(
+function findOptions(
     token: CatalogToken,
-    catalogId: string,
-    selections: Item[]
-): NomadRTE<Ctx, CatalogsEffect, RetrieveCatalogOptionsError, [Options, CatalogToken]> {
+    selections: Item[],
+    errHandler: (err: IgnitionOptionsError) => RetrieveCatalogOptionsError
+): CatalogsResult<RetrieveCatalogOptionsError, [Options, CatalogToken]> {
     return findOptionsInner(token, selections)
-        .mapLeft((err): RetrieveCatalogOptionsError => {
-            switch (err.type) {
-                case "BadToken":
-                    return {...err, catalogId: catalogId};
-                case "UnknownSelections":
-                    return err;
-            }
-        })
-        .toNomadRTE();
-}
-
-function findOptions2<Ctx>(
-    token: CatalogToken,
-    catalogId: string,
-    selections: Item[]
-): NomadRTE<Ctx, CatalogsEffect, RetrieveCatalogOptionsError, [Options, CatalogToken]> {
-    return findOptionsInner(token, selections)
-        .mapLeft((err): RetrieveCatalogOptionsError => {
-            switch (err.type) {
-                case "BadToken":
-                    return {...err, type: "BadUserToken", catalogId: catalogId};
-                case "UnknownSelections":
-                    return err;
-            }
-        })
+        .mapLeft(errHandler)
         .toNomadRTE();
 }

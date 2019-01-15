@@ -2,11 +2,11 @@ import Datastore = require("@google-cloud/datastore");
 import {nomadRTE, NomadRTE} from "@ignition/nomad";
 import {CatalogContents, ItemStatus} from "@ignition/wasm";
 
-import {CatalogOptions, CreateCatalogRequest, FamilyOptions, ItemOption} from "../generated/catalogs_pb";
+import {CatalogOptions, CreateCatalogRequest, FamilyOptions, ItemOption} from "../../generated/catalogs_pb";
 import {status} from "grpc";
 
-import {CatalogsEffect} from "./effects";
-import {CatalogsResult} from "./result";
+import {CatalogsEffect} from "../infrastructure/effects";
+import {CatalogsResult} from "../infrastructure/result";
 import {
     badRequestDetail,
     debugInfoDetail,
@@ -14,7 +14,7 @@ import {
     GrpcServiceErrorDetail,
     resourceInfoDetail,
     serviceError
-} from "./errors.pb";
+} from "../infrastructure/errors.pb";
 import {
     CatalogRules,
     createCatalog as createCatalogInner,

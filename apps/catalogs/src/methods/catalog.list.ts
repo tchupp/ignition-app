@@ -5,10 +5,10 @@ import {CatalogToken} from "@ignition/wasm";
 
 import {tryCatch} from "fp-ts/lib/TaskEither";
 
-import {DatastoreError} from "./datastore.error";
+import {DatastoreError} from "../infrastructure/datastore.error";
 import {ListCatalogResponseItem, ListCatalogsError} from "./catalog.list";
-import {CatalogsEffect} from "./effects";
-import {CatalogsResult} from "./result";
+import {CatalogsEffect} from "../infrastructure/effects";
+import {CatalogsResult} from "../infrastructure/result";
 
 export type ListCatalogsError =
     { type: "Datastore", error: DatastoreError }

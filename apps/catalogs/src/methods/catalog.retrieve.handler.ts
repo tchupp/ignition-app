@@ -8,10 +8,10 @@ import {
     RetrieveCatalogError,
     RetrieveCatalogResponse
 } from "./catalog.retrieve";
-import {Catalog, RetrieveCatalogRequest} from "../generated/catalogs_pb";
-import {badRequestDetail, GrpcServiceError, serviceError} from "./errors.pb";
-import {CatalogsEffect} from "./effects";
-import {CatalogsResult} from "./result";
+import {Catalog, RetrieveCatalogRequest} from "../../generated/catalogs_pb";
+import {badRequestDetail, GrpcServiceError, serviceError} from "../infrastructure/errors.pb";
+import {CatalogsEffect} from "../infrastructure/effects";
+import {CatalogsResult} from "../infrastructure/result";
 
 export function retrieveCatalog(req: RetrieveCatalogRequest): CatalogsResult<GrpcServiceError, Catalog> {
     return fromRequest<Datastore>(req)

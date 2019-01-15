@@ -1,7 +1,7 @@
 import {nomadRTE} from "@ignition/nomad";
 import {CatalogToken, Item, ItemStatus} from "@ignition/wasm";
 
-import {CatalogOptions, FamilyOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
+import {CatalogOptions, FamilyOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../../generated/catalogs_pb";
 import {status} from "grpc";
 
 import {
@@ -9,8 +9,8 @@ import {
     RetrieveCatalogOptionsError,
     RetrieveCatalogOptionsResponse
 } from "./catalog.retrieve.options";
-import {badRequestDetail, GrpcServiceError, preconditionFailureDetail, serviceError} from "./errors.pb";
-import {CatalogsResult} from "./result";
+import {badRequestDetail, GrpcServiceError, preconditionFailureDetail, serviceError} from "../infrastructure/errors.pb";
+import {CatalogsResult} from "../infrastructure/result";
 
 export function retrieveCatalogOptions(req: RetrieveCatalogOptionsRequest): CatalogsResult<GrpcServiceError, CatalogOptions> {
     return fromRequest(req)

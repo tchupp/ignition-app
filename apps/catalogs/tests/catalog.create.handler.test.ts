@@ -6,12 +6,12 @@ import {left, right} from "fp-ts/lib/Either";
 import {status} from "grpc";
 import {deepEqual, instance, mock, when} from "ts-mockito";
 
-import {createCatalog} from "../src/catalog.create.handler";
-import {CatalogRules} from "../src/catalog.create";
+import {createCatalog} from "../src/methods/catalog.create.handler";
+import {CatalogRules} from "../src/methods/catalog.create";
 import {CreateCatalogRequest, Exclusion, Family, Inclusion, ItemOption} from "../generated/catalogs_pb";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
-import {badRequestDetail, resourceInfoDetail, serviceError} from "../src/errors.pb";
-import {DatastoreError, DatastoreErrorCode} from "../src/datastore.error";
+import {badRequestDetail, resourceInfoDetail, serviceError} from "../src/infrastructure/errors.pb";
+import {DatastoreError, DatastoreErrorCode} from "../src/infrastructure/datastore.error";
 
 const timestamp = new Date();
 

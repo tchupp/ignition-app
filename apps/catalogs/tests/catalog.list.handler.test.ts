@@ -4,8 +4,8 @@ import {instance, mock, when} from "ts-mockito";
 
 import {right} from "fp-ts/lib/Either";
 
-import {CatalogEntity} from "../src/catalog.entity";
-import {listCatalogs} from "../src/catalog.list.handler";
+import {CatalogEntity} from "../src/methods/catalog.entity";
+import {listCatalogs} from "../src/methods/catalog.list.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {ListCatalogsRequest} from "../generated/catalogs_pb";
 

@@ -4,10 +4,10 @@ import {CatalogToken} from "@ignition/wasm";
 
 import {fromLeft, taskEither, tryCatch} from "fp-ts/lib/TaskEither";
 
-import {DatastoreError} from "./datastore.error";
+import {DatastoreError} from "../infrastructure/datastore.error";
 import {CatalogEntity} from "./catalog.entity";
-import {timedRTE} from "./effects";
-import {CatalogsResult} from "./result";
+import {timedRTE} from "../infrastructure/effects";
+import {CatalogsResult} from "../infrastructure/result";
 
 export type RetrieveCatalogError =
     { type: "Datastore", error: DatastoreError }
