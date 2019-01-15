@@ -6,10 +6,10 @@ import * as messages from "../generated/catalogs_pb";
 
 import {Either} from "fp-ts/lib/Either";
 
-import {retrieveCatalogOptions as retrieveCatalogOptionsInner} from "./methods/catalog.retrieve.options.handler";
-import {retrieveCatalog as retrieveCatalogInner} from "./methods/catalog.retrieve.handler";
-import {createCatalog as createCatalogInner} from "./methods/catalog.create.handler";
-import {listCatalogs as listCatalogsInner} from "./methods/catalog.list.handler";
+import {retrieveCatalogOptions as retrieveCatalogOptionsInner} from "./functions/catalog.retrieve.options.handler";
+import {retrieveCatalog as retrieveCatalogInner} from "./functions/catalog.retrieve.handler";
+import {createCatalog as createCatalogInner} from "./functions/catalog.create.handler";
+import {listCatalogs as listCatalogsInner} from "./functions/catalog.list.handler";
 import {GrpcServiceError, serviceError} from "./infrastructure/errors.pb";
 import {CatalogsEffect} from "./infrastructure/effects";
 

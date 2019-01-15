@@ -5,8 +5,8 @@ import {deepEqual, instance, mock, when} from "ts-mockito";
 import {left} from "fp-ts/lib/Either";
 import {status} from "grpc";
 
-import {CatalogEntity} from "../src/methods/catalog.entity";
-import {retrieveCatalogOptions} from "../src/methods/catalog.retrieve.options.handler";
+import {CatalogEntity} from "../src/functions/catalog.entity";
+import {retrieveCatalogOptions} from "../src/functions/catalog.retrieve.options.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
 import {badRequestDetail, preconditionFailureDetail, serviceError} from "../src/infrastructure/errors.pb";

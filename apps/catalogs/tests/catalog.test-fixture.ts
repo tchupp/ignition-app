@@ -1,6 +1,6 @@
 import {buildCatalog, CatalogContents, CatalogToken, findOptions, Item} from "@ignition/wasm";
 
-import {CatalogEntity} from "../src/methods/catalog.entity";
+import {CatalogEntity} from "../src/functions/catalog.entity";
 
 const EMPTY_CATALOG_TOKEN: CatalogToken = "";
 

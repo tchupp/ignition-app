@@ -6,8 +6,8 @@ import {left, right} from "fp-ts/lib/Either";
 import {status} from "grpc";
 import {deepEqual, instance, mock, when} from "ts-mockito";
 
-import {createCatalog} from "../src/methods/catalog.create.handler";
-import {CatalogRules} from "../src/methods/catalog.create";
+import {createCatalog} from "../src/functions/catalog.create.handler";
+import {CatalogRules} from "../src/functions/catalog.create";
 import {CreateCatalogRequest, Exclusion, Family, Inclusion, ItemOption} from "../generated/catalogs_pb";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {badRequestDetail, resourceInfoDetail, serviceError} from "../src/infrastructure/errors.pb";
