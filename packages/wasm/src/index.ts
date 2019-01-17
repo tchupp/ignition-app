@@ -81,7 +81,7 @@ export function findOutfits(
     );
 }
 
-export function timedTE<L, A>(label: string, timer: () => TaskEither<L, A>): NomadTE<IgnitionEffect, L, A> {
+export function timedTE<L, A>(label: string, timed: () => TaskEither<L, A>): NomadTE<IgnitionEffect, L, A> {
     const build = (type: "Timing" | "Timed", time: [number, number]) => ({
         type: type,
         label: label,
@@ -89,7 +89,7 @@ export function timedTE<L, A>(label: string, timer: () => TaskEither<L, A>): Nom
     } as IgnitionEffect);
 
     const startTimingEffect = build("Timing", process.hrtime());
-    return fromTaskEither<IgnitionEffect, L, A>(timer())
+    return fromTaskEither<IgnitionEffect, L, A>(timed())
         .concat(startTimingEffect)
         .concatL(() => {
             const end = process.hrtime();

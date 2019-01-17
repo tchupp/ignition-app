@@ -67,18 +67,16 @@ export class NomadTE<U, L, A> {
     }
 
     chain<B>(f: (a: A) => NomadTE<U, L, B>): NomadTE<U, L, B> {
-        const newInner: Promise<Nomad<U, Either<L, B>>> = this.inner.run()
-            .then(async (value: Nomad<U, Either<L, A>>): Promise<Nomad<U, Either<L, B>>> => {
-                const either: Either<L, A> = value.value;
+        const newInner = this.inner.run()
+            .then(async (currentInner): Promise<Nomad<U, Either<L, B>>> => {
+                const either: Either<L, A> = currentInner.value;
 
-                let newInner: Nomad<U, Either<L, B>>;
                 if (either.isLeft()) {
-                    newInner = value.map(() => eitherLeft(either.value));
+                    return currentInner.map(() => eitherLeft(either.value));
                 } else {
-                    newInner = await f(either.value).inner.run();
+                    const {effects, value} = await f(either.value).inner.run();
+                    return new Nomad(currentInner.effects.concat(effects), value);
                 }
-
-                return value.chain(() => newInner);
             });
 
         return new NomadTE(new Task(() => newInner));
