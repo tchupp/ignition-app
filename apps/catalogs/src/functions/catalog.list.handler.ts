@@ -1,22 +1,20 @@
-import Datastore = require("@google-cloud/datastore");
-import {nomadRTE, NomadRTE} from "@ignition/nomad";
+import {nomadRTE} from "@ignition/nomad";
 
 import {status} from "grpc";
 
 import {Catalog, ListCatalogsRequest, ListCatalogsResponse} from "../../generated/catalogs_pb";
 import {ListCatalogResponseItem, listCatalogs as listCatalogsInner, ListCatalogsError} from "./catalog.list";
 import {GrpcServiceError, serviceError} from "../infrastructure/errors.pb";
-import {CatalogsEffect} from "../infrastructure/effects";
 import {CatalogsResult} from "../infrastructure/result";
 
 export function listCatalogs(req: ListCatalogsRequest): CatalogsResult<GrpcServiceError, ListCatalogsResponse> {
-    return fromRequest<Datastore>(req)
+    return fromRequest(req)
         .chain(() => listCatalogsInner())
         .mapLeft(toErrorResponse)
         .map(toSuccessResponse);
 }
 
-function fromRequest<Ctx>(_req: ListCatalogsRequest): NomadRTE<Ctx, CatalogsEffect, ListCatalogsError, any[]> {
+function fromRequest(_req: ListCatalogsRequest): CatalogsResult<ListCatalogsError, any[]> {
     return nomadRTE.of([]);
 }
 

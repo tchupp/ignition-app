@@ -1,5 +1,4 @@
-import Datastore = require("@google-cloud/datastore");
-import {nomadRTE, NomadRTE} from "@ignition/nomad";
+import {nomadRTE} from "@ignition/nomad";
 
 import {status} from "grpc";
 
@@ -10,17 +9,16 @@ import {
 } from "./catalog.retrieve";
 import {Catalog, RetrieveCatalogRequest} from "../../generated/catalogs_pb";
 import {badRequestDetail, GrpcServiceError, serviceError} from "../infrastructure/errors.pb";
-import {CatalogsEffect} from "../infrastructure/effects";
 import {CatalogsResult} from "../infrastructure/result";
 
 export function retrieveCatalog(req: RetrieveCatalogRequest): CatalogsResult<GrpcServiceError, Catalog> {
-    return fromRequest<Datastore>(req)
+    return fromRequest(req)
         .chain(catalogId => retrieveCatalogInner(catalogId))
         .mapLeft(toErrorResponse)
         .map(toSuccessResponse);
 }
 
-function fromRequest<Ctx>(req: RetrieveCatalogRequest): NomadRTE<Ctx, CatalogsEffect, RetrieveCatalogError, string> {
+function fromRequest(req: RetrieveCatalogRequest): CatalogsResult<RetrieveCatalogError, string> {
     const catalogId = req.getCatalogId();
 
     return nomadRTE.of(catalogId);

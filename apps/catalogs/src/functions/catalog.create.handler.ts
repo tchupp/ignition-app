@@ -1,11 +1,8 @@
-import Datastore = require("@google-cloud/datastore");
-import {nomadRTE, NomadRTE} from "@ignition/nomad";
+import {nomadRTE} from "@ignition/nomad";
 import {CatalogContents, ItemStatus} from "@ignition/wasm";
 
 import {CatalogOptions, CreateCatalogRequest, FamilyOptions, ItemOption} from "../../generated/catalogs_pb";
 import {status} from "grpc";
-
-import {CatalogsEffect} from "../infrastructure/effects";
 import {CatalogsResult} from "../infrastructure/result";
 import {
     badRequestDetail,
@@ -23,13 +20,13 @@ import {
 } from "./catalog.create";
 
 export function createCatalog(req: CreateCatalogRequest, timestamp: Date = new Date()): CatalogsResult<GrpcServiceError, CatalogOptions> {
-    return fromRequest<Datastore>(req)
+    return fromRequest(req)
         .chain(rules => createCatalogInner(rules, timestamp))
         .mapLeft(toErrorResponse)
         .map(toSuccessResponse);
 }
 
-function fromRequest<Ctx>(req: CreateCatalogRequest): NomadRTE<Ctx, CatalogsEffect, SaveCatalogError, CatalogRules> {
+function fromRequest(req: CreateCatalogRequest): CatalogsResult<SaveCatalogError, CatalogRules> {
     const catalogId = req.getCatalogId();
     const families = req.getFamiliesList()
         .reduce((acc, rule) => ({...acc, [rule.getFamilyId()]: rule.getItemsList()}), {} as CatalogContents);

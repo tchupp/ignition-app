@@ -1,13 +1,13 @@
 import Datastore = require("@google-cloud/datastore");
 import {QueryResult} from "@google-cloud/datastore/query";
-import {fromTaskEither, NomadRTE} from "@ignition/nomad";
+import {fromTaskEither} from "@ignition/nomad";
 import {CatalogToken} from "@ignition/wasm";
 
 import {tryCatch} from "fp-ts/lib/TaskEither";
 
 import {DatastoreError} from "../infrastructure/datastore.error";
 import {ListCatalogResponseItem, ListCatalogsError} from "./catalog.list";
-import {CatalogsEffect} from "../infrastructure/effects";
+import {CatalogsEffect, timed} from "../infrastructure/effects";
 import {CatalogsResult} from "../infrastructure/result";
 
 export type ListCatalogsError =
@@ -20,7 +20,7 @@ export type ListCatalogResponseItem = {
 }
 
 export function listCatalogs(): CatalogsResult<ListCatalogsError, ListCatalogResponseItem[]> {
-    return new NomadRTE((datastore: Datastore) => {
+    return timed("listCatalogs", (datastore: Datastore) => {
             const query = datastore.createQuery("Catalog");
 
             return fromTaskEither<CatalogsEffect, DatastoreError, QueryResult>(

@@ -1,7 +1,7 @@
 import Datastore = require("@google-cloud/datastore");
 import {CommitResult} from "@google-cloud/datastore/request";
 import {DatastorePayload} from "@google-cloud/datastore/entity";
-import {fromLeft, fromTaskEither, NomadRTE} from "@ignition/nomad";
+import {fromLeft, fromTaskEither} from "@ignition/nomad";
 
 import {
     buildCatalog,
@@ -18,6 +18,7 @@ import {buildCatalogEntity, CatalogEntity} from "./catalog.entity";
 import {SaveCatalogError} from "./catalog.create";
 import {DatastoreError, DatastoreErrorCode} from "../infrastructure/datastore.error";
 import {CatalogsResult, fromReader} from "../infrastructure/result";
+import {timed} from "../infrastructure/effects";
 
 export type SaveCatalogError =
     { type: "Datastore", error: DatastoreError }
@@ -88,7 +89,7 @@ function saveCatalogEntity(
         return {type: "Datastore", error: err};
     }
 
-    return new NomadRTE((datastore: Datastore) =>
+    return timed("saveCatalog", (datastore: Datastore) =>
         fromTaskEither(tryCatch(
             () => datastore.insert(entity),
             (err: any) => fromDatastoreError(err)

@@ -6,7 +6,7 @@ import {fromLeft, taskEither, tryCatch} from "fp-ts/lib/TaskEither";
 
 import {CatalogEntity} from "./catalog.entity";
 import {DatastoreError} from "../infrastructure/datastore.error";
-import {timedRTE} from "../infrastructure/effects";
+import {timed} from "../infrastructure/effects";
 import {CatalogsResult} from "../infrastructure/result";
 
 export type RetrieveCatalogOptionsError =
@@ -72,7 +72,7 @@ function retrieveCatalog(catalogId: string): CatalogsResult<RetrieveCatalogOptio
         catalogId: catalogId
     });
 
-    return timedRTE(`retrieveCatalog: ${catalogId}`, (datastore: Datastore) => {
+    return timed(`retrieveCatalog: ${catalogId}`, (datastore: Datastore) => {
             const key = datastore.key({path: ["Catalog", catalogId]});
 
             return fromTaskEither(

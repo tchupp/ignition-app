@@ -11,16 +11,17 @@ import {retrieveCatalog as retrieveCatalogInner} from "./functions/catalog.retri
 import {createCatalog as createCatalogInner} from "./functions/catalog.create.handler";
 import {listCatalogs as listCatalogsInner} from "./functions/catalog.list.handler";
 import {GrpcServiceError, serviceError} from "./infrastructure/errors.pb";
-import {CatalogsEffect} from "./infrastructure/effects";
+import {handleEffects} from "./infrastructure/effects";
 
 const datastore = new Datastore();
 
-function handleResult<Res>(callback: grpc.sendUnaryData<Res>): ([either, _effects]: [Either<GrpcServiceError, Res>, ReadonlyArray<CatalogsEffect>]) => void {
-    return ([either, _effects]) =>
+function handleResult<Res>(callback: grpc.sendUnaryData<Res>): (either: Either<GrpcServiceError, Res>) => void {
+    return either => {
         either.fold(
             (error: GrpcServiceError) => callback(error as grpc.ServiceError, null),
             (res: Res) => callback(null, res),
         );
+    };
 }
 
 function handleError<Res>(callback: grpc.sendUnaryData<Res>): (error: any) => void {
@@ -32,33 +33,37 @@ function handleError<Res>(callback: grpc.sendUnaryData<Res>): (error: any) => vo
 }
 
 
+function handlers<L, R>(handleL: (l: L) => void, handleR: (r: R) => Promise<void[]>) {
+    return ([l, r]: [L, R]) => Promise.all([handleL(l), handleR(r)]);
+}
+
 const service: grpc.UntypedServiceImplementation = {
     retrieveCatalogOptions: (call: grpc.ServerUnaryCall<messages.RetrieveCatalogOptionsRequest>,
                              callback: grpc.sendUnaryData<messages.CatalogOptions>) =>
         retrieveCatalogOptionsInner(call.request)
             .run(datastore)
-            .then(handleResult(callback))
+            .then(handlers(handleResult(callback), handleEffects))
             .catch(handleError(callback)),
 
     createCatalog: (call: grpc.ServerUnaryCall<messages.CreateCatalogRequest>,
                     callback: grpc.sendUnaryData<messages.CatalogOptions>) =>
         createCatalogInner(call.request, new Date())
             .run(datastore)
-            .then(handleResult(callback))
+            .then(handlers(handleResult(callback), handleEffects))
             .catch(handleError(callback)),
 
     retrieveCatalog: (call: grpc.ServerUnaryCall<messages.RetrieveCatalogRequest>,
                       callback: grpc.sendUnaryData<messages.Catalog>) =>
         retrieveCatalogInner(call.request)
             .run(datastore)
-            .then(handleResult(callback))
+            .then(handlers(handleResult(callback), handleEffects))
             .catch(handleError(callback)),
 
     listCatalogs: (call: grpc.ServerUnaryCall<messages.ListCatalogsRequest>,
                    callback: grpc.sendUnaryData<messages.ListCatalogsResponse>) =>
         listCatalogsInner(call.request)
             .run(datastore)
-            .then(handleResult(callback))
+            .then(handlers(handleResult(callback), handleEffects))
             .catch(handleError(callback)),
 };
 
