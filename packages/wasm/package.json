@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "ava": "^0.25.0",
+    "@types/uuid": "^3.4.4",
     "ava-ts": "^0.25.2",
     "rimraf": "^2.6.2",
     "ts-node": "^7.0.1",

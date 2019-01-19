@@ -16,12 +16,12 @@ test("findOptions has two effects for timing", async t => {
     // @ts-ignore
     const [_, effects] = await findOptions(await catalogToken).run();
 
-    t.deepEqual(effects.length, 2);
+    t.deepEqual(effects.length, 1);
 
-    t.deepEqual(effects[0].type, "Timing");
-    t.deepEqual(effects[0].label, "findOptions: 69SwDy6bPLrHCUs3MTrBszftEko=");
-    t.deepEqual(effects[1].type, "Timed");
-    t.deepEqual(effects[1].label, "findOptions: 69SwDy6bPLrHCUs3MTrBszftEko=");
+    t.deepEqual(effects[0].type, "Timed");
+    t.deepEqual(effects[0].name, "find_options");
+    // @ts-ignore
+    t.deepEqual(effects[0].details.token, "69SwDy6bPLrHCUs3MTrBszftEko=");
 });
 
 test("findOptions with no rules, and no selections", async t => {

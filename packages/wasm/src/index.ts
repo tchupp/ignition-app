@@ -1,5 +1,8 @@
-import {TaskEither, tryCatch} from "fp-ts/lib/TaskEither";
-import {fromTaskEither, NomadTE} from "@ignition/nomad";
+import {tryCatch} from "fp-ts/lib/TaskEither";
+import {NomadTE} from "@ignition/nomad";
+import {IgnitionEffect, timed} from "./effects";
+
+export {IgnitionEffect} from "./effects";
 
 export type CatalogToken = string;
 
@@ -31,10 +34,6 @@ export type ItemStatus =
 
 export type Item = string;
 
-export type IgnitionEffect =
-    { type: "Timing", label: string, timeMs: number }
-    | { type: "Timed", label: string, timeMs: number };
-
 export function buildCatalog(
     families: CatalogContents,
     exclusions: CatalogContents = {},
@@ -42,7 +41,7 @@ export function buildCatalog(
 ): NomadTE<IgnitionEffect, IgnitionCreateCatalogError, CatalogToken> {
     let contents = {families: families, exclusions: exclusions, inclusions: inclusions};
 
-    return timedTE(`buildCatalog`, () =>
+    return timed(`build_catalog`, {}, () =>
         tryCatch(
             () => import("../crate/pkg")
                 .then(m => m.buildClosetWasm(contents)),
@@ -58,7 +57,7 @@ export function findOptions(
     selections: Item[] = [],
     exclusions: Item[] = []
 ): IgnitionOptionsResult {
-    return timedTE(`findOptions: ${hashToken(catalogToken)}`, () =>
+    return timed(`find_options`, {token: hashToken(catalogToken)}, () =>
         tryCatch(
             () => import("../crate/pkg")
                 .then(m => m.findOptionsWasm(catalogToken, selections, exclusions)),
@@ -72,29 +71,13 @@ export function findOutfits(
     selections: Item[] = [],
     exclusions: Item[] = []
 ): NomadTE<IgnitionEffect, IgnitionCreateCatalogError, Item[][]> {
-    return timedTE(`findOutfits: ${hashToken(catalogToken)}`, () =>
+    return timed(`find_outfits`, {token: hashToken(catalogToken)}, () =>
         tryCatch(
             () => import("../crate/pkg")
                 .then(m => m.findOutfitsWasm(catalogToken, selections, exclusions)),
             (err: any) => err
         )
     );
-}
-
-export function timedTE<L, A>(label: string, timed: () => TaskEither<L, A>): NomadTE<IgnitionEffect, L, A> {
-    const build = (type: "Timing" | "Timed", time: [number, number]) => ({
-        type: type,
-        label: label,
-        timeMs: (time[0] * 1000) + (time[1] / 1000000)
-    } as IgnitionEffect);
-
-    const startTimingEffect = build("Timing", process.hrtime());
-    return fromTaskEither<IgnitionEffect, L, A>(timed())
-        .concat(startTimingEffect)
-        .concatL(() => {
-            const end = process.hrtime();
-            return build("Timed", end);
-        });
 }
 
 function hashToken(catalogToken: CatalogToken): string {
