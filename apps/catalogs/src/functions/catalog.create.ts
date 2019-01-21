@@ -89,7 +89,7 @@ function saveCatalogEntity(
         return {type: "Datastore", error: err};
     }
 
-    return timed("saveCatalog", (datastore: Datastore) =>
+    return timed("save_catalog", {}, (datastore: Datastore) =>
         fromTaskEither(tryCatch(
             () => datastore.insert(entity),
             (err: any) => fromDatastoreError(err)

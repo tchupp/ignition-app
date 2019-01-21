@@ -42,29 +42,37 @@ const service: grpc.UntypedServiceImplementation = {
                              callback: grpc.sendUnaryData<messages.CatalogOptions>) =>
         retrieveCatalogOptionsInner(call.request)
             .run(datastore)
-            .then(handlers(handleResult(callback), handleEffects))
-            .catch(handleError(callback)),
+            .then(
+                handlers(handleResult(callback), handleEffects),
+                handleError(callback)
+            ),
 
     createCatalog: (call: grpc.ServerUnaryCall<messages.CreateCatalogRequest>,
                     callback: grpc.sendUnaryData<messages.CatalogOptions>) =>
         createCatalogInner(call.request, new Date())
             .run(datastore)
-            .then(handlers(handleResult(callback), handleEffects))
-            .catch(handleError(callback)),
+            .then(
+                handlers(handleResult(callback), handleEffects),
+                handleError(callback)
+            ),
 
     retrieveCatalog: (call: grpc.ServerUnaryCall<messages.RetrieveCatalogRequest>,
                       callback: grpc.sendUnaryData<messages.Catalog>) =>
         retrieveCatalogInner(call.request)
             .run(datastore)
-            .then(handlers(handleResult(callback), handleEffects))
-            .catch(handleError(callback)),
+            .then(
+                handlers(handleResult(callback), handleEffects),
+                handleError(callback)
+            ),
 
     listCatalogs: (call: grpc.ServerUnaryCall<messages.ListCatalogsRequest>,
                    callback: grpc.sendUnaryData<messages.ListCatalogsResponse>) =>
         listCatalogsInner(call.request)
             .run(datastore)
-            .then(handlers(handleResult(callback), handleEffects))
-            .catch(handleError(callback)),
+            .then(
+                handlers(handleResult(callback), handleEffects),
+                handleError(callback)
+            ),
 };
 
 

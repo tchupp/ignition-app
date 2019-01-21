@@ -35,7 +35,7 @@ function findCatalog(catalogId: string): CatalogsResult<RetrieveCatalogError, Ca
         catalogId: catalogId
     });
 
-    return timed(`retrieveCatalog: ${catalogId}`, (datastore: Datastore) => {
+    return timed(`retrieve_catalog`, {catalogId: catalogId}, (datastore: Datastore) => {
             const key = datastore.key({path: ["Catalog", catalogId]});
 
             return fromTaskEither(

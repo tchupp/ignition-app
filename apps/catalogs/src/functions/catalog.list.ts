@@ -20,7 +20,7 @@ export type ListCatalogResponseItem = {
 }
 
 export function listCatalogs(): CatalogsResult<ListCatalogsError, ListCatalogResponseItem[]> {
-    return timed("listCatalogs", (datastore: Datastore) => {
+    return timed("list_catalogs", {}, (datastore: Datastore) => {
             const query = datastore.createQuery("Catalog");
 
             return fromTaskEither<CatalogsEffect, DatastoreError, QueryResult>(
