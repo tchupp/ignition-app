@@ -3,17 +3,17 @@ import {tryCatch} from "fp-ts/lib/TaskEither";
 import {CatalogsEffect, Environment} from "./index";
 import {Timed} from "./timing";
 
-type Interval = {
+export type Interval = {
     readonly startTime?: { seconds: number },
     readonly endTime: { seconds: number }
 }
 
-type DataPoint = {
+export type DataPoint = {
     readonly interval: Interval
     readonly value: { doubleValue: string }
 }
 
-function DataPoint(value: string, nowMs: number = Date.now()): DataPoint {
+export function DataPoint(value: string, nowMs: number = Date.now()): DataPoint {
     return {
         interval: {
             endTime: {
@@ -26,36 +26,36 @@ function DataPoint(value: string, nowMs: number = Date.now()): DataPoint {
     };
 }
 
-type MetricDefinition = { type: string, labels: any }
+export type MetricDefinition = { type: string, labels: any }
 
-function MetricDefinition(type: string, labels: any): MetricDefinition {
+export function MetricDefinition(type: string, labels: any): MetricDefinition {
     return {
         type: `custom.googleapis.com/ignition/catalogs/${type}`,
         labels,
     };
 }
 
-type GenericTaskResourceDefinition = {
+export type GenericTaskResourceDefinition = {
     type: "generic_task",
     labels: { project_id: string, location: string, namespace: string, job: string, task_id: string }
 }
 
-function GenericTaskResourceDefinition(project_id: string, location: string, namespace: string, job: string, task_id: string): GenericTaskResourceDefinition {
+export function GenericTaskResourceDefinition(project_id: string, location: string, namespace: string, job: string, task_id: string): GenericTaskResourceDefinition {
     return {
         type: "generic_task",
         labels: {project_id, location, namespace, job, task_id}
     };
 }
 
-type ResourceDefinition = GenericTaskResourceDefinition
+export type ResourceDefinition = GenericTaskResourceDefinition
 
-type TimeSeriesData = {
+export type TimeSeriesData = {
     readonly metric: MetricDefinition
     readonly resource: ResourceDefinition
     readonly points: DataPoint[]
 }
 
-type CreateTimeSeriesRequest = {
+export type CreateTimeSeriesRequest = {
     readonly name: string
     readonly timeSeries: TimeSeriesData[]
 }
@@ -67,19 +67,19 @@ export type MetricServiceClient = {
 
 export type MetricServiceContext = [MetricServiceClient, Environment];
 
-function toTimeSeries({projectId, location, namespace}: Environment): (report: Timed) => TimeSeriesData {
-    return report => ({
-        metric: MetricDefinition(report.name, report.details),
-        resource: GenericTaskResourceDefinition(projectId, location, namespace, report.name, report.id),
-        points: [DataPoint(`${report.timeMs}`)],
+function toTimeSeries({projectId, location, namespace}: Environment, nowMs: number = Date.now()): (effect: Timed) => TimeSeriesData {
+    return effect => ({
+        metric: MetricDefinition(effect.name, effect.details),
+        resource: GenericTaskResourceDefinition(projectId, location, namespace, effect.name, effect.id),
+        points: [DataPoint(`${effect.timeMs}`, nowMs)],
     });
 }
 
-export function reportMetrics(effects: ReadonlyArray<CatalogsEffect>): ReaderTaskEither<MetricServiceContext, string, void> {
+export function reportMetrics(effects: ReadonlyArray<CatalogsEffect>, nowMs: number = Date.now()): ReaderTaskEither<MetricServiceContext, string, void> {
     return new ReaderTaskEither(([client, {projectId, location, namespace}]) => {
         const request: CreateTimeSeriesRequest = {
             name: client.projectPath(projectId),
-            timeSeries: effects.map(toTimeSeries({projectId, location, namespace}))
+            timeSeries: effects.map(toTimeSeries({projectId, location, namespace}, nowMs))
         };
 
         return tryCatch(
