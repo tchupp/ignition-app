@@ -1,7 +1,7 @@
 import {nomadRTE} from "@ignition/nomad";
 import {CatalogContents, ItemStatus} from "@ignition/wasm";
 
-import {CatalogOptions, CreateCatalogRequest, FamilyOptions, ItemOption} from "../../generated/catalogs_pb";
+import {CatalogOptions, UpdateCatalogRequest, FamilyOptions, ItemOption} from "../../generated/catalogs_pb";
 import {status} from "grpc";
 import {CatalogsResult} from "../infrastructure/result";
 import {
@@ -12,17 +12,17 @@ import {
     resourceInfoDetail,
     serviceError
 } from "../infrastructure/errors.pb";
-import {createCatalog as createCatalogInner, CreateCatalogError, CreateCatalogResponse} from "./catalog.create";
+import {UpdateCatalogResponse, updateCatalog as updateCatalogInner, UpdateCatalogError} from "./catalog.update";
 import {CatalogRules} from "./catalog.entity";
 
-export function createCatalog(req: CreateCatalogRequest, timestamp: Date = new Date()): CatalogsResult<GrpcServiceError, CatalogOptions> {
+export function updateCatalog(req: UpdateCatalogRequest, timestamp: Date = new Date()): CatalogsResult<GrpcServiceError, CatalogOptions> {
     return fromRequest(req)
-        .chain(rules => createCatalogInner(rules, timestamp))
+        .chain(rules => updateCatalogInner(rules, timestamp))
         .mapLeft(toErrorResponse)
         .map(toSuccessResponse);
 }
 
-function fromRequest(req: CreateCatalogRequest): CatalogsResult<CreateCatalogError, CatalogRules> {
+function fromRequest(req: UpdateCatalogRequest): CatalogsResult<UpdateCatalogError, CatalogRules> {
     const catalogId = req.getCatalogId();
     const families = req.getFamiliesList()
         .reduce((acc, rule) => ({...acc, [rule.getFamilyId()]: rule.getItemsList()}), {} as CatalogContents);
@@ -39,7 +39,7 @@ function fromRequest(req: CreateCatalogRequest): CatalogsResult<CreateCatalogErr
     });
 }
 
-function toSuccessResponse(response: CreateCatalogResponse): CatalogOptions {
+function toSuccessResponse(response: UpdateCatalogResponse): CatalogOptions {
     function toItem(status: ItemStatus): ItemOption {
         const item = new ItemOption();
         switch (status.type) {
@@ -82,7 +82,7 @@ function toSuccessResponse(response: CreateCatalogResponse): CatalogOptions {
     return catalogOptions;
 }
 
-function toErrorResponseDetails(error: CreateCatalogError): GrpcServiceErrorDetail[] {
+function toErrorResponseDetails(error: UpdateCatalogError): GrpcServiceErrorDetail[] {
     switch (error.type) {
         case "Datastore":
             return [];
@@ -174,7 +174,7 @@ function toErrorResponseDetails(error: CreateCatalogError): GrpcServiceErrorDeta
     }
 }
 
-function toErrorResponse(error: CreateCatalogError): GrpcServiceError {
+function toErrorResponse(error: UpdateCatalogError): GrpcServiceError {
     switch (error.type) {
         case "Datastore":
             return serviceError(

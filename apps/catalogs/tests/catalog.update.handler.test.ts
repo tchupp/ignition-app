@@ -8,14 +8,13 @@ import {deepEqual, instance, mock, when} from "ts-mockito";
 
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {CreateCatalogRequest, Exclusion, Family, Inclusion, ItemOption} from "../generated/catalogs_pb";
-import {badRequestDetail, resourceInfoDetail, serviceError} from "../src/infrastructure/errors.pb";
-import {createCatalog} from "../src/functions/catalog.create.handler";
-import {DatastoreError, DatastoreErrorCode} from "../src/infrastructure/datastore.error";
+import {badRequestDetail, serviceError} from "../src/infrastructure/errors.pb";
+import {updateCatalog} from "../src/functions/catalog.update.handler";
 import {CatalogRules} from "../src/functions/catalog.entity";
 
 const timestamp = new Date();
 
-test("createCatalog returns 'created' when catalog is properly formed", async (t) => {
+test("updateCatalog returns 'created' when catalog is properly formed", async (t) => {
     const catalogId = "catalog-1";
     const catalogRules = {
         id: catalogId,
@@ -57,10 +56,10 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
     const datastoreStub: Datastore = mock(Datastore);
 
     when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
-    when(datastoreStub.insert(deepEqual(entity))).thenResolve(commitResult);
+    when(datastoreStub.upsert(deepEqual(entity))).thenResolve(commitResult);
 
     const datastore = instance(datastoreStub);
-    const [result] = await createCatalog(req, timestamp)
+    const [result] = await updateCatalog(req, timestamp)
         .map(catalog => catalog.toObject())
         .run(datastore);
 
@@ -87,65 +86,7 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
     t.deepEqual(result, right(expected));
 });
 
-test("createCatalog returns error when catalog already exists", async (t) => {
-    const catalogId = "catalog-1";
-    const catalogRules = {
-        id: catalogId,
-        families: {
-            "shirts": ["shirts:red", "shirts:black"],
-            "pants": ["pants:jeans", "pants:slacks"]
-        },
-        exclusions: {},
-        inclusions: {}
-    };
-
-    const req = rulesToRequest(catalogRules);
-
-    const catalogKey = {
-        name: catalogId,
-        kind: "Catalog",
-        path: ["Catalog", catalogId]
-    };
-    const entity = {
-        key: catalogKey,
-        excludeFromIndexes: ["token"],
-        data: await buildTestCatalogEntity(
-            catalogId,
-            timestamp,
-            catalogRules.families
-        )
-    };
-    const insertError: DatastoreError = {
-        code: DatastoreErrorCode.ALREADY_EXISTS,
-        details: ""
-    };
-
-    const datastoreStub: Datastore = mock(Datastore);
-
-    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
-    when(datastoreStub.insert(deepEqual(entity))).thenReject(insertError);
-
-    const datastore = instance(datastoreStub);
-    const [result] = await createCatalog(req, timestamp)
-        .map(catalog => catalog.toObject())
-        .run(datastore);
-
-    t.deepEqual(result, left(
-        serviceError(
-            "Catalog already exists",
-            status.ALREADY_EXISTS,
-            [
-                resourceInfoDetail({
-                    resourceType: "Catalog",
-                    resourceName: catalogId,
-                    owner: "",
-                    description: "Catalogs may not be re-created, use UpdateCatalog to modify an existing Catalog",
-                })
-            ])
-    ));
-});
-
-test("createCatalog returns error when families are empty in request", async (t) => {
+test("updateCatalog returns error when families are empty in request", async (t) => {
     const catalogRules = {
         id: "catalog-4",
         families: {},
@@ -157,7 +98,7 @@ test("createCatalog returns error when families are empty in request", async (t)
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const [result] = await createCatalog(req, timestamp).run(datastore);
+    const [result] = await updateCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -174,7 +115,7 @@ test("createCatalog returns error when families are empty in request", async (t)
     ));
 });
 
-test("createCatalog returns error when item is registered to multiple families", async (t) => {
+test("updateCatalog returns error when item is registered to multiple families", async (t) => {
     const catalogRules = {
         id: "catalog-2",
         families: {
@@ -189,7 +130,7 @@ test("createCatalog returns error when item is registered to multiple families",
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const [result] = await createCatalog(req, timestamp).run(datastore);
+    const [result] = await updateCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -206,7 +147,7 @@ test("createCatalog returns error when item is registered to multiple families",
     ));
 });
 
-test("createCatalog returns error when an exclusion rule contain an item that doesn't have a family", async (t) => {
+test("updateCatalog returns error when an exclusion rule contain an item that doesn't have a family", async (t) => {
     const catalogRules = {
         id: "catalog-2",
         families: {"shirts": ["shirts:black", "shirts:red"]},
@@ -218,7 +159,7 @@ test("createCatalog returns error when an exclusion rule contain an item that do
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const [result] = await createCatalog(req, timestamp).run(datastore);
+    const [result] = await updateCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -235,7 +176,7 @@ test("createCatalog returns error when an exclusion rule contain an item that do
     ));
 });
 
-test("createCatalog returns error when an exclusion rule contain a selection and exclusion in the same family", async (t) => {
+test("updateCatalog returns error when an exclusion rule contain a selection and exclusion in the same family", async (t) => {
     const catalogRules = {
         id: "catalog-2",
         families: {"shirts": ["shirts:black", "shirts:red"]},
@@ -247,7 +188,7 @@ test("createCatalog returns error when an exclusion rule contain a selection and
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const [result] = await createCatalog(req, timestamp).run(datastore);
+    const [result] = await updateCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -264,7 +205,7 @@ test("createCatalog returns error when an exclusion rule contain a selection and
     ));
 });
 
-test("createCatalog returns error when an inclusion rule contain an item that doesn't have a family", async (t) => {
+test("updateCatalog returns error when an inclusion rule contain an item that doesn't have a family", async (t) => {
     const catalogRules = {
         id: "catalog-3",
         families: {"shirts": ["shirts:black", "shirts:red"]},
@@ -276,7 +217,7 @@ test("createCatalog returns error when an inclusion rule contain an item that do
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const [result] = await createCatalog(req, timestamp).run(datastore);
+    const [result] = await updateCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -293,7 +234,7 @@ test("createCatalog returns error when an inclusion rule contain an item that do
     ));
 });
 
-test("createCatalog returns error when an inclusion rule contain a selection and inclusion in the same family", async (t) => {
+test("updateCatalog returns error when an inclusion rule contain a selection and inclusion in the same family", async (t) => {
     const catalogRules = {
         id: "catalog-3",
         families: {"shirts": ["shirts:black", "shirts:red"]},
@@ -305,7 +246,7 @@ test("createCatalog returns error when an inclusion rule contain a selection and
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const [result] = await createCatalog(req, timestamp).run(datastore);
+    const [result] = await updateCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(
@@ -322,7 +263,7 @@ test("createCatalog returns error when an inclusion rule contain a selection and
     ));
 });
 
-test("createCatalog returns error when there are multiple errors in the request", async (t) => {
+test("updateCatalog returns error when there are multiple errors in the request", async (t) => {
     const catalogRules = {
         id: "catalog-2",
         families: {
@@ -337,7 +278,7 @@ test("createCatalog returns error when there are multiple errors in the request"
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
-    const [result] = await createCatalog(req, timestamp).run(datastore);
+    const [result] = await updateCatalog(req, timestamp).run(datastore);
 
     t.deepEqual(result, left(
         serviceError(

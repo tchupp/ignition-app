@@ -6,8 +6,8 @@ export {IgnitionEffect} from "./effects";
 
 export type CatalogToken = string;
 
-export type IgnitionCreateCatalogError =
-    { type: "CompoundError", errors: IgnitionCreateCatalogError[] }
+export type IgnitionBuildCatalogError =
+    { type: "CompoundError", errors: IgnitionBuildCatalogError[] }
     | { type: "MultipleFamiliesRegistered", item: string, families: string[] }
     | { type: "InclusionFamilyConflict", family: string, items: string[] }
     | { type: "ExclusionFamilyConflict", family: string, items: string[] }
@@ -38,7 +38,7 @@ export function buildCatalog(
     families: CatalogContents,
     exclusions: CatalogContents = {},
     inclusions: CatalogContents = {}
-): NomadTE<IgnitionEffect, IgnitionCreateCatalogError, CatalogToken> {
+): NomadTE<IgnitionEffect, IgnitionBuildCatalogError, CatalogToken> {
     let contents = {families: families, exclusions: exclusions, inclusions: inclusions};
 
     return timed(`build_catalog`, {}, () =>
@@ -70,7 +70,7 @@ export function findOutfits(
     catalogToken: CatalogToken,
     selections: Item[] = [],
     exclusions: Item[] = []
-): NomadTE<IgnitionEffect, IgnitionCreateCatalogError, Item[][]> {
+): NomadTE<IgnitionEffect, IgnitionBuildCatalogError, Item[][]> {
     return timed(`find_outfits`, {token: hashToken(catalogToken)}, () =>
         tryCatch(
             () => import("../crate/pkg")

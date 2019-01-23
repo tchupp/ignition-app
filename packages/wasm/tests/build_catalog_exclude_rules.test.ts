@@ -1,5 +1,5 @@
 import test from "ava";
-import {buildCatalog, IgnitionCreateCatalogError} from "../src";
+import {buildCatalog, IgnitionBuildCatalogError} from "../src";
 import {left} from "fp-ts/lib/Either";
 
 const families = {
@@ -14,7 +14,7 @@ test("build, when exclusion rule has the same family as the selection, gives an 
 
     const [error] = await buildCatalog(families, exclusions).run();
 
-    const expectedError: IgnitionCreateCatalogError = {
+    const expectedError: IgnitionBuildCatalogError = {
         type: "ExclusionFamilyConflict",
         family: "shirts",
         items: ["shirts:blue", "shirts:red"]
@@ -29,7 +29,7 @@ test("build, when exclusion rule has unknown item as selection, gives an error",
 
     const [error] = await buildCatalog(families, exclusions).run();
 
-    const expectedError: IgnitionCreateCatalogError = {
+    const expectedError: IgnitionBuildCatalogError = {
         type: "ExclusionMissingFamily",
         item: "shirts:black"
     };
@@ -43,7 +43,7 @@ test("build, when exclusion rule has unknown item in exclusions, gives an error"
 
     const [error] = await buildCatalog(families, exclusions).run();
 
-    const expectedError: IgnitionCreateCatalogError = {
+    const expectedError: IgnitionBuildCatalogError = {
         type: "ExclusionMissingFamily",
         item: "pants:ripped"
     };

@@ -17,24 +17,24 @@ import {buildCatalogEntity, CatalogEntity, CatalogRules, fromDatastoreError, Sav
 import {CatalogsResult, fromReader} from "../infrastructure/result";
 import {timed} from "../infrastructure/effects";
 
-export type CreateCatalogError =
+export type UpdateCatalogError =
     SaveCatalogError
     | IgnitionBuildCatalogError
     | IgnitionOptionsError
 
-export type CreateCatalogResponse = {
+export type UpdateCatalogResponse = {
     readonly id: string;
     readonly options: Options;
     readonly token: string;
 }
 
-export function createCatalog(rules: CatalogRules, timestamp: Date): CatalogsResult<CreateCatalogError, CreateCatalogResponse> {
-    if (isEmptyObject(rules.families)) return fromLeft({type: "MissingFamilies"} as CreateCatalogError);
+export function updateCatalog(rules: CatalogRules, timestamp: Date): CatalogsResult<UpdateCatalogError, UpdateCatalogResponse> {
+    if (isEmptyObject(rules.families)) return fromLeft({type: "MissingFamilies"} as UpdateCatalogError);
 
     return buildCatalog(rules.families, rules.exclusions, rules.inclusions)
         .toNomadRTE<Datastore>()
-        .mapLeft((err): CreateCatalogError => err)
-        .chain(catalog => fromReader<CreateCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(rules.id, catalog, timestamp))
+        .mapLeft((err): UpdateCatalogError => err)
+        .chain(catalog => fromReader<UpdateCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(rules.id, catalog, timestamp))
             .chain(saveCatalogEntity)
             .map(() => catalog)
         )
@@ -45,9 +45,9 @@ export function createCatalog(rules: CatalogRules, timestamp: Date): CatalogsRes
 function saveCatalogEntity(
     entity: DatastorePayload<CatalogEntity>
 ): CatalogsResult<SaveCatalogError, CommitResult> {
-    return timed("insert_catalog", {}, (datastore: Datastore) =>
+    return timed("update_catalog", {}, (datastore: Datastore) =>
         fromTaskEither(tryCatch(
-            () => datastore.insert(entity),
+            () => datastore.upsert(entity),
             (err: any) => fromDatastoreError(err, entity.data as CatalogEntity)
         ))
     );

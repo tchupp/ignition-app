@@ -26,6 +26,12 @@ service CatalogManager {
           body: "*"
         };
     }
+    rpc UpdateCatalog (UpdateCatalogRequest) returns (CatalogOptions) {
+        option (google.api.http) = {
+          patch: "/v1/projects/{project_id}/catalogs/{catalog_id}"
+          body: "*"
+        };
+    }
 }
 
 message ListCatalogsRequest {
@@ -64,6 +70,14 @@ message CreateCatalogRequest {
     repeated Family families = 2;
     repeated Exclusion exclusions = 3;
     repeated Inclusion inclusions = 4;
+}
+
+message UpdateCatalogRequest {
+    string project_id = 1;
+    string catalog_id = 2;
+    repeated Family families = 3;
+    repeated Exclusion exclusions = 4;
+    repeated Inclusion inclusions = 5;
 }
 
 message Family {

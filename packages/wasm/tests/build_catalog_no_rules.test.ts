@@ -1,5 +1,5 @@
 import test from "ava";
-import {buildCatalog, IgnitionCreateCatalogError} from "../src";
+import {buildCatalog, IgnitionBuildCatalogError} from "../src";
 import {left} from "fp-ts/lib/Either";
 
 test("build, when one item is in two families, gives an error", async t => {
@@ -10,7 +10,7 @@ test("build, when one item is in two families, gives an error", async t => {
 
     const [error] = await buildCatalog(families).run();
 
-    const expectedError: IgnitionCreateCatalogError = {
+    const expectedError: IgnitionBuildCatalogError = {
         type: "MultipleFamiliesRegistered",
         item: "shirts:blue",
         families: ["pants", "shirts"]
