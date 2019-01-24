@@ -1,3 +1,10 @@
+// initialize StackDriver trace
+require('@google-cloud/trace-agent').start();
+
+// hack to include source-map-support in runtime
+// noinspection TsLint
+require("source-map-support").install();
+
 import Datastore = require("@google-cloud/datastore");
 import * as grpc from "grpc";
 // @ts-ignore
@@ -9,6 +16,7 @@ import {Either} from "fp-ts/lib/Either";
 import {retrieveCatalogOptions as retrieveCatalogOptionsInner} from "./functions/catalog.retrieve.options.handler";
 import {retrieveCatalog as retrieveCatalogInner} from "./functions/catalog.retrieve.handler";
 import {createCatalog as createCatalogInner} from "./functions/catalog.create.handler";
+import {updateCatalog as updateCatalogInner} from "./functions/catalog.update.handler";
 import {listCatalogs as listCatalogsInner} from "./functions/catalog.list.handler";
 import {GrpcServiceError, serviceError} from "./infrastructure/errors.pb";
 import {handleEffects} from "./infrastructure/effects";
@@ -56,6 +64,15 @@ const service: grpc.UntypedServiceImplementation = {
                 handleError(callback)
             ),
 
+    updateCatalog: (call: grpc.ServerUnaryCall<messages.UpdateCatalogRequest>,
+                    callback: grpc.sendUnaryData<messages.CatalogOptions>) =>
+        updateCatalogInner(call.request)
+            .run(datastore)
+            .then(
+                handlers(handleResult(callback), handleEffects),
+                handleError(callback)
+            ),
+
     retrieveCatalog: (call: grpc.ServerUnaryCall<messages.RetrieveCatalogRequest>,
                       callback: grpc.sendUnaryData<messages.Catalog>) =>
         retrieveCatalogInner(call.request)
@@ -74,11 +91,6 @@ const service: grpc.UntypedServiceImplementation = {
                 handleError(callback)
             ),
 };
-
-
-// hack to include source-map-support in runtime
-// noinspection TsLint
-require("source-map-support").install();
 
 function main() {
     const port = '0.0.0.0:8080';

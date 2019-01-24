@@ -47,7 +47,21 @@ export function GenericTaskResourceDefinition(project_id: string, location: stri
     };
 }
 
-export type ResourceDefinition = GenericTaskResourceDefinition
+export type GlobalResourceDefinition = {
+    type: "global",
+    labels: { project_id: string }
+}
+
+export function GlobalResourceDefinition(project_id: string): GlobalResourceDefinition {
+    return {
+        type: "global",
+        labels: {project_id}
+    };
+}
+
+export type ResourceDefinition =
+    GenericTaskResourceDefinition
+    | GlobalResourceDefinition
 
 export type TimeSeriesData = {
     readonly metric: MetricDefinition
@@ -67,19 +81,20 @@ export type MetricServiceClient = {
 
 export type MetricServiceContext = [MetricServiceClient, Environment];
 
-function toTimeSeries({projectId, location, namespace}: Environment, nowMs: number = Date.now()): (effect: Timed) => TimeSeriesData {
+function toTimeSeries(env: Environment, nowMs: number = Date.now()): (effect: Timed) => TimeSeriesData {
     return effect => ({
         metric: MetricDefinition(effect.name, effect.details),
-        resource: GenericTaskResourceDefinition(projectId, location, namespace, effect.name, effect.id),
+        // resource: GenericTaskResourceDefinition(env.projectId, env.location, env.namespace, effect.name, effect.id),
+        resource: GlobalResourceDefinition(env.projectId),
         points: [DataPoint(`${effect.timeMs}`, nowMs)],
     });
 }
 
 export function reportMetrics(effects: ReadonlyArray<CatalogsEffect>, nowMs: number = Date.now()): ReaderTaskEither<MetricServiceContext, string, void> {
-    return new ReaderTaskEither(([client, {projectId, location, namespace}]) => {
+    return new ReaderTaskEither(([client, env]) => {
         const request: CreateTimeSeriesRequest = {
-            name: client.projectPath(projectId),
-            timeSeries: effects.map(toTimeSeries({projectId, location, namespace}, nowMs))
+            name: client.projectPath(env.projectId),
+            timeSeries: effects.map(toTimeSeries(env, nowMs))
         };
 
         return tryCatch(

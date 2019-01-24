@@ -4,7 +4,7 @@ import {Timed} from "../src/infrastructure/effects/timing";
 import {
     CreateTimeSeriesRequest,
     DataPoint,
-    GenericTaskResourceDefinition,
+    GlobalResourceDefinition,
     MetricDefinition,
     MetricServiceClient,
     reportMetrics
@@ -36,7 +36,8 @@ test("reportMetrics", async (t) => {
         name: "project 1 for real",
         timeSeries: [{
             metric: MetricDefinition(timed.name, timed.details),
-            resource: GenericTaskResourceDefinition(env.projectId, env.location, env.namespace, timed.name, timed.id),
+            // resource: GenericTaskResourceDefinition(env.projectId, env.location, env.namespace, timed.name, timed.id),
+            resource: GlobalResourceDefinition(env.projectId),
             points: [DataPoint(`${timed.timeMs}`, nowMs)],
         }]
     });
