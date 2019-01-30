@@ -177,7 +177,7 @@ function findComputerBuild(options: CatalogOptions): string[] {
 // main
 
 async function main() {
-    const projectId = "YOUR_PROJECT_ID";
+    const projectId = "examples";
     const catalogId = "computer-parts";
 
     const client = new CatalogManagerClient('ignition-app.xyz:443', grpc.credentials.createSsl());
