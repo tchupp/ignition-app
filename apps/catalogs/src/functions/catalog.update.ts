@@ -19,6 +19,7 @@ import {timed} from "../infrastructure/effects";
 
 export type UpdateCatalogError =
     SaveCatalogError
+    | { type: "MissingFamilies" }
     | IgnitionBuildCatalogError
     | IgnitionOptionsError
 
@@ -28,13 +29,13 @@ export type UpdateCatalogResponse = {
     readonly token: string;
 }
 
-export function updateCatalog(rules: CatalogRules, timestamp: Date): CatalogsResult<UpdateCatalogError, UpdateCatalogResponse> {
+export function updateCatalog(projectId: string, rules: CatalogRules, timestamp: Date): CatalogsResult<UpdateCatalogError, UpdateCatalogResponse> {
     if (isEmptyObject(rules.families)) return fromLeft({type: "MissingFamilies"} as UpdateCatalogError);
 
     return buildCatalog(rules.families, rules.exclusions, rules.inclusions)
         .toNomadRTE<Datastore>()
         .mapLeft((err): UpdateCatalogError => err)
-        .chain(catalog => fromReader<UpdateCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(rules.id, catalog, timestamp))
+        .chain(catalog => fromReader<UpdateCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(projectId, rules.id, catalog, timestamp))
             .chain(saveCatalogEntity)
             .map(() => catalog)
         )

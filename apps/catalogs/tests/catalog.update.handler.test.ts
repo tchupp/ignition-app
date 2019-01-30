@@ -13,6 +13,7 @@ import {updateCatalog} from "../src/functions/catalog.update.handler";
 import {CatalogRules} from "../src/functions/catalog.entity";
 
 const timestamp = new Date();
+const projectId = "my-project";
 
 test("updateCatalog returns 'created' when catalog is properly formed", async (t) => {
     const catalogId = "catalog-1";
@@ -55,7 +56,7 @@ test("updateCatalog returns 'created' when catalog is properly formed", async (t
 
     const datastoreStub: Datastore = mock(Datastore);
 
-    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+    when(datastoreStub.key(deepEqual({path: ["Project", projectId, "Catalog", catalogId]}))).thenReturn(catalogKey);
     when(datastoreStub.upsert(deepEqual(entity))).thenResolve(commitResult);
 
     const datastore = instance(datastoreStub);
@@ -332,6 +333,7 @@ function rulesToRequest(rules: CatalogRules): CreateCatalogRequest {
 
 
     const req = new CreateCatalogRequest();
+    req.setProjectId(projectId);
     req.setCatalogId(rules.id);
     req.setFamiliesList(families);
     req.setExclusionsList(exclusions);

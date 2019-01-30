@@ -17,12 +17,13 @@ import {CatalogRules} from "./catalog.entity";
 
 export function createCatalog(req: CreateCatalogRequest, timestamp: Date = new Date()): CatalogsResult<GrpcServiceError, CatalogOptions> {
     return fromRequest(req)
-        .chain(rules => createCatalogInner(rules, timestamp))
+        .chain(([projectId, rules]) => createCatalogInner(projectId, rules, timestamp))
         .mapLeft(toErrorResponse)
         .map(toSuccessResponse);
 }
 
-function fromRequest(req: CreateCatalogRequest): CatalogsResult<CreateCatalogError, CatalogRules> {
+function fromRequest(req: CreateCatalogRequest): CatalogsResult<CreateCatalogError, [string, CatalogRules]> {
+    const projectId = req.getProjectId();
     const catalogId = req.getCatalogId();
     const families = req.getFamiliesList()
         .reduce((acc, rule) => ({...acc, [rule.getFamilyId()]: rule.getItemsList()}), {} as CatalogContents);
@@ -31,12 +32,13 @@ function fromRequest(req: CreateCatalogRequest): CatalogsResult<CreateCatalogErr
     const inclusions = req.getInclusionsList()
         .reduce((acc, rule) => ({...acc, [rule.getSelectedItem()]: rule.getInclusionsList()}), {} as CatalogContents);
 
-    return nomadRTE.of({
+    const rules = {
         id: catalogId,
         families: families,
         exclusions: exclusions,
         inclusions: inclusions,
-    });
+    };
+    return nomadRTE.of([projectId, rules] as [string, CatalogRules]);
 }
 
 function toSuccessResponse(response: CreateCatalogResponse): CatalogOptions {

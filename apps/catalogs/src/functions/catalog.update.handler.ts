@@ -1,7 +1,7 @@
 import {nomadRTE} from "@ignition/nomad";
 import {CatalogContents, ItemStatus} from "@ignition/wasm";
 
-import {CatalogOptions, UpdateCatalogRequest, FamilyOptions, ItemOption} from "../../generated/catalogs_pb";
+import {CatalogOptions, FamilyOptions, ItemOption, UpdateCatalogRequest} from "../../generated/catalogs_pb";
 import {status} from "grpc";
 import {CatalogsResult} from "../infrastructure/result";
 import {
@@ -12,17 +12,18 @@ import {
     resourceInfoDetail,
     serviceError
 } from "../infrastructure/errors.pb";
-import {UpdateCatalogResponse, updateCatalog as updateCatalogInner, UpdateCatalogError} from "./catalog.update";
+import {updateCatalog as updateCatalogInner, UpdateCatalogError, UpdateCatalogResponse} from "./catalog.update";
 import {CatalogRules} from "./catalog.entity";
 
 export function updateCatalog(req: UpdateCatalogRequest, timestamp: Date = new Date()): CatalogsResult<GrpcServiceError, CatalogOptions> {
     return fromRequest(req)
-        .chain(rules => updateCatalogInner(rules, timestamp))
+        .chain(([projectId, rules]) => updateCatalogInner(projectId, rules, timestamp))
         .mapLeft(toErrorResponse)
         .map(toSuccessResponse);
 }
 
-function fromRequest(req: UpdateCatalogRequest): CatalogsResult<UpdateCatalogError, CatalogRules> {
+function fromRequest(req: UpdateCatalogRequest): CatalogsResult<UpdateCatalogError, [string, CatalogRules]> {
+    const projectId = req.getProjectId();
     const catalogId = req.getCatalogId();
     const families = req.getFamiliesList()
         .reduce((acc, rule) => ({...acc, [rule.getFamilyId()]: rule.getItemsList()}), {} as CatalogContents);
@@ -31,12 +32,13 @@ function fromRequest(req: UpdateCatalogRequest): CatalogsResult<UpdateCatalogErr
     const inclusions = req.getInclusionsList()
         .reduce((acc, rule) => ({...acc, [rule.getSelectedItem()]: rule.getInclusionsList()}), {} as CatalogContents);
 
-    return nomadRTE.of({
+    const rules = {
         id: catalogId,
         families: families,
         exclusions: exclusions,
         inclusions: inclusions,
-    });
+    };
+    return nomadRTE.of([projectId, rules] as [string, CatalogRules]);
 }
 
 function toSuccessResponse(response: UpdateCatalogResponse): CatalogOptions {

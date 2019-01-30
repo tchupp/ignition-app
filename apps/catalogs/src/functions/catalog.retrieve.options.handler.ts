@@ -14,17 +14,18 @@ import {CatalogsResult} from "../infrastructure/result";
 
 export function retrieveCatalogOptions(req: RetrieveCatalogOptionsRequest): CatalogsResult<GrpcServiceError, CatalogOptions> {
     return fromRequest(req)
-        .chain(([catalogId, token, selections]) => retrieveCatalogOptionsInner(catalogId, token, selections))
+        .chain(([projectId, catalogId, token, selections]) => retrieveCatalogOptionsInner(projectId, catalogId, token, selections))
         .mapLeft(toErrorResponse)
         .map(toSuccessResponse);
 }
 
-function fromRequest(req: RetrieveCatalogOptionsRequest): CatalogsResult<RetrieveCatalogOptionsError, [string, CatalogToken, Item[]]> {
+function fromRequest(req: RetrieveCatalogOptionsRequest): CatalogsResult<RetrieveCatalogOptionsError, [string, string, CatalogToken, Item[]]> {
+    const projectId = req.getProjectId();
     const catalogId = req.getCatalogId();
     const token = req.getToken();
     const selections = req.getSelectionsList();
 
-    return nomadRTE.of([catalogId, token, selections] as [string, CatalogToken, Item[]]);
+    return nomadRTE.of([projectId, catalogId, token, selections] as [string, string, CatalogToken, Item[]]);
 }
 
 function toSuccessResponse(response: RetrieveCatalogOptionsResponse): CatalogOptions {

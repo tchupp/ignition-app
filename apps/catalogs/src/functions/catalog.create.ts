@@ -19,6 +19,7 @@ import {timed} from "../infrastructure/effects";
 
 export type CreateCatalogError =
     SaveCatalogError
+    | { type: "MissingFamilies" }
     | IgnitionBuildCatalogError
     | IgnitionOptionsError
 
@@ -28,13 +29,13 @@ export type CreateCatalogResponse = {
     readonly token: string;
 }
 
-export function createCatalog(rules: CatalogRules, timestamp: Date): CatalogsResult<CreateCatalogError, CreateCatalogResponse> {
+export function createCatalog(projectId: string, rules: CatalogRules, timestamp: Date): CatalogsResult<CreateCatalogError, CreateCatalogResponse> {
     if (isEmptyObject(rules.families)) return fromLeft({type: "MissingFamilies"} as CreateCatalogError);
 
     return buildCatalog(rules.families, rules.exclusions, rules.inclusions)
         .toNomadRTE<Datastore>()
         .mapLeft((err): CreateCatalogError => err)
-        .chain(catalog => fromReader<CreateCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(rules.id, catalog, timestamp))
+        .chain(catalog => fromReader<CreateCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(projectId, rules.id, catalog, timestamp))
             .chain(saveCatalogEntity)
             .map(() => catalog)
         )

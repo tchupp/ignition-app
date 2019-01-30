@@ -1,19 +1,12 @@
-import Datastore = require("@google-cloud/datastore");
 import {CatalogToken, findOptions as findOptionsInner, IgnitionOptionsError, Item, Options} from "@ignition/wasm";
-import {fromLeft as nomadFromLeft, fromTaskEither} from "@ignition/nomad";
+import {fromLeft as nomadFromLeft} from "@ignition/nomad";
 
-import {fromLeft, taskEither, tryCatch} from "fp-ts/lib/TaskEither";
-
-import {CatalogEntity} from "./catalog.entity";
-import {DatastoreError} from "../infrastructure/datastore.error";
-import {timed} from "../infrastructure/effects";
+import {findCatalog, FindCatalogError} from "./catalog.entity";
 import {CatalogsResult} from "../infrastructure/result";
 
 export type RetrieveCatalogOptionsError =
-    { type: "Datastore", error: DatastoreError }
-    | { type: "MissingCatalogId" }
-    | { type: "CatalogNotFound", catalogId: string }
-    // Ignition options errors
+    { type: "MissingCatalogId" }
+    | FindCatalogError
     | { type: "UnknownSelections", items: string[] }
     | { type: "BadToken", catalogId: string, token: string, detail: string }
     | { type: "BadUserToken", catalogId: string, token: string, detail: string }
@@ -24,20 +17,20 @@ export type RetrieveCatalogOptionsResponse = {
     readonly token: string;
 }
 
-export function retrieveCatalogOptions(catalogId: string, token: CatalogToken, selections: Item[]): CatalogsResult<RetrieveCatalogOptionsError, RetrieveCatalogOptionsResponse> {
+export function retrieveCatalogOptions(projectId: string, catalogId: string, token: CatalogToken, selections: Item[]): CatalogsResult<RetrieveCatalogOptionsError, RetrieveCatalogOptionsResponse> {
     if (catalogId.length === 0) {
         return nomadFromLeft({type: "MissingCatalogId"} as RetrieveCatalogOptionsError);
     }
 
     switch (token.length) {
         case 0:
-            return retrieveOptionsFromDatastore(catalogId, selections);
+            return retrieveOptionsFromDatastore(projectId, catalogId, selections);
         default:
             return retrieveOptionsWithUserToken(catalogId, token, selections);
     }
 }
 
-function retrieveOptionsFromDatastore(catalogId: string, selections: Item[]) {
+function retrieveOptionsFromDatastore(projectId: string, catalogId: string, selections: Item[]) {
     const errHandler = (err: IgnitionOptionsError): RetrieveCatalogOptionsError => {
         switch (err.type) {
             case "BadToken":
@@ -47,7 +40,8 @@ function retrieveOptionsFromDatastore(catalogId: string, selections: Item[]) {
         }
     };
 
-    return retrieveCatalog(catalogId)
+    return findCatalog(projectId, catalogId)
+        .mapLeft(err => err as RetrieveCatalogOptionsError)
         .chain(entity => findOptions(entity.token, selections, errHandler))
         .map(([options, token]) => ({id: catalogId, options: options, token: token}));
 }
@@ -64,24 +58,6 @@ function retrieveOptionsWithUserToken(catalogId: string, token: CatalogToken, se
 
     return findOptions(token, selections, errHandler)
         .map(([options, token]) => ({id: catalogId, options: options, token: token}));
-}
-
-function retrieveCatalog(catalogId: string): CatalogsResult<RetrieveCatalogOptionsError, CatalogEntity> {
-    const notFoundError = fromLeft<RetrieveCatalogOptionsError, CatalogEntity>({
-        type: "CatalogNotFound",
-        catalogId: catalogId
-    });
-
-    return timed(`retrieve_catalog`, {catalogId: catalogId}, (datastore: Datastore) => {
-            const key = datastore.key({path: ["Catalog", catalogId]});
-
-            return fromTaskEither(
-                tryCatch(() => datastore.get(key), (err: any) => err as DatastoreError)
-                    .mapLeft((err): RetrieveCatalogOptionsError => ({type: "Datastore", error: err}))
-                    .chain(([entity]) => (entity ? taskEither.of(entity as CatalogEntity) : notFoundError))
-            );
-        }
-    );
 }
 
 function findOptions(

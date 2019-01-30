@@ -9,13 +9,13 @@ import {CatalogsResult} from "../infrastructure/result";
 
 export function listCatalogs(req: ListCatalogsRequest): CatalogsResult<GrpcServiceError, ListCatalogsResponse> {
     return fromRequest(req)
-        .chain(() => listCatalogsInner())
+        .chain(projectId => listCatalogsInner(projectId))
         .mapLeft(toErrorResponse)
         .map(toSuccessResponse);
 }
 
-function fromRequest(_req: ListCatalogsRequest): CatalogsResult<ListCatalogsError, any[]> {
-    return nomadRTE.of([]);
+function fromRequest(req: ListCatalogsRequest): CatalogsResult<ListCatalogsError, string> {
+    return nomadRTE.of(req.getProjectId());
 }
 
 function toSuccessResponse(items: ListCatalogResponseItem[]): ListCatalogsResponse {

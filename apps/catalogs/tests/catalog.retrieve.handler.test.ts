@@ -12,6 +12,7 @@ import {RetrieveCatalogRequest} from "../generated/catalogs_pb";
 import {status} from "grpc";
 
 const timestamp = new Date();
+const projectId = "my-project";
 
 test("retrieveCatalog returns catalog with correct token, when catalog exists", async (t) => {
     const catalogId = "catalog-1";
@@ -31,10 +32,11 @@ test("retrieveCatalog returns catalog with correct token, when catalog exists", 
     };
 
     const datastoreStub: Datastore = mock(Datastore);
-    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+    when(datastoreStub.key(deepEqual({path: ["Project", projectId, "Catalog", catalogId]}))).thenReturn(catalogKey);
     when(datastoreStub.get(deepEqual(catalogKey))).thenResolve([entity]);
 
     const req = new RetrieveCatalogRequest();
+    req.setProjectId(projectId);
     req.setCatalogId(catalogId);
 
     const datastore = instance(datastoreStub);
@@ -60,10 +62,11 @@ test("retrieveCatalog returns error, when catalog does not exist", async (t) => 
     };
 
     const datastoreStub: Datastore = mock(Datastore);
-    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+    when(datastoreStub.key(deepEqual({path: ["Project", projectId, "Catalog", catalogId]}))).thenReturn(catalogKey);
     when(datastoreStub.get(deepEqual(catalogKey))).thenResolve([undefined]);
 
     const req = new RetrieveCatalogRequest();
+    req.setProjectId(projectId);
     req.setCatalogId(catalogId);
 
     const datastore = instance(datastoreStub);

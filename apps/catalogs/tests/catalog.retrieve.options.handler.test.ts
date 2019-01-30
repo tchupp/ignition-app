@@ -11,6 +11,7 @@ import {CatalogOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../gene
 import {buildCatalog} from "@ignition/wasm";
 
 const timestamp = new Date();
+const projectId = "my-project";
 
 type Scenario = {
     description: string
@@ -192,10 +193,11 @@ scenarios.forEach(({description, catalogId, selections, expected}) => {
         };
 
         const datastoreStub: Datastore = mock(Datastore);
-        when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+        when(datastoreStub.key(deepEqual({path: ["Project", projectId, "Catalog", catalogId]}))).thenReturn(catalogKey);
         when(datastoreStub.get(deepEqual(catalogKey))).thenResolve([entity]);
 
         const req = new RetrieveCatalogOptionsRequest();
+        req.setProjectId(projectId);
         req.setCatalogId(catalogId);
         req.setSelectionsList(selections);
 
@@ -214,6 +216,7 @@ test("retrieveCatalogOptions returns catalog options, when request contains toke
     const initialToken = await buildTestCatalogToken(families);
 
     const req = new RetrieveCatalogOptionsRequest();
+    req.setProjectId(projectId);
     req.setCatalogId(catalogId);
     req.setToken(initialToken);
 
@@ -256,6 +259,7 @@ test("retrieveCatalogOptions returns catalog options, when request contains one 
         .then(n => n.value);
 
     const req = new RetrieveCatalogOptionsRequest();
+    req.setProjectId(projectId);
     req.setCatalogId(catalogId);
     req.setToken(initialToken);
     req.setSelectionsList(selections);

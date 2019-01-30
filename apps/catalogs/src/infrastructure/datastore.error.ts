@@ -14,7 +14,19 @@ export enum DatastoreErrorCode {
     UNAVAILABLE = status.UNAVAILABLE,
 }
 
-export type DatastoreError = {
+export type NativeDatastoreError = {
     readonly code: DatastoreErrorCode;
     readonly details: string;
+}
+
+export type DatastoreError = {
+    readonly type: "Datastore"
+    readonly error: NativeDatastoreError
+}
+
+export function DatastoreError(error: NativeDatastoreError): DatastoreError {
+    return {
+        type: "Datastore",
+        error: error
+    };
 }

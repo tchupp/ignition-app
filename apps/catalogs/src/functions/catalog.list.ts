@@ -11,7 +11,7 @@ import {CatalogsEffect, timed} from "../infrastructure/effects";
 import {CatalogsResult} from "../infrastructure/result";
 
 export type ListCatalogsError =
-    { type: "Datastore", error: DatastoreError }
+    DatastoreError
 
 export type ListCatalogResponseItem = {
     readonly id: string;
@@ -19,16 +19,17 @@ export type ListCatalogResponseItem = {
     readonly created: Date;
 }
 
-export function listCatalogs(): CatalogsResult<ListCatalogsError, ListCatalogResponseItem[]> {
+export function listCatalogs(projectId: string): CatalogsResult<ListCatalogsError, ListCatalogResponseItem[]> {
     return timed("list_catalogs", {}, (datastore: Datastore) => {
-            const query = datastore.createQuery("Catalog");
+            const projectKey = datastore.key({path: ["Project", projectId]});
+            const query = datastore.createQuery("Catalog")
+                .hasAncestor(projectKey);
 
             return fromTaskEither<CatalogsEffect, DatastoreError, QueryResult>(
                 tryCatch(
                     () => datastore.runQuery(query),
-                    (err: any) => err as DatastoreError
+                    (err: any) => DatastoreError(err)
                 ))
-                .mapLeft((err): ListCatalogsError => ({type: "Datastore", error: err}))
                 .map(([entities]) => entities as ListCatalogResponseItem[]);
         }
     );

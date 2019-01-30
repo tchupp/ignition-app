@@ -10,10 +10,11 @@ import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {CreateCatalogRequest, Exclusion, Family, Inclusion, ItemOption} from "../generated/catalogs_pb";
 import {badRequestDetail, resourceInfoDetail, serviceError} from "../src/infrastructure/errors.pb";
 import {createCatalog} from "../src/functions/catalog.create.handler";
-import {DatastoreError, DatastoreErrorCode} from "../src/infrastructure/datastore.error";
+import {DatastoreErrorCode, NativeDatastoreError} from "../src/infrastructure/datastore.error";
 import {CatalogRules} from "../src/functions/catalog.entity";
 
 const timestamp = new Date();
+const projectId = "my-project";
 
 test("createCatalog returns 'created' when catalog is properly formed", async (t) => {
     const catalogId = "catalog-1";
@@ -56,7 +57,7 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
 
     const datastoreStub: Datastore = mock(Datastore);
 
-    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+    when(datastoreStub.key(deepEqual({path: ["Project", projectId, "Catalog", catalogId]}))).thenReturn(catalogKey);
     when(datastoreStub.insert(deepEqual(entity))).thenResolve(commitResult);
 
     const datastore = instance(datastoreStub);
@@ -115,14 +116,14 @@ test("createCatalog returns error when catalog already exists", async (t) => {
             catalogRules.families
         )
     };
-    const insertError: DatastoreError = {
+    const insertError: NativeDatastoreError = {
         code: DatastoreErrorCode.ALREADY_EXISTS,
         details: ""
     };
 
     const datastoreStub: Datastore = mock(Datastore);
 
-    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+    when(datastoreStub.key(deepEqual({path: ["Project", projectId, "Catalog", catalogId]}))).thenReturn(catalogKey);
     when(datastoreStub.insert(deepEqual(entity))).thenReject(insertError);
 
     const datastore = instance(datastoreStub);
@@ -391,6 +392,7 @@ function rulesToRequest(rules: CatalogRules): CreateCatalogRequest {
 
 
     const req = new CreateCatalogRequest();
+    req.setProjectId(projectId);
     req.setCatalogId(rules.id);
     req.setFamiliesList(families);
     req.setExclusionsList(exclusions);

@@ -12,6 +12,7 @@ import {RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
 import {badRequestDetail, preconditionFailureDetail, serviceError} from "../src/infrastructure/errors.pb";
 
 const timestamp = new Date();
+const projectId = "my-project";
 
 test("retrieveCatalogOptions returns error, when request is missing catalogId", async (t) => {
     const datastoreStub: Datastore = mock(Datastore);
@@ -57,10 +58,11 @@ test("retrieveCatalogOptions returns error, when request contains unknown select
     };
 
     const datastoreStub: Datastore = mock(Datastore);
-    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+    when(datastoreStub.key(deepEqual({path: ["Project", projectId, "Catalog", catalogId]}))).thenReturn(catalogKey);
     when(datastoreStub.get(deepEqual(catalogKey))).thenResolve([entity]);
 
     const req = new RetrieveCatalogOptionsRequest();
+    req.setProjectId(projectId);
     req.setCatalogId(catalogId);
     req.setSelectionsList(selections);
 
@@ -100,10 +102,11 @@ test("retrieveCatalogOptions returns error, when datastore has an empty catalog 
     };
 
     const datastoreStub: Datastore = mock(Datastore);
-    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+    when(datastoreStub.key(deepEqual({path: ["Project", projectId, "Catalog", catalogId]}))).thenReturn(catalogKey);
     when(datastoreStub.get(deepEqual(catalogKey))).thenResolve([entity]);
 
     const req = new RetrieveCatalogOptionsRequest();
+    req.setProjectId(projectId);
     req.setCatalogId(catalogId);
     req.setSelectionsList(selections);
 
@@ -137,10 +140,11 @@ test("retrieveCatalogOptions returns error, when catalog does not exist", async 
     };
 
     const datastoreStub: Datastore = mock(Datastore);
-    when(datastoreStub.key(deepEqual({path: ["Catalog", catalogId]}))).thenReturn(catalogKey);
+    when(datastoreStub.key(deepEqual({path: ["Project", projectId, "Catalog", catalogId]}))).thenReturn(catalogKey);
     when(datastoreStub.get(deepEqual(catalogKey))).thenResolve([undefined]);
 
     const req = new RetrieveCatalogOptionsRequest();
+    req.setProjectId(projectId);
     req.setCatalogId(catalogId);
 
     const datastore = instance(datastoreStub);
@@ -161,6 +165,7 @@ test("retrieveCatalogOptions returns error, when request contains bad token", as
     const datastoreStub: Datastore = mock(Datastore);
 
     const req = new RetrieveCatalogOptionsRequest();
+    req.setProjectId(projectId);
     req.setCatalogId(catalogId);
 
     req.setToken(token);
