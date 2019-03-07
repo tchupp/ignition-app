@@ -2,7 +2,7 @@ import Datastore = require("@google-cloud/datastore");
 import {DatastorePayload} from "@google-cloud/datastore/entity";
 
 import {fromTaskEither} from "@ignition/nomad";
-import {CatalogContents, CatalogToken} from "@ignition/wasm";
+import {CatalogContents, CatalogToken} from "@ignition/catalogs";
 
 import {asks, Reader} from "fp-ts/lib/Reader";
 import {fromLeft, taskEither, tryCatch} from "fp-ts/lib/TaskEither";

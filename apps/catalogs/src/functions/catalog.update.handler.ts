@@ -1,5 +1,5 @@
 import {nomadRTE} from "@ignition/nomad";
-import {CatalogContents, ItemStatus} from "@ignition/wasm";
+import {CatalogContents, ItemStatus} from "@ignition/catalogs";
 
 import {CatalogOptions, FamilyOptions, ItemOption, UpdateCatalogRequest} from "../../generated/catalogs_pb";
 import {status} from "grpc";

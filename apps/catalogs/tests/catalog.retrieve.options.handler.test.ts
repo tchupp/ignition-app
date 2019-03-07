@@ -8,7 +8,7 @@ import {CatalogEntity} from "../src/functions/catalog.entity";
 import {retrieveCatalogOptions} from "../src/functions/catalog.retrieve.options.handler";
 import {buildTestCatalogEntity, buildTestCatalogToken} from "./catalog.test-fixture";
 import {CatalogOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
-import {buildCatalog} from "@ignition/wasm";
+import {buildCatalog} from "@ignition/catalogs";
 
 const timestamp = new Date();
 const projectId = "my-project";

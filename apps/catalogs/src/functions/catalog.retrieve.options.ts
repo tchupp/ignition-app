@@ -1,4 +1,4 @@
-import {CatalogToken, findOptions as findOptionsInner, IgnitionOptionsError, Item, Options} from "@ignition/wasm";
+import {CatalogToken, findOptions as findOptionsInner, IgnitionOptionsError, Item, Options} from "@ignition/catalogs";
 import {fromLeft as nomadFromLeft} from "@ignition/nomad";
 
 import {findCatalog, FindCatalogError} from "./catalog.entity";

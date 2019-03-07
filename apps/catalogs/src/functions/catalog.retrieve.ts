@@ -1,5 +1,5 @@
 import {fromLeft as nomadFromLeft} from "@ignition/nomad";
-import {CatalogToken} from "@ignition/wasm";
+import {CatalogToken} from "@ignition/catalogs";
 import {findCatalog, FindCatalogError} from "./catalog.entity";
 import {CatalogsResult} from "../infrastructure/result";
 

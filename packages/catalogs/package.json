@@ -1,5 +1,6 @@
 {
-  "name": "@ignition/wasm",
+  "name": "@ignition/catalogs",
+  "private": true,
   "version": "0.1.0",
   "description": "WASM wrapper around ignition.rs",
   "main": "dist/index.js",

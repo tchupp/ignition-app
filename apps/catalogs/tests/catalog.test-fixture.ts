@@ -1,4 +1,4 @@
-import {buildCatalog, CatalogContents, CatalogToken, findOptions, Item} from "@ignition/wasm";
+import {buildCatalog, CatalogContents, CatalogToken, findOptions, Item} from "@ignition/catalogs";
 
 import {CatalogEntity} from "../src/functions/catalog.entity";
 

@@ -9,7 +9,7 @@ import {
     IgnitionBuildCatalogError,
     IgnitionOptionsError,
     Options,
-} from "@ignition/wasm";
+} from "@ignition/catalogs";
 
 import {tryCatch} from "fp-ts/lib/TaskEither";
 

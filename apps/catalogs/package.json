@@ -1,5 +1,6 @@
 {
-  "name": "catalogs",
+  "name": "catalogs-service",
+  "private": true,
   "version": "0.1.0",
   "description": "Catalogs Service",
   "scripts": {
@@ -34,7 +35,7 @@
     "@google-cloud/monitoring": "^0.7.0",
     "@google-cloud/trace-agent": "^3.5.2",
     "@ignition/nomad": "^0.1.0",
-    "@ignition/wasm": "^0.1.0",
+    "@ignition/catalogs": "^0.1.0",
     "fp-ts": "^1.12.0",
     "google-protobuf": "^3.6.1",
     "grpc": "^1.16.1",
