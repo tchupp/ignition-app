@@ -7,7 +7,13 @@ import {status} from "grpc";
 import {deepEqual, instance, mock, when} from "ts-mockito";
 
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
-import {CreateCatalogRequest, Exclusion, Family, Inclusion, ItemOption} from "../generated/catalogs_pb";
+import {
+    CatalogExclusionsRule,
+    CatalogInclusionsRule,
+    CreateCatalogRequest,
+    Family,
+    ItemOption
+} from "../generated/catalogs_pb";
 import {badRequestDetail, serviceError} from "../src/infrastructure/errors.pb";
 import {updateCatalog} from "../src/functions/catalog.update.handler";
 import {CatalogRules} from "../src/functions/catalog.entity";
@@ -23,8 +29,8 @@ test("updateCatalog returns 'created' when catalog is properly formed", async (t
             "shirts": ["shirts:red", "shirts:black"],
             "pants": ["pants:jeans", "pants:slacks"]
         },
-        exclusions: {},
-        inclusions: {}
+        exclusions: [],
+        inclusions: []
     };
 
     const req = rulesToRequest(catalogRules);
@@ -91,8 +97,8 @@ test("updateCatalog returns error when families are empty in request", async (t)
     const catalogRules = {
         id: "catalog-4",
         families: {},
-        exclusions: {},
-        inclusions: {}
+        exclusions: [],
+        inclusions: []
     };
 
     const req = rulesToRequest(catalogRules);
@@ -123,8 +129,8 @@ test("updateCatalog returns error when item is registered to multiple families",
             "shirts": ["blue"],
             "pants": ["blue"]
         },
-        exclusions: {},
-        inclusions: {}
+        exclusions: [],
+        inclusions: []
     };
 
     const req = rulesToRequest(catalogRules);
@@ -152,8 +158,8 @@ test("updateCatalog returns error when an exclusion rule contain an item that do
     const catalogRules = {
         id: "catalog-2",
         families: {"shirts": ["shirts:black", "shirts:red"]},
-        exclusions: {"shirts:blue": ["shirts:black"]},
-        inclusions: {}
+        exclusions: [{conditions: ["shirts:blue"], exclusions: ["shirts:black"]}],
+        inclusions: []
     };
 
     const req = rulesToRequest(catalogRules);
@@ -181,8 +187,8 @@ test("updateCatalog returns error when an exclusion rule contain a selection and
     const catalogRules = {
         id: "catalog-2",
         families: {"shirts": ["shirts:black", "shirts:red"]},
-        exclusions: {"shirts:red": ["shirts:black"]},
-        inclusions: {}
+        exclusions: [{conditions: ["shirts:red"], exclusions: ["shirts:black"]}],
+        inclusions: []
     };
 
     const req = rulesToRequest(catalogRules);
@@ -210,8 +216,8 @@ test("updateCatalog returns error when an inclusion rule contain an item that do
     const catalogRules = {
         id: "catalog-3",
         families: {"shirts": ["shirts:black", "shirts:red"]},
-        exclusions: {},
-        inclusions: {"shirts:blue": ["shirts:black"]}
+        exclusions: [],
+        inclusions: [{conditions: ["shirts:blue"], inclusions: ["shirts:black"]}],
     };
 
     const req = rulesToRequest(catalogRules);
@@ -239,8 +245,8 @@ test("updateCatalog returns error when an inclusion rule contain a selection and
     const catalogRules = {
         id: "catalog-3",
         families: {"shirts": ["shirts:black", "shirts:red"]},
-        exclusions: {},
-        inclusions: {"shirts:red": ["shirts:black"]}
+        exclusions: [],
+        inclusions: [{conditions: ["shirts:red"], inclusions: ["shirts:black"]}],
     };
 
     const req = rulesToRequest(catalogRules);
@@ -271,8 +277,8 @@ test("updateCatalog returns error when there are multiple errors in the request"
             "shirts": ["blue"],
             "pants": ["blue"]
         },
-        exclusions: {"red": ["blue"]},
-        inclusions: {}
+        exclusions: [{conditions: ["red"], exclusions: ["blue"]}],
+        inclusions: []
     };
 
     const req = rulesToRequest(catalogRules);
@@ -289,7 +295,7 @@ test("updateCatalog returns error when there are multiple errors in the request"
                 badRequestDetail({
                     fieldViolationsList: [{
                         field: "families",
-                        description: `Item 'blue' has multiple families: [pants,shirts]`
+                        description: `Item 'blue' has multiple families: [shirts,pants]`
                     }]
                 }),
                 badRequestDetail({
@@ -312,23 +318,19 @@ function rulesToRequest(rules: CatalogRules): CreateCatalogRequest {
             family.setItemsList(items);
             return family;
         });
-    const exclusions = Object.keys(rules.exclusions)
-        .map(item => {
-            const items = rules.exclusions[item];
-
-            const exclusion = new Exclusion();
-            exclusion.setSelectedItem(item);
-            exclusion.setExclusionsList(items);
-            return exclusion;
+    const exclusions = rules.exclusions
+        .map(({conditions, exclusions}) => {
+            const exclusionRule = new CatalogExclusionsRule();
+            exclusionRule.setConditionsList(conditions);
+            exclusionRule.setExclusionsList(exclusions);
+            return exclusionRule;
         });
-    const inclusions = Object.keys(rules.inclusions)
-        .map(item => {
-            const items = rules.inclusions[item];
-
-            const inclusion = new Inclusion();
-            inclusion.setSelectedItem(item);
-            inclusion.setInclusionsList(items);
-            return inclusion;
+    const inclusions = rules.inclusions
+        .map(({conditions, inclusions}) => {
+            const inclusionRule = new CatalogInclusionsRule();
+            inclusionRule.setConditionsList(conditions);
+            inclusionRule.setInclusionsList(inclusions);
+            return inclusionRule;
         });
 
 

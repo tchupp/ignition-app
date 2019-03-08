@@ -135,7 +135,7 @@ test("findOptions returns error when the catalog token is malformed", async t =>
         .chain(catalog => findOptions(catalog, ["shirts:red", "shirts:blue"]))
         .run();
 
-    const expectedError: IgnitionOptionsError = {
+    const expectedError: IgnitionBuilderError = {
         items: ["shirts:black"],
         type: "ExcludedItem",
     };

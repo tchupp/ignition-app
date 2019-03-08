@@ -6,10 +6,11 @@ const families = {
     "shirts": ["shirts:red", "shirts:blue"],
     "pants": ["pants:jeans", "pants:slacks"],
 };
-const inclusions = {
-    "shirts:red": ["pants:jeans"]
-};
-const catalog = buildCatalog(families, {}, inclusions);
+const inclusions = [{
+    conditions: ["shirts:red"],
+    inclusions: ["pants:jeans"],
+}];
+const catalog = buildCatalog(families, [], inclusions);
 
 test("findOutfits with one inclusion rule, and shirts selected", async t => {
     const [outfits1] = await catalog

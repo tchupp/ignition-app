@@ -13,7 +13,7 @@ test("build, when one item is in two families, gives an error", async t => {
     const expectedError: IgnitionBuildCatalogError = {
         type: "MultipleFamiliesRegistered",
         item: "shirts:blue",
-        families: ["pants", "shirts"]
+        families: ["shirts", "pants"]
     };
     t.deepEqual(error, left(expectedError));
 });

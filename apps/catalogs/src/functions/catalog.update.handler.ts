@@ -1,5 +1,5 @@
 import {nomadRTE} from "@ignition/nomad";
-import {CatalogContents, ItemStatus} from "@ignition/catalogs";
+import {CatalogExclusionRule, CatalogFamilies, CatalogInclusionRule, ItemStatus} from "@ignition/catalogs";
 
 import {CatalogOptions, FamilyOptions, ItemOption, UpdateCatalogRequest} from "../../generated/catalogs_pb";
 import {status} from "grpc";
@@ -26,11 +26,11 @@ function fromRequest(req: UpdateCatalogRequest): CatalogsResult<UpdateCatalogErr
     const projectId = req.getProjectId();
     const catalogId = req.getCatalogId();
     const families = req.getFamiliesList()
-        .reduce((acc, rule) => ({...acc, [rule.getFamilyId()]: rule.getItemsList()}), {} as CatalogContents);
+        .reduce((acc, rule) => ({...acc, [rule.getFamilyId()]: rule.getItemsList()}), {} as CatalogFamilies);
     const exclusions = req.getExclusionsList()
-        .reduce((acc, rule) => ({...acc, [rule.getSelectedItem()]: rule.getExclusionsList()}), {} as CatalogContents);
+        .reduce((acc, rule) => ([...acc, {conditions: rule.getConditionsList(), exclusions: rule.getExclusionsList()}]), [] as CatalogExclusionRule[]);
     const inclusions = req.getInclusionsList()
-        .reduce((acc, rule) => ({...acc, [rule.getSelectedItem()]: rule.getInclusionsList()}), {} as CatalogContents);
+        .reduce((acc, rule) => ([...acc, {conditions: rule.getConditionsList(), inclusions: rule.getInclusionsList()}]), [] as CatalogInclusionRule[]);
 
     const rules = {
         id: catalogId,

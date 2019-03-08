@@ -6,9 +6,10 @@ const families = {
     "shirts": ["shirts:red", "shirts:blue"],
     "pants": ["pants:jeans", "pants:slacks"],
 };
-const exclusions = {
-    "shirts:blue": ["pants:jeans"]
-};
+const exclusions = [{
+    conditions: ["shirts:blue"],
+    exclusions: ["pants:jeans"]
+}];
 const catalog = buildCatalog(families, exclusions);
 
 test("findOutfits with one exclusion rule, no selections", async t => {

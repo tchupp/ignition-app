@@ -88,24 +88,24 @@ function createComputerCatalog(client: CatalogManagerClient, projectId: string, 
     };
 
     const amdMotherboard1 = {
-        selectedItem: "mb:msi-b350",
+        conditionsList: ["mb:msi-b350"],
         exclusionsList: [...intelCpus]
     };
     const amdMotherboard2 = {
-        selectedItem: "mb:asus-strix-b350-f",
+        conditionsList: ["mb:asus-strix-b350-f"],
         exclusionsList: [...intelCpus]
     };
     const intelMotherboard1 = {
-        selectedItem: "mb:msi-z390-a-pro",
+        conditionsList: ["mb:msi-z390-a-pro"],
         exclusionsList: [...amdCpus]
     };
     const intelMotherboard2 = {
-        selectedItem: "mb:asus-prime-z370-a",
+        conditionsList: ["mb:asus-prime-z370-a"],
         exclusionsList: [...amdCpus]
     };
 
     const powerHogGpu = {
-        selectedItem: "gpu:gigabyte-geforce-rtx-2070",
+        conditionsList: ["gpu:gigabyte-geforce-rtx-2070"],
         inclusionsList: ["ps:evga-750w"]
     };
 

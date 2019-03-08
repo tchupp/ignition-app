@@ -10,17 +10,28 @@ use wasm_bindgen::prelude::*;
 use super::closet::ClosetToken;
 
 #[derive(Serialize, Deserialize)]
-struct ClosetContents {
+struct CatalogAssembly {
     families: HashMap<String, Vec<String>>,
-    exclusions: HashMap<String, Vec<String>>,
-    inclusions: HashMap<String, Vec<String>>,
+    exclusions: Vec<CatalogExclusionRule>,
+    inclusions: Vec<CatalogInclusionRule>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct CatalogExclusionRule {
+    conditions: Vec<String>,
+    exclusions: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct CatalogInclusionRule {
+    conditions: Vec<String>,
+    inclusions: Vec<String>,
 }
 
 #[wasm_bindgen(js_name = buildClosetWasm)]
 pub fn build_closet(contents: &JsValue) -> js_sys::Promise {
-    let contents: ClosetContents = contents.into_serde().unwrap();
+    let CatalogAssembly { families, exclusions, inclusions } = contents.into_serde().unwrap();
 
-    let families: HashMap<String, Vec<String>> = contents.families.clone();
     let families: HashMap<Family, Vec<Item>> = families.into_iter()
         .map(|(family, items)|
             (
@@ -32,23 +43,21 @@ pub fn build_closet(contents: &JsValue) -> js_sys::Promise {
         )
         .collect();
 
-    let exclusions: HashMap<String, Vec<String>> = contents.exclusions.clone();
     let exclusions: HashMap<Item, Vec<Item>> = exclusions.into_iter()
-        .map(|(selection, exclusions)|
+        .map(|CatalogExclusionRule { conditions, exclusions }|
             (
-                Item::new(selection),
+                Item::new(conditions[0].clone()),
                 exclusions.into_iter()
-                    .map(|id| Item::new(id))
+                    .map(|id| Item::new(id.clone()))
                     .collect::<Vec<Item>>()
             )
         )
         .collect();
 
-    let inclusions: HashMap<String, Vec<String>> = contents.inclusions.clone();
     let inclusions: HashMap<Item, Vec<Item>> = inclusions.into_iter()
-        .map(|(selection, inclusions)|
+        .map(|CatalogInclusionRule { conditions, inclusions }|
             (
-                Item::new(selection),
+                Item::new(conditions[0].clone()),
                 inclusions.into_iter()
                     .map(|id| Item::new(id))
                     .collect::<Vec<Item>>()
@@ -69,50 +78,50 @@ pub fn build_closet(contents: &JsValue) -> js_sys::Promise {
         .map(|closet| ClosetToken::from(closet))
         .map(|token| token.into())
         .map(|closet| js_sys::Promise::resolve(&closet))
-        .map_err(|err| IgnitionOptionsError::from(err))
+        .map_err(|err| CatalogBuilderError::from(err))
         .map_err(|err| JsValue::from_serde(&err).unwrap())
         .unwrap_or_else(|err| js_sys::Promise::reject(&err))
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum IgnitionOptionsError {
+pub enum CatalogBuilderError {
     InclusionMissingFamily { item: String },
     ExclusionMissingFamily { item: String },
     MultipleFamiliesRegistered { item: String, families: Vec<String> },
     InclusionFamilyConflict { family: String, items: Vec<String> },
     ExclusionFamilyConflict { family: String, items: Vec<String> },
-    CompoundError { errors: Vec<IgnitionOptionsError> },
+    CompoundError { errors: Vec<CatalogBuilderError> },
 }
 
-impl From<ClosetBuilderError> for IgnitionOptionsError {
+impl From<ClosetBuilderError> for CatalogBuilderError {
     fn from(error: ClosetBuilderError) -> Self {
         match error {
             ClosetBuilderError::CompoundError(errors) =>
-                IgnitionOptionsError::CompoundError {
-                    errors: errors.into_iter().map(IgnitionOptionsError::from).collect()
+                CatalogBuilderError::CompoundError {
+                    errors: errors.into_iter().map(CatalogBuilderError::from).collect()
                 },
             ClosetBuilderError::MultipleFamiliesRegistered(item, families) =>
-                IgnitionOptionsError::MultipleFamiliesRegistered {
+                CatalogBuilderError::MultipleFamiliesRegistered {
                     item: String::from(item),
                     families: families.into_iter().map(String::from).collect(),
                 },
             ClosetBuilderError::InclusionFamilyConflict(family, items) =>
-                IgnitionOptionsError::InclusionFamilyConflict {
+                CatalogBuilderError::InclusionFamilyConflict {
                     family: String::from(family),
                     items: items.into_iter().map(String::from).collect(),
                 },
             ClosetBuilderError::ExclusionFamilyConflict(family, items) =>
-                IgnitionOptionsError::ExclusionFamilyConflict {
+                CatalogBuilderError::ExclusionFamilyConflict {
                     family: String::from(family),
                     items: items.into_iter().map(String::from).collect(),
                 },
             ClosetBuilderError::InclusionMissingFamily(item) =>
-                IgnitionOptionsError::InclusionMissingFamily {
+                CatalogBuilderError::InclusionMissingFamily {
                     item: String::from(item)
                 },
             ClosetBuilderError::ExclusionMissingFamily(item) =>
-                IgnitionOptionsError::ExclusionMissingFamily {
+                CatalogBuilderError::ExclusionMissingFamily {
                     item: String::from(item)
                 },
         }

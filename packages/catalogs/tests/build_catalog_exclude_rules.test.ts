@@ -8,9 +8,10 @@ const families = {
 };
 
 test("build, when exclusion rule has the same family as the selection, gives an error", async t => {
-    const exclusions = {
-        "shirts:red": ["shirts:blue"]
-    };
+    const exclusions = [{
+        conditions: ["shirts:red"],
+        exclusions: ["shirts:blue"],
+    }];
 
     const [error] = await buildCatalog(families, exclusions).run();
 
@@ -23,9 +24,10 @@ test("build, when exclusion rule has the same family as the selection, gives an 
 });
 
 test("build, when exclusion rule has unknown item as selection, gives an error", async t => {
-    const exclusions = {
-        "shirts:black": ["pants:jeans"]
-    };
+    const exclusions = [{
+        conditions: ["shirts:black"],
+        exclusions: ["pants:jeans"],
+    }];
 
     const [error] = await buildCatalog(families, exclusions).run();
 
@@ -37,9 +39,10 @@ test("build, when exclusion rule has unknown item as selection, gives an error",
 });
 
 test("build, when exclusion rule has unknown item in exclusions, gives an error", async t => {
-    const exclusions = {
-        "shirts:blue": ["pants:ripped"]
-    };
+    const exclusions = [{
+        conditions: ["shirts:blue"],
+        exclusions: ["pants:ripped"],
+    }];
 
     const [error] = await buildCatalog(families, exclusions).run();
 

@@ -68,16 +68,16 @@ message CreateCatalogRequest {
     string project_id = 5;
     string catalog_id = 1;
     repeated Family families = 2;
-    repeated Exclusion exclusions = 3;
-    repeated Inclusion inclusions = 4;
+    repeated CatalogExclusionsRule exclusions = 3;
+    repeated CatalogInclusionsRule inclusions = 4;
 }
 
 message UpdateCatalogRequest {
     string project_id = 1;
     string catalog_id = 2;
     repeated Family families = 3;
-    repeated Exclusion exclusions = 4;
-    repeated Inclusion inclusions = 5;
+    repeated CatalogExclusionsRule exclusions = 4;
+    repeated CatalogInclusionsRule inclusions = 5;
 }
 
 message Family {
@@ -85,13 +85,13 @@ message Family {
     repeated string items = 2;
 }
 
-message Exclusion {
-    string selected_item = 1;
+message CatalogExclusionsRule {
+    repeated string conditions = 1;
     repeated string exclusions = 2;
 }
 
-message Inclusion {
-    string selected_item = 1;
+message CatalogInclusionsRule {
+    repeated string conditions = 1;
     repeated string inclusions = 2;
 }
 

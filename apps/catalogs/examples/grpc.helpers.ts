@@ -1,6 +1,6 @@
 // Builder functions for gRPC requests
 
-import {CreateCatalogRequest, Exclusion, Family, Inclusion} from "../generated/catalogs_pb";
+import {CreateCatalogRequest, CatalogExclusionsRule, Family, CatalogInclusionsRule} from "../generated/catalogs_pb";
 
 function buildFamily(f: Family.AsObject): Family {
     const family = new Family();
@@ -10,18 +10,18 @@ function buildFamily(f: Family.AsObject): Family {
     return family;
 }
 
-function buildExclusion(e: Exclusion.AsObject): Exclusion {
-    const exclusion = new Exclusion();
-    exclusion.setSelectedItem(e.selectedItem);
-    exclusion.setExclusionsList(e.exclusionsList);
+function buildExclusion(rule: CatalogExclusionsRule.AsObject): CatalogExclusionsRule {
+    const exclusion = new CatalogExclusionsRule();
+    exclusion.setConditionsList(rule.conditionsList);
+    exclusion.setExclusionsList(rule.exclusionsList);
 
     return exclusion;
 }
 
-function buildInclusion(e: Inclusion.AsObject): Inclusion {
-    const inclusion = new Inclusion();
-    inclusion.setSelectedItem(e.selectedItem);
-    inclusion.setInclusionsList(e.inclusionsList);
+function buildInclusion(rule: CatalogInclusionsRule.AsObject): CatalogInclusionsRule {
+    const inclusion = new CatalogInclusionsRule();
+    inclusion.setConditionsList(rule.conditionsList);
+    inclusion.setInclusionsList(rule.inclusionsList);
 
     return inclusion;
 }

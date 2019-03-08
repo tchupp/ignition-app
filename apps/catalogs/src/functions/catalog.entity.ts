@@ -2,7 +2,7 @@ import Datastore = require("@google-cloud/datastore");
 import {DatastorePayload} from "@google-cloud/datastore/entity";
 
 import {fromTaskEither} from "@ignition/nomad";
-import {CatalogContents, CatalogToken} from "@ignition/catalogs";
+import {CatalogExclusionRule, CatalogFamilies, CatalogInclusionRule, CatalogToken} from "@ignition/catalogs";
 
 import {asks, Reader} from "fp-ts/lib/Reader";
 import {fromLeft, taskEither, tryCatch} from "fp-ts/lib/TaskEither";
@@ -13,9 +13,9 @@ import {timed} from "../infrastructure/effects";
 
 export type CatalogRules = {
     readonly id: string;
-    readonly families: CatalogContents;
-    readonly exclusions: CatalogContents;
-    readonly inclusions: CatalogContents;
+    readonly families: CatalogFamilies;
+    readonly exclusions: CatalogExclusionRule[];
+    readonly inclusions: CatalogInclusionRule[];
 }
 
 export type CatalogEntity = {

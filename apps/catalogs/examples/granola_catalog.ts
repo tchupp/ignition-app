@@ -43,11 +43,11 @@ function createGranolaCatalog(client: CatalogManagerClient, projectId: string, c
     };
 
     const noCoconutPeanut = {
-        selectedItem: "half-cup:coconut-flakes",
+        conditionsList: ["half-cup:coconut-flakes"],
         exclusionsList: ["2-cups:peanuts", "split-2-cups:peanuts-cashews"]
     };
     const honeyWalnut = {
-        selectedItem: "2-cups:walnuts",
+        conditionsList: ["2-cups:walnuts"],
         inclusionsList: ["half-cup:honey"]
     };
 

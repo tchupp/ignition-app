@@ -1,4 +1,12 @@
-import {buildCatalog, CatalogContents, CatalogToken, findOptions, Item} from "@ignition/catalogs";
+import {
+    buildCatalog,
+    CatalogExclusionRule,
+    CatalogFamilies,
+    CatalogInclusionRule,
+    CatalogToken,
+    findOptions,
+    Item
+} from "@ignition/catalogs";
 
 import {CatalogEntity} from "../src/functions/catalog.entity";
 
@@ -7,9 +15,9 @@ const EMPTY_CATALOG_TOKEN: CatalogToken = "";
 export async function buildTestCatalogEntity(
     id: string,
     timestamp: Date,
-    families: CatalogContents,
-    exclusions: CatalogContents = {},
-    inclusions: CatalogContents = {}
+    families: CatalogFamilies,
+    exclusions: CatalogExclusionRule[] = [],
+    inclusions: CatalogInclusionRule[] = []
 ): Promise<CatalogEntity> {
     const [catalogOrError] = await buildCatalog(families, exclusions, inclusions).run();
 
@@ -21,10 +29,10 @@ export async function buildTestCatalogEntity(
 }
 
 export async function buildTestCatalogToken(
-    families: CatalogContents,
+    families: CatalogFamilies,
     selections: Item[] = [],
-    exclusions: CatalogContents = {},
-    inclusions: CatalogContents = {},
+    exclusions: CatalogExclusionRule[] = [],
+    inclusions: CatalogInclusionRule[] = []
 ): Promise<CatalogToken> {
     const token = await buildCatalog(families, exclusions, inclusions)
         .fold(() => EMPTY_CATALOG_TOKEN, res => res)

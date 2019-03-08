@@ -18,8 +18,18 @@ export type IgnitionOptionsError =
     { type: "UnknownSelections", items: string[] }
     | { type: "BadToken", token: string, detail: string }
 
-export type CatalogContents = {
+export type CatalogFamilies = {
     readonly [key: string]: Item[];
+}
+
+export type CatalogExclusionRule = {
+    readonly conditions: Item[];
+    readonly exclusions: Item[];
+}
+
+export type CatalogInclusionRule = {
+    readonly conditions: Item[];
+    readonly inclusions: Item[];
 }
 
 export type Options = {
@@ -35,9 +45,9 @@ export type ItemStatus =
 export type Item = string;
 
 export function buildCatalog(
-    families: CatalogContents,
-    exclusions: CatalogContents = {},
-    inclusions: CatalogContents = {}
+    families: CatalogFamilies,
+    exclusions: CatalogExclusionRule[] = [],
+    inclusions: CatalogInclusionRule[] = []
 ): NomadTE<IgnitionEffect, IgnitionBuildCatalogError, CatalogToken> {
     let contents = {families: families, exclusions: exclusions, inclusions: inclusions};
 
