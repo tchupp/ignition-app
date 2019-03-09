@@ -1,10 +1,11 @@
 {
   "name": "@ignition/nomad",
+  "private": true,
   "version": "0.1.0",
   "description": "Monads for observability",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "author": "theochupp <tclchiam@gmail.com>",
+  "author": "Theo Chupp",
   "license": "BSD-3-Clause",
   "scripts": {
     "clean": "rimraf ./dist",

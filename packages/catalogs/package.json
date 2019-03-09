@@ -5,7 +5,7 @@
   "description": "WASM wrapper around ignition.rs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "author": "theochupp <tclchiam@gmail.com>",
+  "author": "Theo Chupp",
   "license": "BSD-3-Clause",
   "scripts": {
     "clean": "rimraf ./dist",

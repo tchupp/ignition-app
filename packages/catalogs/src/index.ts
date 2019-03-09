@@ -54,7 +54,7 @@ export function buildCatalog(
     return timed(`build_catalog`, {}, () =>
         tryCatch(
             () => import("../crate/pkg")
-                .then(m => m.buildClosetWasm(contents)),
+                .then(m => m.buildCatalogWasm(contents)),
             (err: any) => err
         )
     );
