@@ -10,7 +10,7 @@ function toUint8Array (s) {
     
 const bytes = toUint8Array('${wasm}');
 let imports = {};
-imports['./ignition_core_wasm'] = require('./ignition_core_wasm');
+imports['./ignition_catalogs_wasm'] = require('./ignition_catalogs_wasm');
 
 const wasmModule = new WebAssembly.Module(bytes);
 const wasmInstance = new WebAssembly.Instance(wasmModule, imports);
@@ -18,6 +18,6 @@ module.exports = wasmInstance.exports;
     `;
 }
 
-const wasmBuffer = fs.readFileSync("crate/pkg/ignition_core_wasm_bg.wasm");
+const wasmBuffer = fs.readFileSync("crate/pkg/ignition_catalogs_wasm_bg.wasm");
 const src = wasm2js(wasmBuffer);
-fs.writeFileSync("crate/pkg/ignition_core_wasm_bg.js", src);
+fs.writeFileSync("crate/pkg/ignition_catalogs_wasm_bg.js", src);
