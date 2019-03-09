@@ -1,36 +1,36 @@
 use std::collections::BTreeMap;
 use std::error::Error;
 
-use ignition::Closet;
-use ignition::ClosetError;
-use ignition::Family;
-use ignition::Item;
+use inner::Catalog;
+use inner::CatalogError;
+use inner::Family;
+use inner::Item;
 use wasm_bindgen::prelude::*;
 use weave::ItemStatus;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ClosetToken(String);
+pub struct CatalogToken(String);
 
-impl From<Closet> for ClosetToken {
-    fn from(closet: Closet) -> Self {
-        let bytes = bincode::serialize(&closet).unwrap();
-        ClosetToken(base64::encode(&bytes[..]))
+impl From<Catalog> for CatalogToken {
+    fn from(catalog: Catalog) -> Self {
+        let bytes = bincode::serialize(&catalog).unwrap();
+        CatalogToken(base64::encode(&bytes[..]))
     }
 }
 
-impl From<ClosetToken> for JsValue {
-    fn from(token: ClosetToken) -> Self {
+impl From<CatalogToken> for JsValue {
+    fn from(token: CatalogToken) -> Self {
         JsValue::from_str(token.0.as_str())
     }
 }
 
 #[wasm_bindgen(js_name = findOutfitsWasm)]
-pub fn find_outfits(closet_token: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
+pub fn find_outfits(catalog_token: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
     let selections: Vec<Item> = to_items(selections);
     let exclusions: Vec<Item> = to_items(exclusions);
 
-    let closet = to_closet(closet_token).unwrap();
-    let outfits = closet.outfits(&selections[..], &exclusions[..]).unwrap();
+    let catalog = to_catalog(catalog_token).unwrap();
+    let outfits = catalog.outfits(&selections[..], &exclusions[..]).unwrap();
 
     js_sys::Promise::resolve(&JsValue::from_serde(&outfits).unwrap())
 }
@@ -43,10 +43,10 @@ pub enum IgnitionOptionsError {
     BadToken { token: String, detail: String },
 }
 
-impl From<ClosetError> for IgnitionOptionsError {
-    fn from(error: ClosetError) -> Self {
+impl From<CatalogError> for IgnitionOptionsError {
+    fn from(error: CatalogError) -> Self {
         match error {
-            ClosetError::UnknownItems(items) => {
+            CatalogError::UnknownItems(items) => {
                 let items = items.iter()
                     .map(|item| String::from(item.clone()))
                     .collect::<Vec<_>>();
@@ -62,8 +62,8 @@ impl From<ClosetError> for IgnitionOptionsError {
 type Options = BTreeMap<Family, Vec<ItemStatus<Item>>>;
 
 #[wasm_bindgen(js_name = findOptionsWasm)]
-pub fn find_options(closet_token: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
-    find_options_inner(closet_token, selections, exclusions)
+pub fn find_options(catalog_token: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
+    find_options_inner(catalog_token, selections, exclusions)
         .map(|options| JsValue::from_serde(&options).unwrap())
         .map(|options| js_sys::Promise::resolve(&options))
         .map_err(|err| JsValue::from_serde(&err).unwrap())
@@ -71,45 +71,45 @@ pub fn find_options(closet_token: &JsValue, selections: &JsValue, exclusions: &J
 }
 
 fn find_options_inner(
-    closet_token: &JsValue,
+    catalog_token: &JsValue,
     selections: &JsValue,
     exclusions: &JsValue,
-) -> Result<(Options, ClosetToken), IgnitionOptionsError> {
+) -> Result<(Options, CatalogToken), IgnitionOptionsError> {
     let selections: Vec<Item> = to_items(selections);
     let exclusions: Vec<Item> = to_items(exclusions);
 
-    let closet = to_closet(closet_token)?;
-    let closet = closet.select(&selections[..])?;
-    let options = closet.options(&selections[..], &exclusions[..])?;
+    let catalog = to_catalog(catalog_token)?;
+    let catalog = catalog.select(&selections[..])?;
+    let options = catalog.options(&selections[..], &exclusions[..])?;
 
-    Ok((options, ClosetToken::from(closet)))
+    Ok((options, CatalogToken::from(catalog)))
 }
 
-fn to_closet(closet_token: &JsValue) -> Result<Closet, IgnitionOptionsError> {
-    let closet_token = match closet_token.as_string() {
+fn to_catalog(catalog_token: &JsValue) -> Result<Catalog, IgnitionOptionsError> {
+    let catalog_token = match catalog_token.as_string() {
         Some(str) => str,
         None => return Err(IgnitionOptionsError::MissingToken),
     };
 
-    let decoded_token = match base64::decode(closet_token.as_str()) {
+    let decoded_token = match base64::decode(catalog_token.as_str()) {
         Ok(t) => t,
         Err(err) => return Err(IgnitionOptionsError::BadToken {
-            token: closet_token,
+            token: catalog_token,
             detail: err.description().into(),
         })
     };
 
-    let closet: Closet = match bincode::deserialize(&decoded_token[..]) {
+    let catalog: Catalog = match bincode::deserialize(&decoded_token[..]) {
         Ok(c) => c,
         Err(err) => {
             return Err(IgnitionOptionsError::BadToken {
-                token: closet_token,
+                token: catalog_token,
                 detail: err.description().into(),
             });
         }
     };
 
-    Ok(closet)
+    Ok(catalog)
 }
 
 fn to_items(items: &JsValue) -> Vec<Item> {

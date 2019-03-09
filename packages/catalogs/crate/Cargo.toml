@@ -1,7 +1,8 @@
 [package]
-name = "ignition-core-wasm"
+name = "ignition-catalogs-wasm"
+description = ""
 version = "0.1.0"
-authors = ["theochupp <tclchiam@gmail.com>"]
+authors = ["Theo Chupp"]
 
 [profile.release]
 debug = false
@@ -26,7 +27,6 @@ itertools = "0.8"
 
 cfg-if = "0.1"
 
-ignition = { git = "https://github.com/tchupp/ignition", rev = "c5fba6e8dace9636876d0d1c75690c3c781b39f2" }
 weave = { git = "https://github.com/tchupp/ignition", rev = "c5fba6e8dace9636876d0d1c75690c3c781b39f2" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
@@ -43,3 +43,6 @@ wee_alloc = { version = "0.4.1", optional = true }
 [dependencies.wasm-bindgen]
 version = "^0.2.29"
 features = ["serde-serialize"]
+
+[dev-dependencies]
+maplit = "1.0"
