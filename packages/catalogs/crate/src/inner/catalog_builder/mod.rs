@@ -139,16 +139,14 @@ fn violates_inclusion_rule(outfit: &BTreeSet<Item>, (selection, inclusion): (&It
 #[cfg(test)]
 mod no_rules_tests {
     use super::CatalogBuilder;
-    use super::Family;
-    use super::Item;
 
     #[test]
     fn one_family_with_two_items() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
-        let black = Item::new("shirts:black");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
+        let black = String::from("shirts:black");
 
-        let shirts = Family::new("shirts");
+        let shirts = String::from("shirts");
 
         let catalog_builder = CatalogBuilder::new()
             .add_items(&shirts, &[red.clone(), blue.clone(), black.clone()]);
@@ -169,14 +167,14 @@ mod no_rules_tests {
 
     #[test]
     fn two_families_with_two_item_each() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_items(&shirts, &[red.clone(), blue.clone()])
@@ -202,19 +200,16 @@ mod no_rules_tests {
 mod exclusion_rules_tests {
     use super::CatalogBuilder;
 
-    use super::Family;
-    use super::Item;
-
     #[test]
     fn exclusion_rule_removes_single_outfit() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -239,14 +234,14 @@ mod exclusion_rules_tests {
 
     #[test]
     fn exclusion_rule_removes_multiple_outfit() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -271,14 +266,14 @@ mod exclusion_rules_tests {
 
     #[test]
     fn exclusion_rules_can_remove_all_outfits() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -300,14 +295,14 @@ mod exclusion_rules_tests {
 
     #[test]
     fn exclusion_rules_can_remove_all_outfits_for_a_selection() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -333,19 +328,17 @@ mod exclusion_rules_tests {
 #[cfg(test)]
 mod inclusion_rules_tests {
     use super::CatalogBuilder;
-    use super::Family;
-    use super::Item;
 
     #[test]
     fn inclusion_rule_removes_single_outfit() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -370,14 +363,14 @@ mod inclusion_rules_tests {
 
     #[test]
     fn inclusion_rule_removes_multiple_outfit() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -402,14 +395,14 @@ mod inclusion_rules_tests {
 
     #[test]
     fn inclusion_rules_cannot_include_two_from_same_family() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)

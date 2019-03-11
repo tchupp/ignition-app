@@ -4,32 +4,36 @@ mod catalog_builder;
 pub use self::catalog::*;
 pub use self::catalog_builder::*;
 
-#[derive(Debug, Clone, Hash, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
-pub struct Family(String);
+//#[derive(Debug, Clone, Hash, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+//pub struct Family(String);
 
-impl Family {
-    pub fn new<S>(id: S) -> Family where S: Into<String> {
-        Family(id.into())
-    }
-}
+pub type Family = String;
 
-impl From<Family> for String {
-    fn from(family: Family) -> Self {
-        family.0
-    }
-}
+//impl Family {
+//    pub fn new<S>(id: S) -> Family where S: Into<String> {
+//        Family(id.into())
+//    }
+//}
 
-#[derive(Debug, Clone, Hash, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
-pub struct Item(String);
+//impl From<Family> for String {
+//    fn from(family: Family) -> Self {
+//        family.0
+//    }
+//}
 
-impl Item {
-    pub fn new<S>(id: S) -> Item where S: Into<String> {
-        Item(id.into())
-    }
-}
+//#[derive(Debug, Clone, Hash, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+//pub struct Item(String);
 
-impl From<Item> for String {
-    fn from(item: Item) -> Self {
-        item.0
-    }
-}
+pub type Item = String;
+
+//impl Item {
+//    pub fn new<S>(id: S) -> Item where S: Into<String> {
+//        Item(id.into())
+//    }
+//}
+
+//impl From<Item> for String {
+//    fn from(item: Item) -> Self {
+//        item.0
+//    }
+//}

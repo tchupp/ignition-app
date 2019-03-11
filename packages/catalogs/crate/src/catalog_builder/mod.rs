@@ -11,45 +11,31 @@ use inner;
 
 #[derive(Serialize, Deserialize)]
 struct CatalogAssembly {
-    families: HashMap<String, Vec<String>>,
+    families: HashMap<Family, Vec<Item>>,
     exclusions: Vec<CatalogExclusionRule>,
     inclusions: Vec<CatalogInclusionRule>,
 }
 
 #[derive(Serialize, Deserialize)]
 struct CatalogExclusionRule {
-    conditions: Vec<String>,
-    exclusions: Vec<String>,
+    conditions: Vec<Item>,
+    exclusions: Vec<Item>,
 }
 
 #[derive(Serialize, Deserialize)]
 struct CatalogInclusionRule {
-    conditions: Vec<String>,
-    inclusions: Vec<String>,
+    conditions: Vec<Item>,
+    inclusions: Vec<Item>,
 }
 
-#[wasm_bindgen(js_name = buildCatalogWasm)]
-pub fn build_catalog(contents: &JsValue) -> js_sys::Promise {
-    let CatalogAssembly { families, exclusions, inclusions } = contents.into_serde().unwrap();
-
-    let families: HashMap<Family, Vec<Item>> = families.into_iter()
-        .map(|(family, items)|
-            (
-                Family::new(family),
-                items.into_iter()
-                    .map(|id| Item::new(id))
-                    .collect::<Vec<Item>>()
-            )
-        )
-        .collect();
+pub fn build_catalog(assembly: &JsValue) -> Result<CatalogToken, CatalogBuilderError> {
+    let CatalogAssembly { families, exclusions, inclusions } = assembly.into_serde().unwrap();
 
     let exclusions: HashMap<Item, Vec<Item>> = exclusions.into_iter()
         .map(|CatalogExclusionRule { conditions, exclusions }|
             (
-                Item::new(conditions[0].clone()),
-                exclusions.into_iter()
-                    .map(|id| Item::new(id.clone()))
-                    .collect::<Vec<Item>>()
+                conditions[0].clone(),
+                exclusions
             )
         )
         .collect();
@@ -57,10 +43,8 @@ pub fn build_catalog(contents: &JsValue) -> js_sys::Promise {
     let inclusions: HashMap<Item, Vec<Item>> = inclusions.into_iter()
         .map(|CatalogInclusionRule { conditions, inclusions }|
             (
-                Item::new(conditions[0].clone()),
-                inclusions.into_iter()
-                    .map(|id| Item::new(id))
-                    .collect::<Vec<Item>>()
+                conditions[0].clone(),
+                inclusions
             )
         )
         .collect();
@@ -76,11 +60,7 @@ pub fn build_catalog(contents: &JsValue) -> js_sys::Promise {
 
     catalog_builder.build()
         .map(|catalog| CatalogToken::from(catalog))
-        .map(|token| token.into())
-        .map(|catalog| js_sys::Promise::resolve(&catalog))
         .map_err(|err| CatalogBuilderError::from(err))
-        .map_err(|err| JsValue::from_serde(&err).unwrap())
-        .unwrap_or_else(|err| js_sys::Promise::reject(&err))
 }
 
 #[derive(Serialize, Deserialize)]

@@ -1,12 +1,13 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
+
+use wasm_bindgen::prelude::*;
+use weave::ItemStatus;
 
 use inner::Catalog;
 use inner::CatalogError;
 use inner::Family;
 use inner::Item;
-use wasm_bindgen::prelude::*;
-use weave::ItemStatus;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CatalogToken(String);
@@ -24,15 +25,17 @@ impl From<CatalogToken> for JsValue {
     }
 }
 
-#[wasm_bindgen(js_name = findOutfitsWasm)]
-pub fn find_outfits(catalog_token: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
-    let selections: Vec<Item> = to_items(selections);
-    let exclusions: Vec<Item> = to_items(exclusions);
+type Outfits = BTreeSet<BTreeSet<Item>>;
 
-    let catalog = to_catalog(catalog_token).unwrap();
-    let outfits = catalog.outfits(&selections[..], &exclusions[..]).unwrap();
+pub fn find_outfits(
+    catalog_token: &JsValue,
+    selections: Vec<Item>,
+    exclusions: Vec<Item>,
+) -> Result<Outfits, IgnitionOptionsError> {
+    let catalog = to_catalog(catalog_token)?;
+    let outfits = catalog.outfits(&selections[..], &exclusions[..])?;
 
-    js_sys::Promise::resolve(&JsValue::from_serde(&outfits).unwrap())
+    Ok(outfits)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -61,23 +64,11 @@ impl From<CatalogError> for IgnitionOptionsError {
 
 type Options = BTreeMap<Family, Vec<ItemStatus<Item>>>;
 
-#[wasm_bindgen(js_name = findOptionsWasm)]
-pub fn find_options(catalog_token: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
-    find_options_inner(catalog_token, selections, exclusions)
-        .map(|options| JsValue::from_serde(&options).unwrap())
-        .map(|options| js_sys::Promise::resolve(&options))
-        .map_err(|err| JsValue::from_serde(&err).unwrap())
-        .unwrap_or_else(|err| js_sys::Promise::reject(&err))
-}
-
-fn find_options_inner(
+pub fn find_options(
     catalog_token: &JsValue,
-    selections: &JsValue,
-    exclusions: &JsValue,
+    selections: Vec<Item>,
+    exclusions: Vec<Item>,
 ) -> Result<(Options, CatalogToken), IgnitionOptionsError> {
-    let selections: Vec<Item> = to_items(selections);
-    let exclusions: Vec<Item> = to_items(exclusions);
-
     let catalog = to_catalog(catalog_token)?;
     let catalog = catalog.select(&selections[..])?;
     let options = catalog.options(&selections[..], &exclusions[..])?;
@@ -113,12 +104,11 @@ fn to_catalog(catalog_token: &JsValue) -> Result<Catalog, IgnitionOptionsError> 
 }
 
 fn to_items(items: &JsValue) -> Vec<Item> {
-    let items: Vec<String> = items.into_serde().unwrap();
+    let items: Vec<Item> = items.into_serde().unwrap();
 
     items.into_iter()
         .flat_map(|item| item.split(",").map(String::from).collect::<Vec<String>>())
         .map(|item| String::from(item.trim()))
         .filter(|item| !item.is_empty())
-        .map(|item| Item::new(item))
         .collect()
 }

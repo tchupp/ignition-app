@@ -61,9 +61,8 @@ impl Catalog {
 
     fn find_unknown_items(&self, items: &[&[Item]]) -> Result<(), CatalogError> {
         let unknown_items = items.iter()
-            .flat_map(|items| items.iter())
+            .flat_map(|items| items.iter().cloned())
             .filter(|item| self.item_index.get(item).is_none())
-            .cloned()
             .collect::<Vec<_>>();
 
         if !unknown_items.is_empty() {
@@ -89,19 +88,17 @@ mod options_tests {
     use super::super::CatalogBuilder;
 
     use super::CatalogError;
-    use super::Family;
-    use super::Item;
 
     #[test]
     fn options_with_empty_selections_has_all_options_available() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -131,14 +128,14 @@ mod options_tests {
 
     #[test]
     fn options_with_one_selection_has_correct_options() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -183,14 +180,14 @@ mod options_tests {
 
     #[test]
     fn options_with_red_excluded_has_correct_options() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -235,15 +232,15 @@ mod options_tests {
 
     #[test]
     fn options_with_unknown_selection_returns_error() {
-        let black = Item::new("shirts:black");
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let black = String::from("shirts:black");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -264,15 +261,15 @@ mod options_tests {
 
     #[test]
     fn options_with_unknown_exclusion_returns_error() {
-        let black = Item::new("shirts:black");
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let black = String::from("shirts:black");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -297,19 +294,16 @@ mod outfits_tests {
     use super::CatalogError;
     use super::super::CatalogBuilder;
 
-    use super::Family;
-    use super::Item;
-
     #[test]
     fn outfits_with_empty_selections_has_all_outfits_available() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -334,14 +328,14 @@ mod outfits_tests {
 
     #[test]
     fn outfits_with_one_selection_has_correct_outfits() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -373,14 +367,14 @@ mod outfits_tests {
 
     #[test]
     fn outfits_with_red_excluded_has_correct_outfits() {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -412,15 +406,15 @@ mod outfits_tests {
 
     #[test]
     fn outfits_with_unknown_selection_returns_error() {
-        let black = Item::new("shirts:black");
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let black = String::from("shirts:black");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -441,15 +435,15 @@ mod outfits_tests {
 
     #[test]
     fn outfits_with_unknown_exclusion_returns_error() {
-        let black = Item::new("shirts:black");
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let black = String::from("shirts:black");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
@@ -475,13 +469,10 @@ mod select_tests {
     use super::CatalogError;
     use super::super::CatalogBuilder;
 
-    use super::Family;
-    use super::Item;
-
     #[test]
     fn order_doesnt_matter_when_selecting_multiple() {
-        let red = Item::new("shirts:red");
-        let jeans = Item::new("pants:jeans");
+        let red = String::from("shirts:red");
+        let jeans = String::from("pants:jeans");
         let catalog = build_catalog();
 
         let catalog1 = catalog.select(&[red.clone(), jeans.clone()]).unwrap();
@@ -494,7 +485,7 @@ mod select_tests {
 
     #[test]
     fn selecting_duplicates_doesnt_matter() {
-        let red = Item::new("shirts:red");
+        let red = String::from("shirts:red");
         let catalog = build_catalog();
 
         let catalog1 = catalog.select(&[red.clone(), red.clone()]).unwrap();
@@ -507,7 +498,7 @@ mod select_tests {
 
     #[test]
     fn selecting_red_is_the_same_as_filtering_outfits() {
-        let red = Item::new("shirts:red");
+        let red = String::from("shirts:red");
 
         let catalog_pre = build_catalog();
         let outfits_pre = catalog_pre.outfits(&[red.clone()], &[]);
@@ -529,8 +520,8 @@ mod select_tests {
 
     #[test]
     fn selecting_multiple_is_the_same_as_filtering_outfits() {
-        let red = Item::new("shirts:red");
-        let slacks = Item::new("pants:slacks");
+        let red = String::from("shirts:red");
+        let slacks = String::from("pants:slacks");
 
         let catalog_pre = build_catalog();
         let outfits_pre = catalog_pre.outfits(&[red.clone(), slacks.clone()], &[]);
@@ -552,7 +543,7 @@ mod select_tests {
 
     #[test]
     fn selecting_black_returns_an_error() {
-        let black = Item::new("shirts:black");
+        let black = String::from("shirts:black");
 
         let catalog = build_catalog();
 
@@ -564,14 +555,14 @@ mod select_tests {
     }
 
     fn build_catalog() -> Catalog {
-        let blue = Item::new("shirts:blue");
-        let red = Item::new("shirts:red");
+        let blue = String::from("shirts:blue");
+        let red = String::from("shirts:red");
 
-        let jeans = Item::new("pants:jeans");
-        let slacks = Item::new("pants:slacks");
+        let jeans = String::from("pants:jeans");
+        let slacks = String::from("pants:slacks");
 
-        let shirts = Family::new("shirts");
-        let pants = Family::new("pants");
+        let shirts = String::from("shirts");
+        let pants = String::from("pants");
 
         let catalog_builder = CatalogBuilder::new()
             .add_item(&shirts, &red)
