@@ -24,6 +24,7 @@ bincode = "1.0"
 base64 = "0.10"
 
 itertools = "0.8"
+reduce = "0.1"
 
 cfg-if = "0.1"
 

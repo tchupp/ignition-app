@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use itertools::Itertools;
 
+use super::{CatalogExclusionRule, CatalogInclusionRule};
 use super::Family;
 use super::Item;
 
@@ -10,8 +11,11 @@ use self::CatalogBuilderError::{CompoundError, ExclusionFamilyConflict, Exclusio
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CatalogBuilderError {
+    EmptyCatalog,
     InclusionMissingFamily { item: String },
     ExclusionMissingFamily { item: String },
+    InclusionMissingCondition,
+    ExclusionMissingCondition,
     MultipleFamiliesRegistered { item: String, families: Vec<String> },
     InclusionFamilyConflict { family: String, items: Vec<String> },
     ExclusionFamilyConflict { family: String, items: Vec<String> },
@@ -19,21 +23,23 @@ pub enum CatalogBuilderError {
 }
 
 pub fn validate_catalog(
-    contents: &BTreeMap<Family, Vec<Item>>,
+    families: &BTreeMap<Family, Vec<Item>>,
     item_index: &BTreeMap<Item, Family>,
-    exclusions: &BTreeMap<Item, Vec<Item>>,
-    inclusions: &BTreeMap<Item, Vec<Item>>,
+    exclusions: &[CatalogExclusionRule],
+    inclusions: &[CatalogInclusionRule],
 ) -> Result<(), CatalogBuilderError> {
     let conflicts =
         vec![
-            find_conflicting_families(contents, item_index),
-            find_illegal_rules(
+            find_conflicting_families(families, item_index),
+            find_illegal_exclusion_rule_conditions(exclusions),
+            find_illegal_inclusion_rule_conditions(inclusions),
+            find_illegal_exclusion_rules(
                 exclusions,
                 item_index,
                 |family, items| ExclusionFamilyConflict { family, items },
                 |item| ExclusionMissingFamily { item },
             ),
-            find_illegal_rules(
+            find_illegal_inclusion_rules(
                 inclusions,
                 item_index,
                 |family, items| InclusionFamilyConflict { family, items },
@@ -41,7 +47,7 @@ pub fn validate_catalog(
             )
         ]
             .iter()
-            .flat_map(|conflicts| conflicts)
+            .flatten()
             .unique()
             .cloned()
             .collect::<Vec<_>>();
@@ -54,10 +60,10 @@ pub fn validate_catalog(
 }
 
 fn find_conflicting_families(
-    contents: &BTreeMap<Family, Vec<Item>>,
+    families: &BTreeMap<Family, Vec<Item>>,
     item_index: &BTreeMap<Item, Family>,
 ) -> Vec<CatalogBuilderError> {
-    contents.iter()
+    families.iter()
         .flat_map(|(family, items)| {
             items.iter()
                 .filter_map(|item| {
@@ -77,8 +83,22 @@ fn find_conflicting_families(
         .collect::<Vec<CatalogBuilderError>>()
 }
 
-fn find_illegal_rules(
-    rules: &BTreeMap<Item, Vec<Item>>,
+fn find_illegal_exclusion_rule_conditions(rules: &[CatalogExclusionRule]) -> Vec<CatalogBuilderError> {
+    rules.iter()
+        .filter(|rule| !rule.conditions.is_empty());
+
+    vec![]
+}
+
+fn find_illegal_inclusion_rule_conditions(rules: &[CatalogInclusionRule]) -> Vec<CatalogBuilderError> {
+    rules.iter()
+        .filter(|rule| !rule.conditions.is_empty());
+
+    vec![]
+}
+
+fn find_illegal_exclusion_rules(
+    rules: &[CatalogExclusionRule],
     item_index: &BTreeMap<Item, Family>,
     conflict_error: fn(Family, Vec<Item>) -> CatalogBuilderError,
     missing_family_error: fn(Item) -> CatalogBuilderError,
@@ -109,6 +129,44 @@ fn find_illegal_rules(
     };
 
     rules.iter()
+        .flat_map(|rule| rule.conditions.iter().map(|selection| (selection, &rule.exclusions)).collect::<Vec<_>>())
+        .flat_map(find_selections_and_items_without_families)
+        .collect::<Vec<_>>()
+}
+
+fn find_illegal_inclusion_rules(
+    rules: &[CatalogInclusionRule],
+    item_index: &BTreeMap<Item, Family>,
+    conflict_error: fn(Family, Vec<Item>) -> CatalogBuilderError,
+    missing_family_error: fn(Item) -> CatalogBuilderError,
+) -> Vec<CatalogBuilderError> {
+    let find_selections_and_items_without_families = |(selection, items): (&Item, &Vec<Item>)| {
+        let selection_family = match item_index.get(selection) {
+            None => return vec![missing_family_error(selection.clone())],
+            Some(selection_family) => selection_family,
+        };
+
+        items.iter()
+            .filter_map(|item| {
+                let item_family = match item_index.get(item) {
+                    None => return Some(missing_family_error(item.clone())),
+                    Some(item_family) => item_family,
+                };
+
+                if selection_family == item_family {
+                    let mut items = vec![selection.clone(), item.clone()];
+                    items.sort();
+
+                    Some(conflict_error(selection_family.clone(), items))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+    };
+
+    rules.iter()
+        .flat_map(|rule| rule.conditions.iter().map(|selection| (selection, &rule.inclusions)).collect::<Vec<_>>())
         .flat_map(find_selections_and_items_without_families)
         .collect::<Vec<_>>()
 }

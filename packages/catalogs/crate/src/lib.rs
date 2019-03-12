@@ -6,6 +6,7 @@ extern crate js_sys;
 #[cfg(test)]
 #[macro_use]
 extern crate maplit;
+extern crate reduce;
 #[macro_use]
 extern crate serde_derive;
 extern crate wasm_bindgen;

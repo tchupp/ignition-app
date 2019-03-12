@@ -1,7 +1,8 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::str;
 
-use wasm_bindgen::prelude::*;
+use reduce::Reduce;
+use weave::zdd2::Forest;
 
 use inner::{Catalog, CatalogBuilder, CatalogBuilderError};
 use inner::{Family, Item};
@@ -10,21 +11,73 @@ mod validation;
 
 #[derive(Serialize, Deserialize)]
 pub struct CatalogAssembly {
-    families: HashMap<Family, Vec<Item>>,
+    families: BTreeMap<Family, Vec<Item>>,
     exclusions: Vec<CatalogExclusionRule>,
     inclusions: Vec<CatalogInclusionRule>,
 }
 
+trait CatalogRule {
+    fn check(&self, outfit: &[Item]) -> bool;
+}
+
 #[derive(Serialize, Deserialize)]
-struct CatalogExclusionRule {
+pub struct CatalogExclusionRule {
     conditions: Vec<Item>,
     exclusions: Vec<Item>,
 }
 
+impl CatalogRule for CatalogExclusionRule {
+    fn check(&self, outfit: &[String]) -> bool {
+        self.conditions.iter().all(|condition| outfit.contains(condition))
+            && self.exclusions.iter().any(|item| outfit.contains(item))
+    }
+}
+
 #[derive(Serialize, Deserialize)]
-struct CatalogInclusionRule {
+pub struct CatalogInclusionRule {
     conditions: Vec<Item>,
     inclusions: Vec<Item>,
+}
+
+impl CatalogRule for CatalogInclusionRule {
+    fn check(&self, outfit: &[String]) -> bool {
+        self.conditions.iter().all(|condition| outfit.contains(condition))
+            && self.inclusions.iter().any(|item| !outfit.contains(item))
+    }
+}
+
+pub fn build_catalog_1(CatalogAssembly { families, exclusions, inclusions }: CatalogAssembly) -> Result<Catalog, validation::CatalogBuilderError> {
+    let item_index: BTreeMap<Item, Family> = families.iter()
+        .flat_map(|(family, items)| items.into_iter()
+            .map(|item| (item.clone(), family.clone()))
+            .collect::<Vec<_>>()
+        )
+        .collect();
+
+    validation::validate_catalog(
+        &families,
+        &item_index,
+        &exclusions,
+        &inclusions,
+    )?;
+
+    let catalog = families.into_iter()
+        .map(|(_, items)| Forest::unique(&items))
+        .reduce(|a, b| Forest::product(a, b))
+        .ok_or(validation::CatalogBuilderError::EmptyCatalog)?;
+
+    let outfits = catalog.trees().into_iter()
+        .filter(|outfit| {
+            !exclusions.into_iter()
+                .any(|rule| rule.check(outfit))
+        })
+        .filter(|outfit| {
+            !inclusions.into_iter()
+                .any(|rule| rule.check(outfit))
+        })
+        .collect::<Vec<Vec<_>>>();
+
+    unimplemented!()
 }
 
 pub fn build_catalog(CatalogAssembly { families, exclusions, inclusions }: CatalogAssembly) -> Result<Catalog, CatalogBuilderError> {
@@ -62,8 +115,6 @@ pub fn build_catalog(CatalogAssembly { families, exclusions, inclusions }: Catal
 mod no_rules_tests {
     use super::build_catalog;
     use super::CatalogAssembly;
-    use super::CatalogBuilder;
-    use super::CatalogExclusionRule;
 
     #[test]
     fn one_family_with_two_items() {
@@ -74,7 +125,7 @@ mod no_rules_tests {
         let shirts = String::from("shirts");
 
         let catalog = build_catalog(CatalogAssembly {
-            families: hashmap! {
+            families: btreemap! {
                 shirts => vec![red.clone(), blue.clone(), black.clone()]
             },
             exclusions: vec![],
@@ -105,7 +156,7 @@ mod no_rules_tests {
         let pants = String::from("pants");
 
         let catalog = build_catalog(CatalogAssembly {
-            families: hashmap! {
+            families: btreemap! {
                 shirts => vec![red.clone(), blue.clone()],
                 pants => vec![jeans.clone(), slacks.clone()],
             },
@@ -131,7 +182,6 @@ mod no_rules_tests {
 mod exclusion_rules_tests {
     use super::build_catalog;
     use super::CatalogAssembly;
-    use super::CatalogBuilder;
     use super::CatalogExclusionRule;
 
     #[test]
@@ -146,7 +196,7 @@ mod exclusion_rules_tests {
         let pants = String::from("pants");
 
         let catalog = build_catalog(CatalogAssembly {
-            families: hashmap! {
+            families: btreemap! {
                 shirts => vec![red.clone(), blue.clone()],
                 pants => vec![jeans.clone(), slacks.clone()],
             },
@@ -178,7 +228,7 @@ mod exclusion_rules_tests {
         let pants = String::from("pants");
 
         let catalog = build_catalog(CatalogAssembly {
-            families: hashmap! {
+            families: btreemap! {
                 shirts => vec![red.clone(), blue.clone()],
                 pants => vec![jeans.clone(), slacks.clone()],
             },
@@ -212,7 +262,7 @@ mod exclusion_rules_tests {
         let pants = String::from("pants");
 
         let catalog = build_catalog(CatalogAssembly {
-            families: hashmap! {
+            families: btreemap! {
                 shirts => vec![red.clone(), blue.clone()],
                 pants => vec![jeans.clone(), slacks.clone()],
             },
@@ -243,7 +293,7 @@ mod exclusion_rules_tests {
         let pants = String::from("pants");
 
         let catalog = build_catalog(CatalogAssembly {
-            families: hashmap! {
+            families: btreemap! {
                 shirts => vec![red.clone(), blue.clone()],
                 pants => vec![jeans.clone(), slacks.clone()],
             },
@@ -263,13 +313,41 @@ mod exclusion_rules_tests {
             catalog.outfits(&[], &[]).unwrap()
         );
     }
+
+//    #[test]
+//    fn exclusion_rules_must_have_a_condition() {
+//        let blue = String::from("shirts:blue");
+//        let red = String::from("shirts:red");
+//
+//        let jeans = String::from("pants:jeans");
+//        let slacks = String::from("pants:slacks");
+//
+//        let shirts = String::from("shirts");
+//        let pants = String::from("pants");
+//
+//        let error = build_catalog(CatalogAssembly {
+//            families: btreemap! {
+//                shirts => vec![red.clone(), blue.clone()],
+//                pants => vec![jeans.clone(), slacks.clone()],
+//            },
+//            exclusions: vec![
+//                CatalogExclusionRule { conditions: vec![], exclusions: vec![jeans.clone(), slacks.clone()] },
+//            ],
+//            inclusions: vec![],
+//        })
+//            .expect_err("expected build to return Error");
+//
+//        assert_eq!(
+//            CatalogBuilderError::ExclusionMissingCondition,
+//            error
+//        );
+//    }
 }
 
 #[cfg(test)]
 mod inclusion_rules_tests {
     use super::build_catalog;
     use super::CatalogAssembly;
-    use super::CatalogBuilder;
     use super::CatalogInclusionRule;
 
     #[test]
@@ -284,7 +362,7 @@ mod inclusion_rules_tests {
         let pants = String::from("pants");
 
         let catalog = build_catalog(CatalogAssembly {
-            families: hashmap! {
+            families: btreemap! {
                 shirts => vec![red.clone(), blue.clone()],
                 pants => vec![jeans.clone(), slacks.clone()],
             },
@@ -318,7 +396,7 @@ mod inclusion_rules_tests {
         let pants = String::from("pants");
 
         let catalog = build_catalog(CatalogAssembly {
-            families: hashmap! {
+            families: btreemap! {
                 shirts => vec![red.clone(), blue.clone()],
                 pants => vec![jeans.clone(), slacks.clone()],
             },
@@ -352,7 +430,7 @@ mod inclusion_rules_tests {
         let pants = String::from("pants");
 
         let catalog = build_catalog(CatalogAssembly {
-            families: hashmap! {
+            families: btreemap! {
                 shirts => vec![red.clone(), blue.clone()],
                 pants => vec![jeans.clone(), slacks.clone()],
             },
