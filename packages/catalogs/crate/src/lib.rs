@@ -13,6 +13,7 @@ extern crate weave;
 
 use wasm_bindgen::prelude::*;
 
+use catalog_builder::CatalogAssembly;
 use inner::Item;
 
 mod catalog;
@@ -40,6 +41,7 @@ pub fn find_options(catalog_token: &JsValue, selections: &JsValue, exclusions: &
 
 #[wasm_bindgen(js_name = buildCatalogWasm)]
 pub fn build_catalog(assembly: &JsValue) -> js_sys::Promise {
+    let assembly: CatalogAssembly = assembly.into_serde().unwrap();
     catalog_builder::build_catalog(assembly)
         .into_promise()
 }

@@ -1,16 +1,19 @@
 use std::collections::HashMap;
 use std::str;
 
-use inner::CatalogBuilder;
-use inner::Family;
-use inner::Item;
 use wasm_bindgen::prelude::*;
 
+use inner::CatalogBuilder;
+use inner::CatalogBuilderError;
+use inner::Family;
+use inner::Item;
+
 use super::catalog::CatalogToken;
-use inner;
+
+mod validation;
 
 #[derive(Serialize, Deserialize)]
-struct CatalogAssembly {
+pub struct CatalogAssembly {
     families: HashMap<Family, Vec<Item>>,
     exclusions: Vec<CatalogExclusionRule>,
     inclusions: Vec<CatalogInclusionRule>,
@@ -28,9 +31,7 @@ struct CatalogInclusionRule {
     inclusions: Vec<Item>,
 }
 
-pub fn build_catalog(assembly: &JsValue) -> Result<CatalogToken, CatalogBuilderError> {
-    let CatalogAssembly { families, exclusions, inclusions } = assembly.into_serde().unwrap();
-
+pub fn build_catalog(CatalogAssembly { families, exclusions, inclusions }: CatalogAssembly) -> Result<CatalogToken, CatalogBuilderError> {
     let exclusions: HashMap<Item, Vec<Item>> = exclusions.into_iter()
         .map(|CatalogExclusionRule { conditions, exclusions }|
             (
@@ -61,49 +62,4 @@ pub fn build_catalog(assembly: &JsValue) -> Result<CatalogToken, CatalogBuilderE
     catalog_builder.build()
         .map(|catalog| CatalogToken::from(catalog))
         .map_err(|err| CatalogBuilderError::from(err))
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum CatalogBuilderError {
-    InclusionMissingFamily { item: String },
-    ExclusionMissingFamily { item: String },
-    MultipleFamiliesRegistered { item: String, families: Vec<String> },
-    InclusionFamilyConflict { family: String, items: Vec<String> },
-    ExclusionFamilyConflict { family: String, items: Vec<String> },
-    CompoundError { errors: Vec<CatalogBuilderError> },
-}
-
-impl From<inner::CatalogBuilderError> for CatalogBuilderError {
-    fn from(error: inner::CatalogBuilderError) -> Self {
-        match error {
-            inner::CatalogBuilderError::CompoundError(errors) =>
-                CatalogBuilderError::CompoundError {
-                    errors: errors.into_iter().map(CatalogBuilderError::from).collect()
-                },
-            inner::CatalogBuilderError::MultipleFamiliesRegistered(item, families) =>
-                CatalogBuilderError::MultipleFamiliesRegistered {
-                    item: String::from(item),
-                    families: families.into_iter().map(String::from).collect(),
-                },
-            inner::CatalogBuilderError::InclusionFamilyConflict(family, items) =>
-                CatalogBuilderError::InclusionFamilyConflict {
-                    family: String::from(family),
-                    items: items.into_iter().map(String::from).collect(),
-                },
-            inner::CatalogBuilderError::ExclusionFamilyConflict(family, items) =>
-                CatalogBuilderError::ExclusionFamilyConflict {
-                    family: String::from(family),
-                    items: items.into_iter().map(String::from).collect(),
-                },
-            inner::CatalogBuilderError::InclusionMissingFamily(item) =>
-                CatalogBuilderError::InclusionMissingFamily {
-                    item: String::from(item)
-                },
-            inner::CatalogBuilderError::ExclusionMissingFamily(item) =>
-                CatalogBuilderError::ExclusionMissingFamily {
-                    item: String::from(item)
-                },
-        }
-    }
 }
