@@ -7,7 +7,7 @@ use super::Item;
 
 use self::CatalogBuilderError::{CompoundError, ExclusionFamilyConflict, ExclusionMissingFamily, InclusionFamilyConflict, InclusionMissingFamily, MultipleFamiliesRegistered};
 
-#[derive(Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CatalogBuilderError {
     InclusionMissingFamily { item: String },

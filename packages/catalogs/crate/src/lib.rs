@@ -13,6 +13,7 @@ extern crate weave;
 
 use wasm_bindgen::prelude::*;
 
+use catalog::CatalogToken;
 use catalog_builder::CatalogAssembly;
 use inner::Item;
 
@@ -43,6 +44,7 @@ pub fn find_options(catalog_token: &JsValue, selections: &JsValue, exclusions: &
 pub fn build_catalog(assembly: &JsValue) -> js_sys::Promise {
     let assembly: CatalogAssembly = assembly.into_serde().unwrap();
     catalog_builder::build_catalog(assembly)
+        .map(|catalog| CatalogToken::from(catalog))
         .into_promise()
 }
 
