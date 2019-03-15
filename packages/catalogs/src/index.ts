@@ -16,8 +16,6 @@ export type IgnitionBuildCatalogError =
     { type: "EmptyCatalog" }
     | { type: "InclusionMissingFamily", item: string }
     | { type: "ExclusionMissingFamily", item: string }
-    | { type: "InclusionMissingCondition" }
-    | { type: "ExclusionMissingCondition" }
     | { type: "MultipleFamiliesRegistered", item: string, families: string[] }
     | { type: "InclusionFamilyConflict", family: string, items: string[] }
     | { type: "ExclusionFamilyConflict", family: string, items: string[] }

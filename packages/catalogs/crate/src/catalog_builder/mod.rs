@@ -350,7 +350,7 @@ mod exclusion_rules_tests {
         let shirts = Family::from("shirts");
         let pants = Family::from("pants");
 
-        let error = build_catalog(CatalogAssembly {
+        let catalog = build_catalog(CatalogAssembly {
             families: btreemap! {
                 shirts => vec![red.clone(), blue.clone()],
                 pants => vec![jeans.clone(), slacks.clone()],
@@ -360,11 +360,15 @@ mod exclusion_rules_tests {
             ],
             inclusions: vec![],
         })
-            .expect_err("expected build to return Error");
+            .expect("expected build to return Catalog");
 
+        let expected = vec![
+            vec![slacks.clone(), blue.clone()],
+            vec![slacks.clone(), red.clone()],
+        ];
         assert_eq!(
-            CatalogBuilderError::ExclusionMissingCondition,
-            error
+            expected,
+            catalog.combinations()
         );
     }
 
@@ -582,7 +586,7 @@ mod inclusion_rules_tests {
         let shirts = Family::from("shirts");
         let pants = Family::from("pants");
 
-        let error = build_catalog(CatalogAssembly {
+        let catalog = build_catalog(CatalogAssembly {
             families: btreemap! {
                 shirts => vec![red.clone(), blue.clone()],
                 pants => vec![jeans.clone(), slacks.clone()],
@@ -592,11 +596,15 @@ mod inclusion_rules_tests {
                 CatalogInclusionRule { conditions: vec![], inclusions: vec![jeans.clone()] },
             ],
         })
-            .expect_err("expected build to return Error");
+            .expect("expected build to return Catalog");
 
+        let expected = vec![
+            vec![jeans.clone(), blue.clone()],
+            vec![jeans.clone(), red.clone()],
+        ];
         assert_eq!(
-            CatalogBuilderError::InclusionMissingCondition,
-            error
+            expected,
+            catalog.combinations()
         );
     }
 
