@@ -14,30 +14,33 @@ extern crate weave;
 
 use wasm_bindgen::prelude::*;
 
-use catalog::CatalogToken;
+use catalog::CatalogState;
 use catalog_builder::CatalogAssembly;
-use inner::Item;
+use types::Item;
 
 mod catalog;
 mod catalog_builder;
 mod utils;
-mod inner;
+mod types;
 
 #[wasm_bindgen(js_name = findOutfitsWasm)]
-pub fn find_outfits(catalog_token: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
+pub fn find_outfits(catalog_state: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
     let selections: Vec<Item> = to_items(selections);
     let exclusions: Vec<Item> = to_items(exclusions);
 
-    catalog::find_outfits(catalog_token, selections, exclusions)
+    CatalogState::from_jsvalue(catalog_state)
+        .and_then(|state| state.combinations(&selections, &exclusions))
+        .map(|(combos, _)| combos)
         .into_promise()
 }
 
 #[wasm_bindgen(js_name = findOptionsWasm)]
-pub fn find_options(catalog_token: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
+pub fn find_options(catalog_state: &JsValue, selections: &JsValue, exclusions: &JsValue) -> js_sys::Promise {
     let selections: Vec<Item> = to_items(selections);
     let exclusions: Vec<Item> = to_items(exclusions);
 
-    catalog::find_options(catalog_token, selections, exclusions)
+    CatalogState::from_jsvalue(catalog_state)
+        .and_then(|state| state.options(&selections, &exclusions))
         .into_promise()
 }
 
@@ -45,7 +48,7 @@ pub fn find_options(catalog_token: &JsValue, selections: &JsValue, exclusions: &
 pub fn build_catalog(assembly: &JsValue) -> js_sys::Promise {
     let assembly: CatalogAssembly = assembly.into_serde().unwrap();
     catalog_builder::build_catalog(assembly)
-        .map(|catalog| CatalogToken::from(catalog))
+        .map(|catalog| CatalogState::from_catalog(catalog))
         .into_promise()
 }
 

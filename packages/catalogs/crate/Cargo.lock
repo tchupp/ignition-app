@@ -110,7 +110,7 @@ dependencies = [
  "serde 1.0.89 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.89 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasm-bindgen 0.2.38 (registry+https://github.com/rust-lang/crates.io-index)",
- "weave 0.1.0 (git+https://github.com/tchupp/ignition?rev=c5fba6e8dace9636876d0d1c75690c3c781b39f2)",
+ "weave 0.1.0 (git+https://github.com/tchupp/ignition?rev=252fecd4022c6de77395240c613903eb9fb8e4a7)",
  "wee_alloc 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -357,7 +357,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "weave"
 version = "0.1.0"
-source = "git+https://github.com/tchupp/ignition?rev=c5fba6e8dace9636876d0d1c75690c3c781b39f2#c5fba6e8dace9636876d0d1c75690c3c781b39f2"
+source = "git+https://github.com/tchupp/ignition?rev=252fecd4022c6de77395240c613903eb9fb8e4a7#252fecd4022c6de77395240c613903eb9fb8e4a7"
 dependencies = [
  "hashbrown 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "itertools 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -445,7 +445,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum wasm-bindgen-macro 0.2.38 (registry+https://github.com/rust-lang/crates.io-index)" = "e51818f0ab6cdef85125d2c2f1a89096370286fe229d24de89504617918d76af"
 "checksum wasm-bindgen-macro-support 0.2.38 (registry+https://github.com/rust-lang/crates.io-index)" = "4770fd638bed46ce4669cb59aba4657e264839c24c568cc03d772849bfaed7eb"
 "checksum wasm-bindgen-shared 0.2.38 (registry+https://github.com/rust-lang/crates.io-index)" = "6f52047198d1887ffd4e508264bffbf92382a97c8b09b74781dbb11ee055ccc5"
-"checksum weave 0.1.0 (git+https://github.com/tchupp/ignition?rev=c5fba6e8dace9636876d0d1c75690c3c781b39f2)" = "<none>"
+"checksum weave 0.1.0 (git+https://github.com/tchupp/ignition?rev=252fecd4022c6de77395240c613903eb9fb8e4a7)" = "<none>"
 "checksum wee_alloc 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)" = "e841fed992c6c70cf2af5dbcffb0d988b1a7ffc5177ae4fb714ed14944b39d0a"
 "checksum winapi 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)" = "92c1eb33641e276cfa214a0522acad57be5c56b10cb348b3c5117db75f3ac4b0"
 "checksum winapi-i686-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"

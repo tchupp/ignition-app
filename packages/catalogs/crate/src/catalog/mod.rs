@@ -1,114 +1,204 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::HashMap;
 use std::error::Error;
 
+use itertools::Itertools;
 use wasm_bindgen::prelude::*;
 use weave::ItemStatus;
+use weave::zdd2::Forest;
 
-use inner::Catalog;
-use inner::CatalogError;
-use inner::Family;
-use inner::Item;
+use types::Family;
+use types::Item;
+
+use self::CatalogError::{CompoundError, UnknownExclusions, UnknownSelections};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct CatalogToken(String);
-
-impl From<Catalog> for CatalogToken {
-    fn from(catalog: Catalog) -> Self {
-        let bytes = bincode::serialize(&catalog).unwrap();
-        CatalogToken(base64::encode(&bytes[..]))
-    }
+pub struct Catalog {
+    combinations: Forest<Item>,
+    items: HashMap<Item, Family>,
 }
 
-impl From<CatalogToken> for JsValue {
-    fn from(token: CatalogToken) -> Self {
-        JsValue::from_str(token.0.as_str())
+impl Catalog {
+    pub fn new(combinations: Forest<Item>, items: HashMap<Item, Family>) -> Self {
+        Catalog { combinations, items }
     }
-}
 
-type Outfits = BTreeSet<BTreeSet<Item>>;
+    pub fn restrict(self, selections: &[Item], exclusions: &[Item]) -> Self {
+        let combinations = self.combinations
+            .subset_all(selections)
+            .subset_none(exclusions);
 
-pub fn find_outfits(
-    catalog_token: &JsValue,
-    selections: Vec<Item>,
-    exclusions: Vec<Item>,
-) -> Result<Outfits, IgnitionOptionsError> {
-    let catalog = to_catalog(catalog_token)?;
-    let outfits = catalog.outfits(&selections[..], &exclusions[..])?;
+        Catalog { combinations, items: self.items }
+    }
 
-    Ok(outfits)
+    pub fn combinations(&self) -> Vec<Vec<Item>> {
+        self.combinations.trees()
+    }
+
+    pub fn family(&self, item: &Item) -> Family {
+        self.items[item].clone()
+    }
+
+    fn not_recognized(&self, items: &[Item]) -> Vec<Item> {
+        items.iter()
+            .filter(|&item| !self.items.contains_key(item))
+            .cloned()
+            .collect()
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "type")]
-pub enum IgnitionOptionsError {
+pub enum CatalogError {
     UnknownSelections { items: Vec<String> },
+    UnknownExclusions { items: Vec<String> },
     MissingToken,
+    BadState,
     BadToken { token: String, detail: String },
+    CompoundError { errors: Vec<CatalogError> },
 }
 
-impl From<CatalogError> for IgnitionOptionsError {
-    fn from(error: CatalogError) -> Self {
-        match error {
-            CatalogError::UnknownItems(items) => {
-                let items = items.iter()
-                    .map(|item| String::from(item.clone()))
-                    .collect::<Vec<_>>();
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CatalogToken(String);
 
-                IgnitionOptionsError::UnknownSelections {
-                    items: items.into_iter().map(String::from).collect()
-                }
-            }
-        }
-    }
-}
-
-type Options = BTreeMap<Family, Vec<ItemStatus<Item>>>;
-
-pub fn find_options(
-    catalog_token: &JsValue,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CatalogState {
+    token: CatalogToken,
     selections: Vec<Item>,
     exclusions: Vec<Item>,
-) -> Result<(Options, CatalogToken), IgnitionOptionsError> {
-    let catalog = to_catalog(catalog_token)?;
-    let catalog = catalog.select(&selections[..])?;
-    let options = catalog.options(&selections[..], &exclusions[..])?;
-
-    Ok((options, CatalogToken::from(catalog)))
 }
 
-fn to_catalog(catalog_token: &JsValue) -> Result<Catalog, IgnitionOptionsError> {
-    let catalog_token = match catalog_token.as_string() {
-        Some(str) => str,
-        None => return Err(IgnitionOptionsError::MissingToken),
-    };
+impl CatalogState {
+    pub fn from_jsvalue(value: &JsValue) -> Result<Self, CatalogError> {
+        value.into_serde()
+            .map_err(|_| CatalogError::BadState)
+    }
 
-    let decoded_token = match base64::decode(catalog_token.as_str()) {
-        Ok(t) => t,
-        Err(err) => return Err(IgnitionOptionsError::BadToken {
-            token: catalog_token,
-            detail: err.description().into(),
-        })
-    };
-
-    let catalog: Catalog = match bincode::deserialize(&decoded_token[..]) {
-        Ok(c) => c,
-        Err(err) => {
-            return Err(IgnitionOptionsError::BadToken {
-                token: catalog_token,
-                detail: err.description().into(),
-            });
+    pub fn from_catalog(catalog: Catalog) -> Self {
+        Self {
+            token: Self::catalog_to_token(&catalog),
+            selections: vec![],
+            exclusions: vec![],
         }
-    };
+    }
 
-    Ok(catalog)
-}
+    pub fn combinations(self, selections: &[Item], exclusions: &[Item]) -> Result<(Vec<Vec<Item>>, Self), CatalogError> {
+        let catalog = Self::catalog_from_token(&self.token)?;
 
-fn to_items(items: &JsValue) -> Vec<Item> {
-    let items: Vec<Item> = items.into_serde().unwrap();
+        let unknown_selections = catalog.not_recognized(selections);
+        let unknown_exclusions = catalog.not_recognized(exclusions);
 
-    items.into_iter()
-        .flat_map(|item| item.split(",").map(String::from).collect::<Vec<String>>())
-        .map(|item| String::from(item.trim()))
-        .filter(|item| !item.is_empty())
-        .collect()
+        let catalog = match (unknown_selections.len(), unknown_exclusions.len()) {
+            (0, 0) => catalog,
+            (_, 0) => return Err(UnknownSelections { items: unknown_selections }),
+            (0, _) => return Err(UnknownExclusions { items: unknown_exclusions }),
+            (_, _) => return Err(CompoundError {
+                errors: vec![
+                    UnknownSelections { items: unknown_selections },
+                    UnknownExclusions { items: unknown_exclusions }]
+            }),
+        };
+
+        let catalog = catalog.restrict(selections, exclusions);
+        let combinations = catalog.combinations();
+
+        let new_state = CatalogState {
+            token: Self::catalog_to_token(&catalog),
+            selections: Self::chain(&self.selections, selections),
+            exclusions: Self::chain(&self.exclusions, exclusions),
+        };
+
+        Ok((combinations, new_state))
+    }
+
+    pub fn options(self, selections: &[Item], exclusions: &[Item]) -> Result<(HashMap<Family, Vec<ItemStatus<Item>>>, Self), CatalogError> {
+        let catalog = Self::catalog_from_token(&self.token)?;
+
+        let unknown_selections = catalog.not_recognized(selections);
+        let unknown_exclusions = catalog.not_recognized(exclusions);
+
+        let catalog = match (unknown_selections.len(), unknown_exclusions.len()) {
+            (0, 0) => catalog,
+            (_, 0) => return Err(UnknownSelections { items: unknown_selections }),
+            (0, _) => return Err(UnknownExclusions { items: unknown_exclusions }),
+            (_, _) => return Err(CompoundError {
+                errors: vec![
+                    UnknownSelections { items: unknown_selections },
+                    UnknownExclusions { items: unknown_exclusions }]
+            }),
+        };
+
+        let catalog = catalog.restrict(selections, exclusions);
+        let combinations = catalog.combinations();
+        let total = combinations.len();
+
+        let selections = Self::chain(&self.selections, selections);
+        let exclusions = Self::chain(&self.exclusions, exclusions);
+
+        let options = catalog.combinations.occurrences()
+            .into_iter()
+            .chain(catalog.items.keys()
+                .map(|f| (f.clone(), 0usize))
+            )
+            .unique_by(|(item, _)| item.clone())
+            .map(|(item, count)| ((catalog.family(&item), item), count))
+            .map(|((family, item), count)| {
+                let item = if count == 0 {
+                    ItemStatus::Excluded(item)
+                } else if selections.contains(&item) {
+                    ItemStatus::Selected(item)
+                } else if count == total {
+                    ItemStatus::Required(item)
+                } else {
+                    ItemStatus::Available(item)
+                };
+
+                (family, item)
+            })
+            .into_group_map::<Family, ItemStatus<Item>>();
+
+        let new_state = CatalogState {
+            token: Self::catalog_to_token(&catalog),
+            selections,
+            exclusions,
+        };
+
+        Ok((options, new_state))
+    }
+
+    fn catalog_from_token(catalog_token: &CatalogToken) -> Result<Catalog, CatalogError> {
+        let catalog_token = &catalog_token.0;
+        let decoded_token = match base64::decode(catalog_token.as_str()) {
+            Ok(t) => t,
+            Err(err) => return Err(CatalogError::BadToken {
+                token: catalog_token.clone(),
+                detail: err.description().into(),
+            })
+        };
+
+        let catalog: Catalog = match bincode::deserialize(&decoded_token[..]) {
+            Ok(c) => c,
+            Err(err) => {
+                return Err(CatalogError::BadToken {
+                    token: catalog_token.clone(),
+                    detail: err.description().into(),
+                });
+            }
+        };
+
+        Ok(catalog)
+    }
+
+    fn catalog_to_token(catalog: &Catalog) -> CatalogToken {
+        let bytes = bincode::serialize(catalog).unwrap();
+        CatalogToken(base64::encode(&bytes[..]))
+    }
+
+    fn chain(v1: &[Item], v2: &[Item]) -> Vec<Item> {
+        v1.iter()
+            .chain(v2)
+            .cloned()
+            .unique()
+            .sorted()
+            .collect()
+    }
 }

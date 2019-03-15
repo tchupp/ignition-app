@@ -28,7 +28,7 @@ reduce = "0.1"
 
 cfg-if = "0.1"
 
-weave = { git = "https://github.com/tchupp/ignition", rev = "c5fba6e8dace9636876d0d1c75690c3c781b39f2" }
+weave = { git = "https://github.com/tchupp/ignition", rev = "252fecd4022c6de77395240c613903eb9fb8e4a7" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
