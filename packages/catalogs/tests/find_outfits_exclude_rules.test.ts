@@ -18,9 +18,9 @@ test("findOutfits with one exclusion rule, no selections", async t => {
         .run();
 
     const expected1 = [
-        ["pants:jeans", "shirts:red"],
-        ["pants:slacks", "shirts:blue"],
         ["pants:slacks", "shirts:red"],
+        ["pants:slacks", "shirts:blue"],
+        ["pants:jeans", "shirts:red"],
     ];
     t.deepEqual(outfits1, right(expected1));
 });

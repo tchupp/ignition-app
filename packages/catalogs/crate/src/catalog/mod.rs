@@ -1,7 +1,8 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::error::Error;
 
 use itertools::Itertools;
+use serde::{Serialize, Serializer};
 use wasm_bindgen::prelude::*;
 use weave::ItemStatus;
 use weave::zdd2::Forest;
@@ -14,7 +15,13 @@ use self::CatalogError::{CompoundError, UnknownExclusions, UnknownSelections};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Catalog {
     combinations: Forest<Item>,
+    #[serde(serialize_with = "ordered_map")]
     items: HashMap<Item, Family>,
+}
+
+fn ordered_map<S: Serializer>(value: &HashMap<Item, Family>, serializer: S) -> Result<S::Ok, S::Error> {
+    let ordered: BTreeMap<_, _> = value.iter().collect();
+    ordered.serialize(serializer)
 }
 
 impl Catalog {
@@ -34,8 +41,18 @@ impl Catalog {
         self.combinations.trees()
     }
 
-    pub fn family(&self, item: &Item) -> Family {
-        self.items[item].clone()
+    pub fn item_occurrences<'a>(&'a self) -> impl Iterator<Item=(Family, (Item, usize))> + 'a {
+        self.combinations.occurrences()
+            .into_iter()
+            .map(move |(item, count)| {
+                let family = self.items[&item].clone();
+
+                (family, (item, count))
+            })
+            .chain(self.items.iter()
+                .map(|(item, family)| (family.clone(), (item.clone(), 0usize)))
+            )
+            .unique_by(|(_, (item, _))| item.clone())
     }
 
     fn not_recognized(&self, items: &[Item]) -> Vec<Item> {
@@ -67,6 +84,8 @@ pub struct CatalogState {
     exclusions: Vec<Item>,
 }
 
+pub type OptionsByFamily = HashMap<Family, Vec<ItemStatus<Item>>>;
+
 impl CatalogState {
     pub fn from_jsvalue(value: &JsValue) -> Result<Self, CatalogError> {
         value.into_serde()
@@ -83,20 +102,7 @@ impl CatalogState {
 
     pub fn combinations(self, selections: &[Item], exclusions: &[Item]) -> Result<(Vec<Vec<Item>>, Self), CatalogError> {
         let catalog = Self::catalog_from_token(&self.token)?;
-
-        let unknown_selections = catalog.not_recognized(selections);
-        let unknown_exclusions = catalog.not_recognized(exclusions);
-
-        let catalog = match (unknown_selections.len(), unknown_exclusions.len()) {
-            (0, 0) => catalog,
-            (_, 0) => return Err(UnknownSelections { items: unknown_selections }),
-            (0, _) => return Err(UnknownExclusions { items: unknown_exclusions }),
-            (_, _) => return Err(CompoundError {
-                errors: vec![
-                    UnknownSelections { items: unknown_selections },
-                    UnknownExclusions { items: unknown_exclusions }]
-            }),
-        };
+        Self::validate_selections_and_exclusions(&catalog, selections, exclusions)?;
 
         let catalog = catalog.restrict(selections, exclusions);
         let combinations = catalog.combinations();
@@ -110,38 +116,18 @@ impl CatalogState {
         Ok((combinations, new_state))
     }
 
-    pub fn options(self, selections: &[Item], exclusions: &[Item]) -> Result<(HashMap<Family, Vec<ItemStatus<Item>>>, Self), CatalogError> {
+    pub fn options(self, selections: &[Item], exclusions: &[Item]) -> Result<(OptionsByFamily, Self), CatalogError> {
         let catalog = Self::catalog_from_token(&self.token)?;
-
-        let unknown_selections = catalog.not_recognized(selections);
-        let unknown_exclusions = catalog.not_recognized(exclusions);
-
-        let catalog = match (unknown_selections.len(), unknown_exclusions.len()) {
-            (0, 0) => catalog,
-            (_, 0) => return Err(UnknownSelections { items: unknown_selections }),
-            (0, _) => return Err(UnknownExclusions { items: unknown_exclusions }),
-            (_, _) => return Err(CompoundError {
-                errors: vec![
-                    UnknownSelections { items: unknown_selections },
-                    UnknownExclusions { items: unknown_exclusions }]
-            }),
-        };
+        Self::validate_selections_and_exclusions(&catalog, selections, exclusions)?;
 
         let catalog = catalog.restrict(selections, exclusions);
-        let combinations = catalog.combinations();
-        let total = combinations.len();
+        let total = catalog.combinations.len();
 
         let selections = Self::chain(&self.selections, selections);
         let exclusions = Self::chain(&self.exclusions, exclusions);
 
-        let options = catalog.combinations.occurrences()
-            .into_iter()
-            .chain(catalog.items.keys()
-                .map(|f| (f.clone(), 0usize))
-            )
-            .unique_by(|(item, _)| item.clone())
-            .map(|(item, count)| ((catalog.family(&item), item), count))
-            .map(|((family, item), count)| {
+        let options = catalog.item_occurrences()
+            .map(|(family, (item, count))| {
                 let item = if count == 0 {
                     ItemStatus::Excluded(item)
                 } else if selections.contains(&item) {
@@ -165,7 +151,7 @@ impl CatalogState {
         Ok((options, new_state))
     }
 
-    fn catalog_from_token(catalog_token: &CatalogToken) -> Result<Catalog, CatalogError> {
+    pub fn catalog_from_token(catalog_token: &CatalogToken) -> Result<Catalog, CatalogError> {
         let catalog_token = &catalog_token.0;
         let decoded_token = match base64::decode(catalog_token.as_str()) {
             Ok(t) => t,
@@ -191,6 +177,22 @@ impl CatalogState {
     fn catalog_to_token(catalog: &Catalog) -> CatalogToken {
         let bytes = bincode::serialize(catalog).unwrap();
         CatalogToken(base64::encode(&bytes[..]))
+    }
+
+    fn validate_selections_and_exclusions(catalog: &Catalog, selections: &[Item], exclusions: &[Item]) -> Result<(), CatalogError> {
+        let unknown_selections = catalog.not_recognized(selections);
+        let unknown_exclusions = catalog.not_recognized(exclusions);
+
+        match (unknown_selections.len(), unknown_exclusions.len()) {
+            (0, 0) => Ok(()),
+            (_, 0) => Err(UnknownSelections { items: unknown_selections }),
+            (0, _) => Err(UnknownExclusions { items: unknown_exclusions }),
+            (_, _) => Err(CompoundError {
+                errors: vec![
+                    UnknownSelections { items: unknown_selections },
+                    UnknownExclusions { items: unknown_exclusions }]
+            }),
+        }
     }
 
     fn chain(v1: &[Item], v2: &[Item]) -> Vec<Item> {

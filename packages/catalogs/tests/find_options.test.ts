@@ -1,32 +1,33 @@
 import test from "ava";
-import {buildCatalog, CatalogToken, findOptions, IgnitionOptionsError, Options} from "../src";
+import {buildCatalog, CatalogState, findOptions, IgnitionOptionsError, Options} from "../src";
 import {left, right} from "fp-ts/lib/Either";
+
+const DEFAULT_STATE = {token: "", selections: [], exclusions: []};
 
 const families = {
     "shirts": ["shirts:red", "shirts:blue"],
     "pants": ["pants:jeans", "pants:slacks"],
 };
-const catalogToken: Promise<CatalogToken> = buildCatalog(families)
-    .mapLeft(err => err as unknown as IgnitionOptionsError)
-    .fold(() => "", e => e)
+const catalogState: Promise<CatalogState> = buildCatalog(families)
+    .fold(() => DEFAULT_STATE, res => res)
     .run()
     .then(n => n.value);
 
-test("findOptions has two effects for timing", async t => {
+test("findOptions has one effect for timing", async t => {
     // @ts-ignore
-    const [_, effects] = await findOptions(await catalogToken).run();
+    const [_, effects] = await findOptions(await catalogState).run();
 
     t.deepEqual(effects.length, 1);
 
     t.deepEqual(effects[0].type, "Timed");
     t.deepEqual(effects[0].name, "find_options");
     // @ts-ignore
-    t.deepEqual(effects[0].details.token, "69SwDy6bPLrHCUs3MTrBszftEko=");
+    t.deepEqual(effects[0].details.token, "J8WFmwgHMh4Sh65iElxsr7f3Lx8=");
 });
 
 test("findOptions with no rules, and no selections", async t => {
-    const [options] = await findOptions(await catalogToken).run();
-    const newCatalogToken = await catalogToken;
+    const [options] = await findOptions(await catalogState).run();
+    const newCatalogState = await catalogState;
 
     const expectedOptions: Options = {
         "shirts": [
@@ -38,19 +39,19 @@ test("findOptions with no rules, and no selections", async t => {
             {type: "Available", item: "pants:slacks"},
         ]
     };
-    t.deepEqual(options, right([expectedOptions, newCatalogToken]));
+    t.deepEqual(options, right([expectedOptions, newCatalogState]));
 });
 
 test("findOptions with no rules, and one selection", async t => {
-    const [result1] = await findOptions(await catalogToken, ["shirts:red"]).run();
+    const [result1] = await findOptions(await catalogState, ["shirts:red"]).run();
 
-    const newCatalogToken = result1.map(e => e[1]).getOrElse("");
-    const [result2] = await findOptions(newCatalogToken, []).run();
+    const newCatalogState = result1.map(e => e[1]).getOrElse(DEFAULT_STATE);
+    const [result2] = await findOptions(newCatalogState, []).run();
 
     const expectedOptions: Options = {
         "shirts": [
-            {type: "Excluded", item: "shirts:blue"},
-            {type: "Selected", item: "shirts:red"}
+            {type: "Selected", item: "shirts:red"},
+            {type: "Excluded", item: "shirts:blue"}
         ],
         "pants": [
             {type: "Available", item: "pants:jeans"},
@@ -61,20 +62,80 @@ test("findOptions with no rules, and one selection", async t => {
     t.deepEqual(result1, result2);
 });
 
-test("findOptions with no rules, and all selections", async t => {
-    const [result1] = await findOptions(await catalogToken, ["pants:slacks,   shirts:red"]).run();
+test("findOptions with no rules, and two selections", async t => {
+    const [result1] = await findOptions(await catalogState, ["pants:slacks,   shirts:red"]).run();
 
-    const newCatalogToken = result1.map(e => e[1]).getOrElse("");
-    const [result2] = await findOptions(newCatalogToken, []).run();
+    const newCatalogState = result1.map(e => e[1]).getOrElse(DEFAULT_STATE);
+    const [result2] = await findOptions(newCatalogState, []).run();
 
     const expectedOptions: Options = {
         "shirts": [
-            {type: "Excluded", item: "shirts:blue"},
-            {type: "Selected", item: "shirts:red"}
+            {type: "Selected", item: "shirts:red"},
+            {type: "Excluded", item: "shirts:blue"}
         ],
         "pants": [
-            {type: "Excluded", item: "pants:jeans"},
             {type: "Selected", item: "pants:slacks"},
+            {type: "Excluded", item: "pants:jeans"},
+        ]
+    };
+    t.deepEqual(result1.map(e => e[0]), right(expectedOptions));
+    t.deepEqual(result1, result2);
+});
+
+test("findOptions with no rules, and one exclusion", async t => {
+    const [result1] = await findOptions(await catalogState, [], ["shirts:blue"]).run();
+
+    const newCatalogState = result1.map(e => e[1]).getOrElse(DEFAULT_STATE);
+    const [result2] = await findOptions(newCatalogState, []).run();
+
+    const expectedOptions: Options = {
+        "shirts": [
+            {type: "Required", item: "shirts:red"},
+            {type: "Excluded", item: "shirts:blue"}
+        ],
+        "pants": [
+            {type: "Available", item: "pants:jeans"},
+            {type: "Available", item: "pants:slacks"},
+        ]
+    };
+    t.deepEqual(result1.map(e => e[0]), right(expectedOptions));
+    t.deepEqual(result1, result2);
+});
+
+test("findOptions with no rules, and two exclusions", async t => {
+    const [result1] = await findOptions(await catalogState, [], ["pants:slacks,   shirts:red"]).run();
+
+    const newCatalogState = result1.map(e => e[1]).getOrElse(DEFAULT_STATE);
+    const [result2] = await findOptions(newCatalogState, []).run();
+
+    const expectedOptions: Options = {
+        "shirts": [
+            {type: "Required", item: "shirts:blue"},
+            {type: "Excluded", item: "shirts:red"},
+        ],
+        "pants": [
+            {type: "Required", item: "pants:jeans"},
+            {type: "Excluded", item: "pants:slacks"},
+        ]
+    };
+    t.deepEqual(result1.map(e => e[0]), right(expectedOptions));
+    t.deepEqual(result1, result2);
+});
+
+test("findOptions with no rules, and one exclusion", async t => {
+    const [result1] = await findOptions(await catalogState, ["pants:slacks"], ["shirts:blue"]).run();
+
+    const newCatalogState = result1.map(e => e[1]).getOrElse(DEFAULT_STATE);
+    const [result2] = await findOptions(newCatalogState, []).run();
+
+    const expectedOptions: Options = {
+        "shirts": [
+            {type: "Required", item: "shirts:red"},
+            {type: "Excluded", item: "shirts:blue"}
+        ],
+        "pants": [
+            {type: "Selected", item: "pants:slacks"},
+            {type: "Excluded", item: "pants:jeans"},
         ]
     };
     t.deepEqual(result1.map(e => e[0]), right(expectedOptions));
@@ -82,7 +143,7 @@ test("findOptions with no rules, and all selections", async t => {
 });
 
 test("findOptions with no rules, with unknown selection", async t => {
-    const [error] = await findOptions(await catalogToken, ["shirts:black"]).run();
+    const [error] = await findOptions(await catalogState, ["shirts:black"]).run();
 
     const expectedError: IgnitionOptionsError = {
         items: ["shirts:black"],
@@ -91,47 +152,57 @@ test("findOptions with no rules, with unknown selection", async t => {
     t.deepEqual(error, left(expectedError));
 });
 
-test("findOptions returns error when the catalog token is blank", async t => {
-    const token = "";
+test("findOptions with no rules, with unknown exclusion", async t => {
+    const [error] = await findOptions(await catalogState, [], ["shirts:black"]).run();
 
-    const [error] = await findOptions(token, ["shirts:black"]).run();
+    const expectedError: IgnitionOptionsError = {
+        items: ["shirts:black"],
+        type: "UnknownExclusions",
+    };
+    t.deepEqual(error, left(expectedError));
+});
+
+test("findOptions returns error when the catalog token is blank", async t => {
+    const state = {token: "", selections: [], exclusions: []};
+
+    const [error] = await findOptions(state, ["shirts:black"]).run();
 
     const expectedError: IgnitionOptionsError = {
         type: "BadToken",
-        token: token,
+        token: state.token,
         detail: "failed to fill whole buffer"
     };
     t.deepEqual(error, left(expectedError));
 });
 
 test("findOptions returns error when the catalog token is the wrong length", async t => {
-    const token = "MwAAAAAAAAAoM";
+    const state = {token: "MwAAAAAAAAAoM", selections: [], exclusions: []};
 
-    const [error] = await findOptions(token, ["shirts:black"]).run();
+    const [error] = await findOptions(state, []).run();
 
     const expectedError: IgnitionOptionsError = {
         type: "BadToken",
-        token: token,
+        token: state.token,
         detail: "invalid length"
     };
     t.deepEqual(error, left(expectedError));
 });
 
 test("findOptions returns error when the catalog token is malformed", async t => {
-    const token = "MwAAAAAAAAAoMCA";
+    const state = {token: "MwAAAAAAAAAoMCA", selections: [], exclusions: []};
 
-    const [error] = await findOptions(token, ["shirts:black"]).run();
+    const [error] = await findOptions(state, []).run();
 
     const expectedError: IgnitionOptionsError = {
         type: "BadToken",
-        token: token,
+        token: state.token,
         detail: ""
     };
     t.deepEqual(error, left(expectedError));
 });
 
 /*test.skip("findOptions with no rules, with more selections than families", async t => {
-    const error = await catalogToken
+    const error = await catalogState
         .chain(catalog => findOptions(catalog, ["shirts:red", "shirts:blue"]))
         .run();
 

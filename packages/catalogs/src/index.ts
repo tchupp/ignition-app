@@ -6,17 +6,30 @@ export {IgnitionEffect} from "./effects";
 
 export type CatalogToken = string;
 
+export type CatalogState = {
+    readonly token: CatalogToken;
+    readonly selections: Item[];
+    readonly exclusions: Item[];
+};
+
 export type IgnitionBuildCatalogError =
-    { type: "CompoundError", errors: IgnitionBuildCatalogError[] }
+    { type: "EmptyCatalog" }
+    | { type: "InclusionMissingFamily", item: string }
+    | { type: "ExclusionMissingFamily", item: string }
+    | { type: "InclusionMissingCondition" }
+    | { type: "ExclusionMissingCondition" }
     | { type: "MultipleFamiliesRegistered", item: string, families: string[] }
     | { type: "InclusionFamilyConflict", family: string, items: string[] }
     | { type: "ExclusionFamilyConflict", family: string, items: string[] }
-    | { type: "InclusionMissingFamily", item: string }
-    | { type: "ExclusionMissingFamily", item: string }
+    | { type: "CompoundError", errors: IgnitionBuildCatalogError[] }
 
 export type IgnitionOptionsError =
-    { type: "UnknownSelections", items: string[] }
-    | { type: "BadToken", token: string, detail: string }
+    { type: "UnknownSelections", items: Item[] }
+    | { type: "UnknownExclusions", items: Item[] }
+    | { type: "MissingToken" }
+    | { type: "BadState" }
+    | { type: "BadToken", token: CatalogToken, detail: string }
+    | { type: "CompoundError", errors: IgnitionOptionsError[] }
 
 export type CatalogFamilies = {
     readonly [key: string]: Item[];
@@ -48,7 +61,7 @@ export function buildCatalog(
     families: CatalogFamilies,
     exclusions: CatalogExclusionRule[] = [],
     inclusions: CatalogInclusionRule[] = []
-): NomadTE<IgnitionEffect, IgnitionBuildCatalogError, CatalogToken> {
+): NomadTE<IgnitionEffect, IgnitionBuildCatalogError, CatalogState> {
     let contents = {families: families, exclusions: exclusions, inclusions: inclusions};
 
     return timed(`build_catalog`, {}, () =>
@@ -60,39 +73,39 @@ export function buildCatalog(
     );
 }
 
-export type IgnitionOptionsResult = NomadTE<IgnitionEffect, IgnitionOptionsError, [Options, CatalogToken]>
+export type IgnitionOptionsResult = NomadTE<IgnitionEffect, IgnitionOptionsError, [Options, CatalogState]>
 
 export function findOptions(
-    catalogToken: CatalogToken,
+    catalogState: CatalogState,
     selections: Item[] = [],
     exclusions: Item[] = []
 ): IgnitionOptionsResult {
-    return timed(`find_options`, {token: hashToken(catalogToken)}, () =>
+    return timed(`find_options`, {token: hashToken(catalogState)}, () =>
         tryCatch(
             () => import("../crate/pkg")
-                .then(m => m.findOptionsWasm(catalogToken, selections, exclusions)),
+                .then(m => m.findOptionsWasm(catalogState, selections, exclusions)),
             (err: any) => err
         )
     );
 }
 
 export function findOutfits(
-    catalogToken: CatalogToken,
+    catalogState: CatalogState,
     selections: Item[] = [],
     exclusions: Item[] = []
 ): NomadTE<IgnitionEffect, IgnitionBuildCatalogError, Item[][]> {
-    return timed(`find_outfits`, {token: hashToken(catalogToken)}, () =>
+    return timed(`find_outfits`, {token: hashToken(catalogState)}, () =>
         tryCatch(
             () => import("../crate/pkg")
-                .then(m => m.findOutfitsWasm(catalogToken, selections, exclusions)),
+                .then(m => m.findOutfitsWasm(catalogState, selections, exclusions)),
             (err: any) => err
         )
     );
 }
 
-function hashToken(catalogToken: CatalogToken): string {
+function hashToken(catalogState: CatalogState): string {
     return require('crypto')
         .createHash('sha1')
-        .update(catalogToken)
+        .update(catalogState.token)
         .digest('base64');
 }

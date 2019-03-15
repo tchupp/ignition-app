@@ -11,6 +11,7 @@ extern crate reduce;
 extern crate serde_derive;
 extern crate wasm_bindgen;
 extern crate weave;
+extern crate serde;
 
 use wasm_bindgen::prelude::*;
 
@@ -48,7 +49,7 @@ pub fn find_options(catalog_state: &JsValue, selections: &JsValue, exclusions: &
 pub fn build_catalog(assembly: &JsValue) -> js_sys::Promise {
     let assembly: CatalogAssembly = assembly.into_serde().unwrap();
     catalog_builder::build_catalog(assembly)
-        .map(|catalog| CatalogState::from_catalog(catalog))
+        .map(CatalogState::from_catalog)
         .into_promise()
 }
 
@@ -56,7 +57,7 @@ fn to_items(items: &JsValue) -> Vec<Item> {
     let items: Vec<Item> = items.into_serde().unwrap();
 
     items.into_iter()
-        .flat_map(|item| item.split(",").map(String::from).collect::<Vec<String>>())
+        .flat_map(|item| item.split(',').map(String::from).collect::<Vec<String>>())
         .map(|item| String::from(item.trim()))
         .filter(|item| !item.is_empty())
         .collect()
