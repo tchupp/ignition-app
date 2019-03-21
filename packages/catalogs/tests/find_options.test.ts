@@ -1,5 +1,5 @@
 import test from "ava";
-import {buildCatalog, CatalogState, findOptions, IgnitionOptionsError, Options} from "../src";
+import {buildCatalog, CatalogState, findOptions, CatalogOptionsError, Options} from "../src";
 import {left, right} from "fp-ts/lib/Either";
 
 const DEFAULT_STATE = {token: "", selections: [], exclusions: []};
@@ -145,7 +145,7 @@ test("findOptions with no rules, and one exclusion", async t => {
 test("findOptions with no rules, with unknown selection", async t => {
     const [error] = await findOptions(await catalogState, ["shirts:black"]).run();
 
-    const expectedError: IgnitionOptionsError = {
+    const expectedError: CatalogOptionsError = {
         items: ["shirts:black"],
         type: "UnknownSelections",
     };
@@ -155,7 +155,7 @@ test("findOptions with no rules, with unknown selection", async t => {
 test("findOptions with no rules, with unknown exclusion", async t => {
     const [error] = await findOptions(await catalogState, [], ["shirts:black"]).run();
 
-    const expectedError: IgnitionOptionsError = {
+    const expectedError: CatalogOptionsError = {
         items: ["shirts:black"],
         type: "UnknownExclusions",
     };
@@ -167,7 +167,7 @@ test("findOptions returns error when the catalog token is blank", async t => {
 
     const [error] = await findOptions(state, ["shirts:black"]).run();
 
-    const expectedError: IgnitionOptionsError = {
+    const expectedError: CatalogOptionsError = {
         type: "BadToken",
         token: state.token,
         detail: "failed to fill whole buffer"
@@ -180,7 +180,7 @@ test("findOptions returns error when the catalog token is the wrong length", asy
 
     const [error] = await findOptions(state, []).run();
 
-    const expectedError: IgnitionOptionsError = {
+    const expectedError: CatalogOptionsError = {
         type: "BadToken",
         token: state.token,
         detail: "invalid length"
@@ -193,7 +193,7 @@ test("findOptions returns error when the catalog token is malformed", async t =>
 
     const [error] = await findOptions(state, []).run();
 
-    const expectedError: IgnitionOptionsError = {
+    const expectedError: CatalogOptionsError = {
         type: "BadToken",
         token: state.token,
         detail: ""

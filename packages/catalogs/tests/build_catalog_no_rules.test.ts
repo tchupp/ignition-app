@@ -1,5 +1,5 @@
 import test from "ava";
-import {buildCatalog, CatalogState, IgnitionBuildCatalogError} from "../src";
+import {buildCatalog, CatalogState, CatalogBuildError} from "../src";
 import {left, right} from "fp-ts/lib/Either";
 
 test("build, when one item is in two families, gives an error", async t => {
@@ -10,7 +10,7 @@ test("build, when one item is in two families, gives an error", async t => {
 
     const [error] = await buildCatalog(families).run();
 
-    const expectedError: IgnitionBuildCatalogError = {
+    const expectedError: CatalogBuildError = {
         type: "MultipleFamiliesRegistered",
         item: "blue",
         families: ["shirts", "pants"]
@@ -23,7 +23,7 @@ test("build, with no families, gives an error", async t => {
 
     const [error] = await buildCatalog(families).run();
 
-    const expectedError: IgnitionBuildCatalogError = {
+    const expectedError: CatalogBuildError = {
         type: "EmptyCatalog",
     };
     t.deepEqual(error, left(expectedError));

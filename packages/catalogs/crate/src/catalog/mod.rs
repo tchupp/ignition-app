@@ -10,7 +10,7 @@ use weave::zdd2::Forest;
 use types::Family;
 use types::Item;
 
-use self::CatalogError::{CompoundError, UnknownExclusions, UnknownSelections};
+use self::CatalogError::{UnknownExclusions, UnknownItems, UnknownSelections};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Catalog {
@@ -66,12 +66,11 @@ impl Catalog {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum CatalogError {
-    UnknownSelections { items: Vec<String> },
-    UnknownExclusions { items: Vec<String> },
-    MissingToken,
+    UnknownSelections { items: Vec<Item> },
+    UnknownExclusions { items: Vec<Item> },
     BadState,
     BadToken { token: String, detail: String },
-    CompoundError { errors: Vec<CatalogError> },
+    UnknownItems { selections: Vec<Item>, exclusions: Vec<Item> },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -84,7 +83,7 @@ pub struct CatalogState {
     exclusions: Vec<Item>,
 }
 
-pub type OptionsByFamily = HashMap<Family, Vec<ItemStatus<Item>>>;
+pub type OptionsByFamily = BTreeMap<Family, Vec<ItemStatus<Item>>>;
 
 impl CatalogState {
     pub fn from_jsvalue(value: &JsValue) -> Result<Self, CatalogError> {
@@ -140,7 +139,9 @@ impl CatalogState {
 
                 (family, item)
             })
-            .into_group_map::<Family, ItemStatus<Item>>();
+            .into_group_map::<Family, ItemStatus<Item>>()
+            .into_iter()
+            .collect::<BTreeMap<_, _>>();
 
         let new_state = CatalogState {
             token: Self::catalog_to_token(&catalog),
@@ -187,10 +188,9 @@ impl CatalogState {
             (0, 0) => Ok(()),
             (_, 0) => Err(UnknownSelections { items: unknown_selections }),
             (0, _) => Err(UnknownExclusions { items: unknown_exclusions }),
-            (_, _) => Err(CompoundError {
-                errors: vec![
-                    UnknownSelections { items: unknown_selections },
-                    UnknownExclusions { items: unknown_exclusions }]
+            (_, _) => Err(UnknownItems {
+                selections: unknown_selections,
+                exclusions: unknown_exclusions,
             }),
         }
     }

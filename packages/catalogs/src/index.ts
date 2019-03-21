@@ -12,22 +12,21 @@ export type CatalogState = {
     readonly exclusions: Item[];
 };
 
-export type IgnitionBuildCatalogError =
+export type CatalogBuildError =
     { type: "EmptyCatalog" }
     | { type: "InclusionMissingFamily", item: string }
     | { type: "ExclusionMissingFamily", item: string }
     | { type: "MultipleFamiliesRegistered", item: string, families: string[] }
     | { type: "InclusionFamilyConflict", family: string, items: string[] }
     | { type: "ExclusionFamilyConflict", family: string, items: string[] }
-    | { type: "CompoundError", errors: IgnitionBuildCatalogError[] }
+    | { type: "CompoundError", errors: CatalogBuildError[] }
 
-export type IgnitionOptionsError =
+export type CatalogOptionsError =
     { type: "UnknownSelections", items: Item[] }
     | { type: "UnknownExclusions", items: Item[] }
-    | { type: "MissingToken" }
+    | { type: "UnknownItems", selections: Item[], exclusions: Item[] }
     | { type: "BadState" }
     | { type: "BadToken", token: CatalogToken, detail: string }
-    | { type: "CompoundError", errors: IgnitionOptionsError[] }
 
 export type CatalogFamilies = {
     readonly [key: string]: Item[];
@@ -48,30 +47,31 @@ export type Options = {
 }
 
 export type ItemStatus =
-    { type: "Available", item: string }
-    | { type: "Excluded", item: string }
-    | { type: "Selected", item: string }
-    | { type: "Required", item: string };
+    { type: "Available", item: Item }
+    | { type: "Excluded", item: Item }
+    | { type: "Selected", item: Item }
+    | { type: "Required", item: Item };
 
 export type Item = string;
+export type Family = string;
 
 export function buildCatalog(
     families: CatalogFamilies,
     exclusions: CatalogExclusionRule[] = [],
     inclusions: CatalogInclusionRule[] = []
-): NomadTE<IgnitionEffect, IgnitionBuildCatalogError, CatalogState> {
-    let contents = {families: families, exclusions: exclusions, inclusions: inclusions};
+): NomadTE<IgnitionEffect, CatalogBuildError, CatalogState> {
+    let assembly = {families: families, exclusions: exclusions, inclusions: inclusions};
 
     return timed(`build_catalog`, {}, () =>
         tryCatch(
             () => import("../crate/pkg")
-                .then(m => m.buildCatalogWasm(contents)),
+                .then(m => m.buildCatalogWasm(assembly)),
             (err: any) => err
         )
     );
 }
 
-export type IgnitionOptionsResult = NomadTE<IgnitionEffect, IgnitionOptionsError, [Options, CatalogState]>
+export type IgnitionOptionsResult = NomadTE<IgnitionEffect, CatalogOptionsError, [Options, CatalogState]>
 
 export function findOptions(
     catalogState: CatalogState,
@@ -91,7 +91,7 @@ export function findOutfits(
     catalogState: CatalogState,
     selections: Item[] = [],
     exclusions: Item[] = []
-): NomadTE<IgnitionEffect, IgnitionBuildCatalogError, Item[][]> {
+): NomadTE<IgnitionEffect, CatalogBuildError, Item[][]> {
     return timed(`find_outfits`, {token: hashToken(catalogState)}, () =>
         tryCatch(
             () => import("../crate/pkg")
