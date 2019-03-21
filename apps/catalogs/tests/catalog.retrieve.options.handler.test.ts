@@ -161,15 +161,15 @@ const scenarios: Scenario[] = [
                 {
                     familyId: "pants",
                     optionsList: [
-                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "pants:jeans"},
                         {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "pants:slacks"},
+                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "pants:jeans"},
                     ]
                 },
                 {
                     familyId: "shirts",
                     optionsList: [
-                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:red"},
                         {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
+                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:red"},
                     ]
                 }
             ]

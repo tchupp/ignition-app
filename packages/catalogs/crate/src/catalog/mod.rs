@@ -4,11 +4,11 @@ use std::error::Error;
 use itertools::Itertools;
 use serde::{Serialize, Serializer};
 use wasm_bindgen::prelude::*;
-use weave::ItemStatus;
 use weave::zdd2::Forest;
 
 use types::Family;
 use types::Item;
+use types::ItemStatus;
 
 use self::CatalogError::{UnknownExclusions, UnknownItems, UnknownSelections};
 
