@@ -16,15 +16,14 @@ import {
 } from "../generated/catalogs_pb";
 import {badRequestDetail, serviceError} from "../src/infrastructure/errors.pb";
 import {updateCatalog} from "../src/functions/catalog.update.handler";
-import {CatalogRules} from "../src/functions/catalog.entity";
+import {CatalogAssembly} from "../src/functions/catalog.entity";
 
 const timestamp = new Date();
 const projectId = "my-project";
 
 test("updateCatalog returns 'created' when catalog is properly formed", async (t) => {
     const catalogId = "catalog-1";
-    const catalogRules = {
-        id: catalogId,
+    const catalogAssembly = {
         families: {
             "shirts": ["shirts:red", "shirts:black"],
             "pants": ["pants:jeans", "pants:slacks"]
@@ -33,7 +32,7 @@ test("updateCatalog returns 'created' when catalog is properly formed", async (t
         inclusions: []
     };
 
-    const req = rulesToRequest(catalogRules);
+    const req = rulesToRequest(catalogId, catalogAssembly);
 
     const catalogKey = {
         name: catalogId,
@@ -56,7 +55,7 @@ test("updateCatalog returns 'created' when catalog is properly formed", async (t
         data: await buildTestCatalogEntity(
             catalogId,
             timestamp,
-            catalogRules.families
+            catalogAssembly.families
         )
     };
 
@@ -94,14 +93,14 @@ test("updateCatalog returns 'created' when catalog is properly formed", async (t
 });
 
 test("updateCatalog returns error when families are empty in request", async (t) => {
-    const catalogRules = {
-        id: "catalog-4",
+    const catalogId = "catalog-4";
+    const catalogAssembly = {
         families: {},
         exclusions: [],
         inclusions: []
     };
 
-    const req = rulesToRequest(catalogRules);
+    const req = rulesToRequest(catalogId, catalogAssembly);
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
@@ -123,8 +122,8 @@ test("updateCatalog returns error when families are empty in request", async (t)
 });
 
 test("updateCatalog returns error when item is registered to multiple families", async (t) => {
-    const catalogRules = {
-        id: "catalog-2",
+    const catalogId = "catalog-2";
+    const catalogAssembly = {
         families: {
             "shirts": ["blue"],
             "pants": ["blue"]
@@ -133,7 +132,7 @@ test("updateCatalog returns error when item is registered to multiple families",
         inclusions: []
     };
 
-    const req = rulesToRequest(catalogRules);
+    const req = rulesToRequest(catalogId, catalogAssembly);
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
@@ -155,14 +154,14 @@ test("updateCatalog returns error when item is registered to multiple families",
 });
 
 test("updateCatalog returns error when an exclusion rule contain an item that doesn't have a family", async (t) => {
-    const catalogRules = {
-        id: "catalog-2",
+    const catalogId = "catalog-2";
+    const catalogAssembly = {
         families: {"shirts": ["shirts:black", "shirts:red"]},
         exclusions: [{conditions: ["shirts:blue"], exclusions: ["shirts:black"]}],
         inclusions: []
     };
 
-    const req = rulesToRequest(catalogRules);
+    const req = rulesToRequest(catalogId, catalogAssembly);
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
@@ -184,14 +183,14 @@ test("updateCatalog returns error when an exclusion rule contain an item that do
 });
 
 test("updateCatalog returns error when an exclusion rule contain a selection and exclusion in the same family", async (t) => {
-    const catalogRules = {
-        id: "catalog-2",
+    const catalogId = "catalog-2";
+    const catalogAssembly = {
         families: {"shirts": ["shirts:black", "shirts:red"]},
         exclusions: [{conditions: ["shirts:red"], exclusions: ["shirts:black"]}],
         inclusions: []
     };
 
-    const req = rulesToRequest(catalogRules);
+    const req = rulesToRequest(catalogId, catalogAssembly);
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
@@ -213,14 +212,14 @@ test("updateCatalog returns error when an exclusion rule contain a selection and
 });
 
 test("updateCatalog returns error when an inclusion rule contain an item that doesn't have a family", async (t) => {
-    const catalogRules = {
-        id: "catalog-3",
+    const catalogId = "catalog-3";
+    const catalogAssembly = {
         families: {"shirts": ["shirts:black", "shirts:red"]},
         exclusions: [],
         inclusions: [{conditions: ["shirts:blue"], inclusions: ["shirts:black"]}],
     };
 
-    const req = rulesToRequest(catalogRules);
+    const req = rulesToRequest(catalogId, catalogAssembly);
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
@@ -242,14 +241,14 @@ test("updateCatalog returns error when an inclusion rule contain an item that do
 });
 
 test("updateCatalog returns error when an inclusion rule contain a selection and inclusion in the same family", async (t) => {
-    const catalogRules = {
-        id: "catalog-3",
+    const catalogId = "catalog-3";
+    const catalogAssembly = {
         families: {"shirts": ["shirts:black", "shirts:red"]},
         exclusions: [],
         inclusions: [{conditions: ["shirts:red"], inclusions: ["shirts:black"]}],
     };
 
-    const req = rulesToRequest(catalogRules);
+    const req = rulesToRequest(catalogId, catalogAssembly);
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
@@ -271,8 +270,8 @@ test("updateCatalog returns error when an inclusion rule contain a selection and
 });
 
 test("updateCatalog returns error when there are multiple errors in the request", async (t) => {
-    const catalogRules = {
-        id: "catalog-2",
+    const catalogId = "catalog-2";
+    const catalogAssembly = {
         families: {
             "shirts": ["blue"],
             "pants": ["blue"]
@@ -281,7 +280,7 @@ test("updateCatalog returns error when there are multiple errors in the request"
         inclusions: []
     };
 
-    const req = rulesToRequest(catalogRules);
+    const req = rulesToRequest(catalogId, catalogAssembly);
 
     const datastoreStub: Datastore = mock(Datastore);
     const datastore = instance(datastoreStub);
@@ -308,24 +307,24 @@ test("updateCatalog returns error when there are multiple errors in the request"
     ));
 });
 
-function rulesToRequest(rules: CatalogRules): CreateCatalogRequest {
-    const families = Object.keys(rules.families)
+function rulesToRequest(catalogId: string, assembly: CatalogAssembly): CreateCatalogRequest {
+    const families = Object.keys(assembly.families)
         .map(id => {
-            const items = rules.families[id];
+            const items = assembly.families[id];
 
             const family = new Family();
             family.setFamilyId(id);
             family.setItemsList(items);
             return family;
         });
-    const exclusions = rules.exclusions
+    const exclusions = assembly.exclusions
         .map(({conditions, exclusions}) => {
             const exclusionRule = new CatalogExclusionsRule();
             exclusionRule.setConditionsList(conditions);
             exclusionRule.setExclusionsList(exclusions);
             return exclusionRule;
         });
-    const inclusions = rules.inclusions
+    const inclusions = assembly.inclusions
         .map(({conditions, inclusions}) => {
             const inclusionRule = new CatalogInclusionsRule();
             inclusionRule.setConditionsList(conditions);
@@ -336,7 +335,7 @@ function rulesToRequest(rules: CatalogRules): CreateCatalogRequest {
 
     const req = new CreateCatalogRequest();
     req.setProjectId(projectId);
-    req.setCatalogId(rules.id);
+    req.setCatalogId(catalogId);
     req.setFamiliesList(families);
     req.setExclusionsList(exclusions);
     req.setInclusionsList(inclusions);

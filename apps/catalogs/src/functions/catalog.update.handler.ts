@@ -13,32 +13,41 @@ import {
     serviceError
 } from "../infrastructure/errors.pb";
 import {updateCatalog as updateCatalogInner, UpdateCatalogError, UpdateCatalogResponse} from "./catalog.update";
-import {CatalogRules} from "./catalog.entity";
+import {CatalogAssembly} from "./catalog.entity";
+
+type ProjectId = string;
+type CatalogId = string;
+type FromRequest = [ProjectId, CatalogId, CatalogAssembly];
 
 export function updateCatalog(req: UpdateCatalogRequest, timestamp: Date = new Date()): CatalogsResult<GrpcServiceError, CatalogOptions> {
     return fromRequest(req)
-        .chain(([projectId, rules]) => updateCatalogInner(projectId, rules, timestamp))
+        .chain(([projectId, catalogId, assembly]) => updateCatalogInner(projectId, catalogId, assembly, timestamp))
         .mapLeft(toErrorResponse)
         .map(toSuccessResponse);
 }
 
-function fromRequest(req: UpdateCatalogRequest): CatalogsResult<UpdateCatalogError, [string, CatalogRules]> {
+function fromRequest(req: UpdateCatalogRequest): CatalogsResult<UpdateCatalogError, FromRequest> {
     const projectId = req.getProjectId();
     const catalogId = req.getCatalogId();
     const families = req.getFamiliesList()
         .reduce((acc, rule) => ({...acc, [rule.getFamilyId()]: rule.getItemsList()}), {} as CatalogFamilies);
     const exclusions = req.getExclusionsList()
-        .reduce((acc, rule) => ([...acc, {conditions: rule.getConditionsList(), exclusions: rule.getExclusionsList()}]), [] as CatalogExclusionRule[]);
+        .reduce((acc, rule) => ([...acc, {
+            conditions: rule.getConditionsList(),
+            exclusions: rule.getExclusionsList()
+        }]), [] as CatalogExclusionRule[]);
     const inclusions = req.getInclusionsList()
-        .reduce((acc, rule) => ([...acc, {conditions: rule.getConditionsList(), inclusions: rule.getInclusionsList()}]), [] as CatalogInclusionRule[]);
+        .reduce((acc, rule) => ([...acc, {
+            conditions: rule.getConditionsList(),
+            inclusions: rule.getInclusionsList()
+        }]), [] as CatalogInclusionRule[]);
 
-    const rules = {
-        id: catalogId,
+    const assembly = {
         families: families,
         exclusions: exclusions,
         inclusions: inclusions,
     };
-    return nomadRTE.of([projectId, rules] as [string, CatalogRules]);
+    return nomadRTE.of([projectId, catalogId, assembly] as FromRequest);
 }
 
 function toSuccessResponse(response: UpdateCatalogResponse): CatalogOptions {
@@ -99,7 +108,7 @@ function toErrorResponseDetails(error: UpdateCatalogError): GrpcServiceErrorDeta
                 })
             ];
 
-        case "MissingFamilies":
+        case "EmptyCatalog":
             return [
                 badRequestDetail({
                     fieldViolationsList: [{
@@ -171,9 +180,34 @@ function toErrorResponseDetails(error: UpdateCatalogError): GrpcServiceErrorDeta
                 })
             ];
 
+        case "UnknownExclusions":
+            return [
+                debugInfoDetail({
+                    detail: `We should have no selections when creating a catalog, but had: [${error.items}]`,
+                    stackEntriesList: []
+                })
+            ];
+
+        case "UnknownItems":
+            return [
+                debugInfoDetail({
+                    detail: `We should have no selections when creating a catalog, but had: [${error.selections}]`,
+                    stackEntriesList: []
+                }),
+                debugInfoDetail({
+                    detail: `We should have no exclusions when creating a catalog, but had: [${error.exclusions}]`,
+                    stackEntriesList: []
+                })
+            ];
+
         case "BadToken":
             return [];
+        case "BadState":
+            return [];
     }
+
+    console.error(JSON.stringify(error, null, 2));
+    return [];
 }
 
 function toErrorResponse(error: UpdateCatalogError): GrpcServiceError {
@@ -190,7 +224,7 @@ function toErrorResponse(error: UpdateCatalogError): GrpcServiceError {
                 status.ALREADY_EXISTS,
                 toErrorResponseDetails(error));
 
-        case "MissingFamilies":
+        case "EmptyCatalog":
             return serviceError(
                 "Families are required to build a catalog",
                 status.INVALID_ARGUMENT,
@@ -234,6 +268,18 @@ function toErrorResponse(error: UpdateCatalogError): GrpcServiceError {
                 toErrorResponseDetails(error));
 
         case "UnknownSelections":
+            return serviceError(
+                "Error should not have occurred",
+                status.INTERNAL,
+                toErrorResponseDetails(error));
+
+        case "UnknownExclusions":
+            return serviceError(
+                "Error should not have occurred",
+                status.INTERNAL,
+                toErrorResponseDetails(error));
+
+        case "UnknownItems":
             return serviceError(
                 "Error should not have occurred",
                 status.INTERNAL,

@@ -11,28 +11,39 @@ import {DatastoreError, DatastoreErrorCode, NativeDatastoreError} from "../infra
 import {CatalogsResult} from "../infrastructure/result";
 import {timed} from "../infrastructure/effects";
 
-export type CatalogRules = {
-    readonly id: string;
+export type CatalogAssembly = {
     readonly families: CatalogFamilies;
+    readonly exclusions: CatalogExclusionRule[];
+    readonly inclusions: CatalogInclusionRule[];
+};
+
+export type CatalogRules = {
     readonly exclusions: CatalogExclusionRule[];
     readonly inclusions: CatalogInclusionRule[];
 }
 
 export type CatalogEntity = {
     readonly id: string;
+    readonly families: CatalogFamilies;
+    readonly rules: CatalogRules;
     readonly token: CatalogToken;
     readonly created: Date;
 }
 
-export function buildCatalogEntity(projectId: string, catalogId: string, catalogToken: CatalogToken, timestamp: Date): Reader<Datastore, DatastorePayload<CatalogEntity>> {
+export function buildCatalogEntity(projectId: string, catalogId: string, assembly: CatalogAssembly, token: CatalogToken, timestamp: Date): Reader<Datastore, DatastorePayload<CatalogEntity>> {
     return asks(datastore => ({
         key: datastore.key({path: ["Project", projectId, "Catalog", catalogId]}),
         excludeFromIndexes: ["token"],
         data: {
             id: catalogId,
-            token: catalogToken,
+            families: assembly.families,
+            rules: {
+                inclusions: assembly.inclusions,
+                exclusions: assembly.exclusions,
+            },
+            token: token,
             created: timestamp
-        }
+        } as CatalogEntity
     }));
 }
 

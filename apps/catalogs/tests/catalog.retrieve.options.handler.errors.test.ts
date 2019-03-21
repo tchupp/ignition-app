@@ -91,6 +91,8 @@ test("retrieveCatalogOptions returns error, when datastore has an empty catalog 
 
     const entity: CatalogEntity = {
         id: catalogId,
+        families: {},
+        rules: {inclusions: [], exclusions: []},
         token: "",
         created: timestamp
     };

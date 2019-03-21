@@ -110,6 +110,38 @@ function toErrorResponse(error: RetrieveCatalogOptionsError): GrpcServiceError {
                     })
                 ]);
 
+        case "UnknownExclusions":
+            return serviceError(
+                "Unknown Exclusions",
+                status.INVALID_ARGUMENT,
+                [
+                    badRequestDetail({
+                        fieldViolationsList: [{
+                            field: "exclusions",
+                            description: `Excluded items are unknown: [${error.items}]`
+                        }]
+                    })
+                ]);
+
+        case "UnknownItems":
+            return serviceError(
+                "Unknown Items",
+                status.INVALID_ARGUMENT,
+                [
+                    badRequestDetail({
+                        fieldViolationsList: [{
+                            field: "selections",
+                            description: `Selected items are unknown: [${error.selections}]`
+                        }]
+                    }),
+                    badRequestDetail({
+                        fieldViolationsList: [{
+                            field: "exclusions",
+                            description: `Excluded items are unknown: [${error.exclusions}]`
+                        }]
+                    })
+                ]);
+
         case "BadToken":
             return serviceError(
                 "Malformed catalog token, catalog must be re-created",
@@ -136,5 +168,11 @@ function toErrorResponse(error: RetrieveCatalogOptionsError): GrpcServiceError {
                         }]
                     })
                 ]);
+
+        case "BadState":
+            return serviceError(
+                "Bad Catalog State",
+                status.INTERNAL,
+                []);
     }
 }
