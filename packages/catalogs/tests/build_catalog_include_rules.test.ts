@@ -1,5 +1,5 @@
 import test from "ava";
-import {buildCatalog, IgnitionBuildCatalogError} from "../src";
+import {buildCatalog, CatalogBuildError} from "../src";
 import {left} from "fp-ts/lib/Either";
 
 test("build, when inclusion rule has the same family as the selection, gives an error", async t => {
@@ -14,7 +14,7 @@ test("build, when inclusion rule has the same family as the selection, gives an 
 
     const [error] = await buildCatalog(families, [], inclusions).run();
 
-    let expectedError: IgnitionBuildCatalogError = {
+    let expectedError: CatalogBuildError = {
         type: "InclusionFamilyConflict",
         family: "shirts",
         items: ["shirts:blue", "shirts:red"]
@@ -34,7 +34,7 @@ test("build, when inclusion rule has unknown item as selection, gives an error",
 
     const [error] = await buildCatalog(families, [], inclusions).run();
 
-    let expectedError: IgnitionBuildCatalogError = {
+    let expectedError: CatalogBuildError = {
         type: "InclusionMissingFamily",
         item: "shirts:black"
     };
@@ -53,7 +53,7 @@ test("build, when inclusion rule has unknown item in inclusions, gives an error"
 
     const [error] = await buildCatalog(families, [], inclusions).run();
 
-    let expectedError: IgnitionBuildCatalogError = {
+    let expectedError: CatalogBuildError = {
         type: "InclusionMissingFamily",
         item: "pants:ripped"
     };

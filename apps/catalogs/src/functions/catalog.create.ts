@@ -2,45 +2,60 @@ import Datastore = require("@google-cloud/datastore");
 import {CommitResult} from "@google-cloud/datastore/request";
 import {DatastorePayload} from "@google-cloud/datastore/entity";
 
-import {fromLeft, fromTaskEither} from "@ignition/nomad";
+import {fromTaskEither} from "@ignition/nomad";
 import {
     buildCatalog,
+    CatalogBuildError,
+    CatalogOptionsError,
+    CatalogToken,
     findOptions as findOptionsInner,
-    IgnitionBuildCatalogError,
-    IgnitionOptionsError,
     Options,
 } from "@ignition/catalogs";
 
 import {tryCatch} from "fp-ts/lib/TaskEither";
 
-import {buildCatalogEntity, CatalogEntity, CatalogRules, fromDatastoreError, SaveCatalogError} from "./catalog.entity";
+import {
+    buildCatalogEntity,
+    CatalogAssembly,
+    CatalogEntity,
+    fromDatastoreError,
+    SaveCatalogError
+} from "./catalog.entity";
 import {CatalogsResult, fromReader} from "../infrastructure/result";
 import {timed} from "../infrastructure/effects";
 
 export type CreateCatalogError =
     SaveCatalogError
-    | { type: "MissingFamilies" }
-    | IgnitionBuildCatalogError
-    | IgnitionOptionsError
+    | CatalogBuildError
+    | CatalogOptionsError
 
 export type CreateCatalogResponse = {
     readonly id: string;
     readonly options: Options;
-    readonly token: string;
+    readonly token: CatalogToken;
 }
 
-export function createCatalog(projectId: string, rules: CatalogRules, timestamp: Date): CatalogsResult<CreateCatalogError, CreateCatalogResponse> {
-    if (isEmptyObject(rules.families)) return fromLeft({type: "MissingFamilies"} as CreateCatalogError);
+type ProjectId = string;
+type CatalogId = string;
 
-    return buildCatalog(rules.families, rules.exclusions, rules.inclusions)
+export function createCatalog(
+    projectId: ProjectId,
+    catalogId: CatalogId,
+    assembly: CatalogAssembly,
+    timestamp: Date
+): CatalogsResult<CreateCatalogError, CreateCatalogResponse> {
+    return buildCatalog(assembly.families, assembly.exclusions, assembly.inclusions)
         .toNomadRTE<Datastore>()
         .mapLeft((err): CreateCatalogError => err)
-        .chain(catalog => fromReader<CreateCatalogError, DatastorePayload<CatalogEntity>>(buildCatalogEntity(projectId, rules.id, catalog, timestamp))
-            .chain(saveCatalogEntity)
-            .map(() => catalog)
+        .chain(catalogState =>
+            fromReader<CreateCatalogError, DatastorePayload<CatalogEntity>>(
+                buildCatalogEntity(projectId, catalogId, assembly, catalogState.token, timestamp)
+            )
+                .chain(saveCatalogEntity)
+                .map(() => catalogState)
         )
-        .chain(catalogToken => findOptionsInner(catalogToken).toNomadRTE<Datastore>())
-        .map(([options, token]) => ({id: rules.id, options: options, token: token}));
+        .chain(catalogState => findOptionsInner(catalogState).toNomadRTE<Datastore>())
+        .map(([options, catalog]) => ({id: catalogId, options: options, token: catalog.token}));
 }
 
 function saveCatalogEntity(
@@ -52,8 +67,4 @@ function saveCatalogEntity(
             (err: any) => fromDatastoreError(err, entity.data as CatalogEntity)
         ))
     );
-}
-
-function isEmptyObject(obj: object): boolean {
-    return Object.keys(obj).length === 0;
 }

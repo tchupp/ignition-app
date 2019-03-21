@@ -19,6 +19,6 @@ export function retrieveCatalog(projectId: string, catalogId: string): CatalogsR
     }
 
     return findCatalog(projectId, catalogId)
-        .map(entity => ({id: entity.id, token: entity.token, created: entity.created}));
+        .map(entity => ({id: catalogId, token: entity.token, created: entity.created}));
 }
 

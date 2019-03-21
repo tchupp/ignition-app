@@ -3,6 +3,7 @@ import {
     CatalogExclusionRule,
     CatalogFamilies,
     CatalogInclusionRule,
+    CatalogState,
     CatalogToken,
     findOptions,
     Item
@@ -11,20 +12,29 @@ import {
 import {CatalogEntity} from "../src/functions/catalog.entity";
 
 const EMPTY_CATALOG_TOKEN: CatalogToken = "";
+const EMPTY_CATALOG_STATE: CatalogState = {
+    token: EMPTY_CATALOG_TOKEN,
+    selections: [],
+    exclusions: []
+};
 
 export async function buildTestCatalogEntity(
-    id: string,
-    timestamp: Date,
+    catalogId: string,
+    created: Date,
     families: CatalogFamilies,
     exclusions: CatalogExclusionRule[] = [],
     inclusions: CatalogInclusionRule[] = []
 ): Promise<CatalogEntity> {
-    const [catalogOrError] = await buildCatalog(families, exclusions, inclusions).run();
+    const [catalogOrError] = await buildCatalog(families, exclusions, inclusions)
+        .map(state => state.token)
+        .run();
 
     return {
-        id: id,
+        id: catalogId,
+        families,
+        rules: {inclusions, exclusions},
         token: catalogOrError.getOrElse(EMPTY_CATALOG_TOKEN),
-        created: timestamp
+        created: created
     };
 }
 
@@ -34,13 +44,14 @@ export async function buildTestCatalogToken(
     exclusions: CatalogExclusionRule[] = [],
     inclusions: CatalogInclusionRule[] = []
 ): Promise<CatalogToken> {
-    const token = await buildCatalog(families, exclusions, inclusions)
-        .fold(() => EMPTY_CATALOG_TOKEN, res => res)
+    const catalogState = await buildCatalog(families, exclusions, inclusions)
+        .fold(() => EMPTY_CATALOG_STATE, res => res)
         .run()
         .then(n => n.value);
 
-    return await findOptions(token, selections)
-        .fold(() => EMPTY_CATALOG_TOKEN, ([_, token]) => token)
+    return await findOptions(catalogState, selections)
+        .map(([_, state]) => state.token)
+        .fold(() => EMPTY_CATALOG_TOKEN, token => token)
         .run()
         .then(n => n.value);
 }

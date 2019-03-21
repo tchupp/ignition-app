@@ -8,7 +8,6 @@ import {CatalogEntity} from "../src/functions/catalog.entity";
 import {retrieveCatalogOptions} from "../src/functions/catalog.retrieve.options.handler";
 import {buildTestCatalogEntity, buildTestCatalogToken} from "./catalog.test-fixture";
 import {CatalogOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../generated/catalogs_pb";
-import {buildCatalog} from "@ignition/catalogs";
 
 const timestamp = new Date();
 const projectId = "my-project";
@@ -94,8 +93,8 @@ const scenarios: Scenario[] = [
                 {
                     familyId: "shirts",
                     optionsList: [
-                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
                         {"itemStatus": ItemOption.Status.SELECTED, "itemId": "shirts:red"},
+                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
                     ]
                 }
             ]
@@ -112,15 +111,15 @@ const scenarios: Scenario[] = [
                 {
                     familyId: "pants",
                     optionsList: [
-                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "pants:jeans"},
                         {"itemStatus": ItemOption.Status.SELECTED, "itemId": "pants:slacks"},
+                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "pants:jeans"},
                     ]
                 },
                 {
                     familyId: "shirts",
                     optionsList: [
-                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
                         {"itemStatus": ItemOption.Status.SELECTED, "itemId": "shirts:red"},
+                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
                     ]
                 }
             ]
@@ -137,15 +136,15 @@ const scenarios: Scenario[] = [
                 {
                     familyId: "pants",
                     optionsList: [
-                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "pants:jeans"},
                         {"itemStatus": ItemOption.Status.SELECTED, "itemId": "pants:slacks"},
+                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "pants:jeans"},
                     ]
                 },
                 {
                     familyId: "shirts",
                     optionsList: [
-                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
                         {"itemStatus": ItemOption.Status.SELECTED, "itemId": "shirts:red"},
+                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
                     ]
                 }
             ]
@@ -169,8 +168,8 @@ const scenarios: Scenario[] = [
                 {
                     familyId: "shirts",
                     optionsList: [
-                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
                         {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:red"},
+                        {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
                     ]
                 }
             ]
@@ -250,13 +249,10 @@ test("retrieveCatalogOptions returns catalog options, when request contains toke
     t.deepEqual(result, right(expected));
 });
 
-test("retrieveCatalogOptions returns catalog options, when request contains one selection", async (t) => {
+test("retrieveCatalogOptions returns catalog options, with token, when request contains one selection", async (t) => {
     const catalogId = "catalog-8";
     const selections = [" shirts:red   "];
-    const initialToken = await buildCatalog(families)
-        .fold(() => "", res => res)
-        .run()
-        .then(n => n.value);
+    const initialToken = await buildTestCatalogToken(families);
 
     const req = new RetrieveCatalogOptionsRequest();
     req.setProjectId(projectId);
@@ -285,8 +281,8 @@ test("retrieveCatalogOptions returns catalog options, when request contains one 
             {
                 familyId: "shirts",
                 optionsList: [
-                    {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
                     {"itemStatus": ItemOption.Status.SELECTED, "itemId": "shirts:red"},
+                    {"itemStatus": ItemOption.Status.EXCLUDED, "itemId": "shirts:black"},
                 ]
             }
         ]

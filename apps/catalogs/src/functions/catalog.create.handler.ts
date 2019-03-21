@@ -13,32 +13,41 @@ import {
     serviceError
 } from "../infrastructure/errors.pb";
 import {createCatalog as createCatalogInner, CreateCatalogError, CreateCatalogResponse} from "./catalog.create";
-import {CatalogRules} from "./catalog.entity";
+import {CatalogAssembly} from "./catalog.entity";
+
+type ProjectId = string;
+type CatalogId = string;
+type FromRequest = [ProjectId, CatalogId, CatalogAssembly];
 
 export function createCatalog(req: CreateCatalogRequest, timestamp: Date = new Date()): CatalogsResult<GrpcServiceError, CatalogOptions> {
     return fromRequest(req)
-        .chain(([projectId, rules]) => createCatalogInner(projectId, rules, timestamp))
+        .chain(([projectId, catalogId, assembly]) => createCatalogInner(projectId, catalogId, assembly, timestamp))
         .mapLeft(toErrorResponse)
         .map(toSuccessResponse);
 }
 
-function fromRequest(req: CreateCatalogRequest): CatalogsResult<CreateCatalogError, [string, CatalogRules]> {
+function fromRequest(req: CreateCatalogRequest): CatalogsResult<CreateCatalogError, FromRequest> {
     const projectId = req.getProjectId();
     const catalogId = req.getCatalogId();
     const families = req.getFamiliesList()
         .reduce((acc, rule) => ({...acc, [rule.getFamilyId()]: rule.getItemsList()}), {} as CatalogFamilies);
     const exclusions = req.getExclusionsList()
-        .reduce((acc, rule) => ([...acc, {conditions: rule.getConditionsList(), exclusions: rule.getExclusionsList()}]), [] as CatalogExclusionRule[]);
+        .reduce((acc, rule) => ([...acc, {
+            conditions: rule.getConditionsList(),
+            exclusions: rule.getExclusionsList()
+        }]), [] as CatalogExclusionRule[]);
     const inclusions = req.getInclusionsList()
-        .reduce((acc, rule) => ([...acc, {conditions: rule.getConditionsList(), inclusions: rule.getInclusionsList()}]), [] as CatalogInclusionRule[]);
+        .reduce((acc, rule) => ([...acc, {
+            conditions: rule.getConditionsList(),
+            inclusions: rule.getInclusionsList()
+        }]), [] as CatalogInclusionRule[]);
 
-    const rules = {
-        id: catalogId,
+    const assembly = {
         families: families,
         exclusions: exclusions,
         inclusions: inclusions,
     };
-    return nomadRTE.of([projectId, rules] as [string, CatalogRules]);
+    return nomadRTE.of([projectId, catalogId, assembly] as FromRequest);
 }
 
 function toSuccessResponse(response: CreateCatalogResponse): CatalogOptions {
@@ -99,7 +108,7 @@ function toErrorResponseDetails(error: CreateCatalogError): GrpcServiceErrorDeta
                 })
             ];
 
-        case "MissingFamilies":
+        case "EmptyCatalog":
             return [
                 badRequestDetail({
                     fieldViolationsList: [{
@@ -171,9 +180,34 @@ function toErrorResponseDetails(error: CreateCatalogError): GrpcServiceErrorDeta
                 })
             ];
 
+        case "UnknownExclusions":
+            return [
+                debugInfoDetail({
+                    detail: `We should have no exclusions when creating a catalog, but had: [${error.items}]`,
+                    stackEntriesList: []
+                })
+            ];
+
+        case "UnknownItems":
+            return [
+                debugInfoDetail({
+                    detail: `We should have no selections when creating a catalog, but had: [${error.selections}]`,
+                    stackEntriesList: []
+                }),
+                debugInfoDetail({
+                    detail: `We should have no exclusions when creating a catalog, but had: [${error.exclusions}]`,
+                    stackEntriesList: []
+                })
+            ];
+
         case "BadToken":
             return [];
+        case "BadState":
+            return [];
     }
+
+    console.error(JSON.stringify(error, null, 2));
+    return [];
 }
 
 function toErrorResponse(error: CreateCatalogError): GrpcServiceError {
@@ -190,7 +224,7 @@ function toErrorResponse(error: CreateCatalogError): GrpcServiceError {
                 status.ALREADY_EXISTS,
                 toErrorResponseDetails(error));
 
-        case "MissingFamilies":
+        case "EmptyCatalog":
             return serviceError(
                 "Families are required to build a catalog",
                 status.INVALID_ARGUMENT,
@@ -239,7 +273,25 @@ function toErrorResponse(error: CreateCatalogError): GrpcServiceError {
                 status.INTERNAL,
                 toErrorResponseDetails(error));
 
+        case "UnknownExclusions":
+            return serviceError(
+                "Error should not have occurred",
+                status.INTERNAL,
+                toErrorResponseDetails(error));
+
+        case "UnknownItems":
+            return serviceError(
+                "Error should not have occurred",
+                status.INTERNAL,
+                toErrorResponseDetails(error));
+
         case "BadToken":
+            return serviceError(
+                "Catalog was not created correctly",
+                status.INTERNAL,
+                toErrorResponseDetails(error));
+
+        case "BadState":
             return serviceError(
                 "Catalog was not created correctly",
                 status.INTERNAL,

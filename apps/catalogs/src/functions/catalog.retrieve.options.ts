@@ -1,4 +1,4 @@
-import {CatalogToken, findOptions as findOptionsInner, IgnitionOptionsError, Item, Options} from "@ignition/catalogs";
+import {CatalogOptionsError, CatalogToken, findOptions as findOptionsInner, Item, Options} from "@ignition/catalogs";
 import {fromLeft as nomadFromLeft} from "@ignition/nomad";
 
 import {findCatalog, FindCatalogError} from "./catalog.entity";
@@ -7,9 +7,13 @@ import {CatalogsResult} from "../infrastructure/result";
 export type RetrieveCatalogOptionsError =
     { type: "MissingCatalogId" }
     | FindCatalogError
-    | { type: "UnknownSelections", items: string[] }
-    | { type: "BadToken", catalogId: string, token: string, detail: string }
-    | { type: "BadUserToken", catalogId: string, token: string, detail: string }
+    // CatalogOptionsErrors
+    | { type: "UnknownSelections", items: Item[] }
+    | { type: "UnknownExclusions", items: Item[] }
+    | { type: "UnknownItems", selections: Item[], exclusions: Item[] }
+    | { type: "BadState" }
+    | { type: "BadToken", catalogId: string, token: CatalogToken, detail: string }
+    | { type: "BadUserToken", catalogId: string, token: CatalogToken, detail: string }
 
 export type RetrieveCatalogOptionsResponse = {
     readonly id: string;
@@ -31,11 +35,14 @@ export function retrieveCatalogOptions(projectId: string, catalogId: string, tok
 }
 
 function retrieveOptionsFromDatastore(projectId: string, catalogId: string, selections: Item[]) {
-    const errHandler = (err: IgnitionOptionsError): RetrieveCatalogOptionsError => {
+    const errHandler = (err: CatalogOptionsError): RetrieveCatalogOptionsError => {
         switch (err.type) {
             case "BadToken":
                 return {...err, catalogId: catalogId};
             case "UnknownSelections":
+            case "UnknownExclusions":
+            case "UnknownItems":
+            case "BadState":
                 return err;
         }
     };
@@ -47,11 +54,14 @@ function retrieveOptionsFromDatastore(projectId: string, catalogId: string, sele
 }
 
 function retrieveOptionsWithUserToken(catalogId: string, token: CatalogToken, selections: Item[]) {
-    const errHandler = (err: IgnitionOptionsError): RetrieveCatalogOptionsError => {
+    const errHandler = (err: CatalogOptionsError): RetrieveCatalogOptionsError => {
         switch (err.type) {
             case "BadToken":
                 return {...err, type: "BadUserToken", catalogId: catalogId};
             case "UnknownSelections":
+            case "UnknownExclusions":
+            case "UnknownItems":
+            case "BadState":
                 return err;
         }
     };
@@ -63,9 +73,11 @@ function retrieveOptionsWithUserToken(catalogId: string, token: CatalogToken, se
 function findOptions(
     token: CatalogToken,
     selections: Item[],
-    errHandler: (err: IgnitionOptionsError) => RetrieveCatalogOptionsError
+    errHandler: (err: CatalogOptionsError) => RetrieveCatalogOptionsError
 ): CatalogsResult<RetrieveCatalogOptionsError, [Options, CatalogToken]> {
-    return findOptionsInner(token, selections)
+    const state = {token: token, selections: [], exclusions: []};
+    return findOptionsInner(state, selections)
         .mapLeft(errHandler)
-        .toNomadRTE();
+        .toNomadRTE()
+        .map(([options, state]) => [options, state.token] as [Options, CatalogToken]);
 }
