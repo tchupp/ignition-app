@@ -10,6 +10,7 @@ import {badRequestDetail, serviceError} from "../src/infrastructure/errors.pb";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {RetrieveCatalogRequest} from "../generated/catalogs_pb";
 import {status} from "grpc";
+import {defaultCatalogState} from "../src/functions/catalog.state";
 
 const timestamp = new Date();
 const projectId = "my-project";
@@ -17,6 +18,7 @@ const projectId = "my-project";
 test("retrieveCatalog returns catalog with correct token, when catalog exists", async (t) => {
     const catalogId = "catalog-1";
     const entity: CatalogEntity = await buildTestCatalogEntity(
+        projectId,
         catalogId,
         timestamp,
         {
@@ -45,10 +47,22 @@ test("retrieveCatalog returns catalog with correct token, when catalog exists", 
         .run(datastore);
 
     t.deepEqual(result, right({
+        projectId: projectId,
         catalogId: catalogId,
-        projectId: "",
-        token: entity.token,
         created: timestamp.toISOString(),
+        defaultState: defaultCatalogState(projectId, catalogId),
+        familiesList: [
+            {
+                familyId: "shirts",
+                itemsList: ["shirts:red", "shirts:black"]
+            },
+            {
+                familyId: "pants",
+                itemsList: ["pants:jeans", "pants:slacks"]
+            }
+        ],
+        exclusionRulesList: [],
+        inclusionRulesList: [],
     }));
 });
 

@@ -43,6 +43,7 @@ test("retrieveCatalogOptions returns error, when request contains unknown select
     const selections = ["shirts:blue"];
 
     const entity: CatalogEntity = await buildTestCatalogEntity(
+        projectId,
         catalogId,
         timestamp,
         {
@@ -90,7 +91,8 @@ test("retrieveCatalogOptions returns error, when datastore has an empty catalog 
     const selections = ["shirts:blue"];
 
     const entity: CatalogEntity = {
-        id: catalogId,
+        projectId: projectId,
+        catalogId: catalogId,
         families: {},
         rules: {inclusions: [], exclusions: []},
         token: "",

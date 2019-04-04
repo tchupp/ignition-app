@@ -1,15 +1,20 @@
 import {nomadRTE} from "@ignition/nomad";
+import {CatalogFamilies} from "@ignition/catalogs";
 
 import {status} from "grpc";
 
+import {retrieveCatalog as retrieveCatalogInner, RetrieveCatalogError,} from "./catalog.retrieve";
 import {
-    retrieveCatalog as retrieveCatalogInner,
-    RetrieveCatalogError,
-    RetrieveCatalogResponse
-} from "./catalog.retrieve";
-import {Catalog, RetrieveCatalogRequest} from "../../generated/catalogs_pb";
+    Catalog,
+    CatalogExclusionsRule,
+    CatalogInclusionsRule,
+    Family,
+    RetrieveCatalogRequest
+} from "../../generated/catalogs_pb";
 import {badRequestDetail, GrpcServiceError, serviceError} from "../infrastructure/errors.pb";
 import {CatalogsResult} from "../infrastructure/result";
+import {CatalogEntity} from "./catalog.entity";
+import {defaultCatalogState} from "./catalog.state";
 
 export function retrieveCatalog(req: RetrieveCatalogRequest): CatalogsResult<GrpcServiceError, Catalog> {
     return fromRequest(req)
@@ -25,12 +30,38 @@ function fromRequest(req: RetrieveCatalogRequest): CatalogsResult<RetrieveCatalo
     return nomadRTE.of([projectId, catalogId] as [string, string]);
 }
 
-function toSuccessResponse(response: RetrieveCatalogResponse): Catalog {
+function toSuccessResponse(entity: CatalogEntity): Catalog {
     const catalog = new Catalog();
-    catalog.setCatalogId(response.id);
-    catalog.setToken(response.token);
-    catalog.setCreated(response.created.toISOString());
+    catalog.setProjectId(entity.projectId);
+    catalog.setCatalogId(entity.catalogId);
+    catalog.setCreated(entity.created.toISOString());
+    catalog.setDefaultState(defaultCatalogState(entity.projectId, entity.catalogId));
+    catalog.setFamiliesList(toFamiliesList(entity.families));
+    catalog.setExclusionRulesList(entity.rules.exclusions.map(({conditions, exclusions}) => {
+        const rule = new CatalogExclusionsRule();
+        rule.setConditionsList(conditions);
+        rule.setExclusionsList(exclusions);
+        return rule;
+    }));
+    catalog.setInclusionRulesList(entity.rules.inclusions.map(({conditions, inclusions}) => {
+        const rule = new CatalogInclusionsRule();
+        rule.setConditionsList(conditions);
+        rule.setInclusionsList(inclusions);
+        return rule;
+    }));
     return catalog;
+}
+
+function toFamiliesList(families: CatalogFamilies): Array<Family> {
+    return Object.keys(families)
+        .map(familyId => {
+            const items = families[familyId];
+
+            const family = new Family();
+            family.setFamilyId(familyId);
+            family.setItemsList(items);
+            return family;
+        });
 }
 
 function toErrorResponse(error: RetrieveCatalogError): GrpcServiceError {

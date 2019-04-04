@@ -8,6 +8,7 @@ import {CatalogEntity} from "../src/functions/catalog.entity";
 import {listCatalogs} from "../src/functions/catalog.list.handler";
 import {buildTestCatalogEntity} from "./catalog.test-fixture";
 import {ListCatalogsRequest} from "../generated/catalogs_pb";
+import {defaultCatalogState} from "../src/functions/catalog.state";
 
 const timestamp = new Date();
 const projectId = "my-project";
@@ -15,6 +16,7 @@ const projectId = "my-project";
 test("listCatalogs returns multiple catalogs", async (t) => {
     const catalogId1 = "catalog-1";
     const entity1: CatalogEntity = await buildTestCatalogEntity(
+        projectId,
         catalogId1,
         timestamp,
         {
@@ -24,6 +26,7 @@ test("listCatalogs returns multiple catalogs", async (t) => {
     );
     const catalogId2 = "catalog-2";
     const entity2: CatalogEntity = await buildTestCatalogEntity(
+        projectId,
         catalogId2,
         timestamp,
         {
@@ -59,16 +62,40 @@ test("listCatalogs returns multiple catalogs", async (t) => {
 
     t.deepEqual(result, right([
         {
+            projectId: projectId,
             catalogId: catalogId1,
-            projectId: "",
-            token: entity1.token,
             created: timestamp.toISOString(),
+            defaultState: defaultCatalogState(projectId, catalogId1),
+            familiesList: [
+                {
+                    familyId: "shirts",
+                    itemsList: ["shirts:red", "shirts:black"]
+                },
+                {
+                    familyId: "pants",
+                    itemsList: ["pants:jeans", "pants:slacks"]
+                }
+            ],
+            exclusionRulesList: [],
+            inclusionRulesList: [],
         },
         {
+            projectId: projectId,
             catalogId: catalogId2,
-            projectId: "",
-            token: entity2.token,
             created: timestamp.toISOString(),
+            defaultState: defaultCatalogState(projectId, catalogId2),
+            familiesList: [
+                {
+                    familyId: "shirts",
+                    itemsList: ["shirts:green", "shirts:yellow"]
+                },
+                {
+                    familyId: "pants",
+                    itemsList: ["pants:black", "pants:slacks"]
+                }
+            ],
+            exclusionRulesList: [],
+            inclusionRulesList: [],
         }
     ]));
 });

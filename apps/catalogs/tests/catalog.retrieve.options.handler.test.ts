@@ -180,6 +180,7 @@ const scenarios: Scenario[] = [
 scenarios.forEach(({description, catalogId, selections, expected}) => {
     test(description, async (t) => {
         const entity: CatalogEntity = await buildTestCatalogEntity(
+            projectId,
             catalogId,
             timestamp,
             families

@@ -23,19 +23,27 @@ export type CatalogRules = {
 }
 
 export type CatalogEntity = {
-    readonly id: string;
+    readonly projectId: string;
+    readonly catalogId: string;
     readonly families: CatalogFamilies;
     readonly rules: CatalogRules;
     readonly token: CatalogToken;
     readonly created: Date;
 }
 
-export function buildCatalogEntity(projectId: string, catalogId: string, assembly: CatalogAssembly, token: CatalogToken, timestamp: Date): Reader<Datastore, DatastorePayload<CatalogEntity>> {
+export function buildCatalogEntity(
+    projectId: string,
+    catalogId: string,
+    assembly: CatalogAssembly,
+    token: CatalogToken,
+    timestamp: Date
+): Reader<Datastore, DatastorePayload<CatalogEntity>> {
     return asks(datastore => ({
         key: datastore.key({path: ["Project", projectId, "Catalog", catalogId]}),
         excludeFromIndexes: ["token"],
         data: {
-            id: catalogId,
+            projectId: projectId,
+            catalogId: catalogId,
             families: assembly.families,
             rules: {
                 inclusions: assembly.inclusions,
@@ -53,7 +61,7 @@ export type SaveCatalogError =
 
 export function fromDatastoreError(err: NativeDatastoreError, entity: CatalogEntity): SaveCatalogError {
     if (err.code === DatastoreErrorCode.ALREADY_EXISTS) {
-        return {type: "CatalogAlreadyExists", catalogId: entity.id};
+        return {type: "CatalogAlreadyExists", catalogId: entity.catalogId};
     }
     return DatastoreError(err);
 }

@@ -51,8 +51,11 @@ message RetrieveCatalogRequest {
 message Catalog {
     string project_id = 1;
     string catalog_id = 2;
-    string token = 3;
-    string created = 4;
+    string created = 3;
+    string default_state = 4;
+    repeated Family families = 5;
+    repeated CatalogExclusionsRule exclusion_rules = 6;
+    repeated CatalogInclusionsRule inclusion_rules = 7;
 }
 
 message RetrieveCatalogOptionsRequest {

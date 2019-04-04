@@ -54,6 +54,7 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
         key: catalogKey,
         excludeFromIndexes: ["token"],
         data: await buildTestCatalogEntity(
+            projectId,
             catalogId,
             timestamp,
             catalogAssembly.families
@@ -115,6 +116,7 @@ test("createCatalog returns error when catalog already exists", async (t) => {
         key: catalogKey,
         excludeFromIndexes: ["token"],
         data: await buildTestCatalogEntity(
+            projectId,
             catalogId,
             timestamp,
             catalogAssembly.families

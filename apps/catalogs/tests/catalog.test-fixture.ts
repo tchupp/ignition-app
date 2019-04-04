@@ -19,6 +19,7 @@ const EMPTY_CATALOG_STATE: CatalogState = {
 };
 
 export async function buildTestCatalogEntity(
+    projectId: string,
     catalogId: string,
     created: Date,
     families: CatalogFamilies,
@@ -30,7 +31,8 @@ export async function buildTestCatalogEntity(
         .run();
 
     return {
-        id: catalogId,
+        projectId: projectId,
+        catalogId: catalogId,
         families,
         rules: {inclusions, exclusions},
         token: catalogOrError.getOrElse(EMPTY_CATALOG_TOKEN),

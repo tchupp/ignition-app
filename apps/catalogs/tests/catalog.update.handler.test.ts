@@ -53,6 +53,7 @@ test("updateCatalog returns 'created' when catalog is properly formed", async (t
         key: catalogKey,
         excludeFromIndexes: ["token"],
         data: await buildTestCatalogEntity(
+            projectId,
             catalogId,
             timestamp,
             catalogAssembly.families
