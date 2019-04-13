@@ -64,7 +64,7 @@ message RetrieveCatalogOptionsRequest {
     repeated string selections = 2;
     repeated string exclusions = 3;
 
-    string token = 5;
+    string state = 5;
 }
 
 message CreateCatalogRequest {
@@ -99,10 +99,9 @@ message CatalogInclusionsRule {
 }
 
 message CatalogOptions {
-    string catalog_id = 1;
-    repeated FamilyOptions options = 2;
+    repeated FamilyOptions options = 1;
 
-    string token = 3;
+    string state = 2;
 }
 
 message FamilyOptions {

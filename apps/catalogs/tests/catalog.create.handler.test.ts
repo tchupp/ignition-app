@@ -18,6 +18,7 @@ import {badRequestDetail, resourceInfoDetail, serviceError} from "../src/infrast
 import {createCatalog} from "../src/functions/catalog.create.handler";
 import {DatastoreErrorCode, NativeDatastoreError} from "../src/infrastructure/datastore.error";
 import {CatalogAssembly} from "../src/functions/catalog.entity";
+import {defaultCatalogState} from "../src/functions/catalog.state";
 
 const timestamp = new Date();
 const projectId = "my-project";
@@ -72,8 +73,7 @@ test("createCatalog returns 'created' when catalog is properly formed", async (t
         .run(datastore);
 
     const expected = {
-        catalogId: catalogId,
-        token: entity.data.token,
+        state: defaultCatalogState(projectId, catalogId),
         optionsList: [
             {
                 familyId: "pants",

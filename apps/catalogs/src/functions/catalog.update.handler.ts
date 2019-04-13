@@ -14,6 +14,7 @@ import {
 } from "../infrastructure/errors.pb";
 import {updateCatalog as updateCatalogInner, UpdateCatalogError, UpdateCatalogResponse} from "./catalog.update";
 import {CatalogAssembly} from "./catalog.entity";
+import {defaultCatalogState} from "./catalog.state";
 
 type ProjectId = string;
 type CatalogId = string;
@@ -50,7 +51,7 @@ function fromRequest(req: UpdateCatalogRequest): CatalogsResult<UpdateCatalogErr
     return nomadRTE.of([projectId, catalogId, assembly] as FromRequest);
 }
 
-function toSuccessResponse(response: UpdateCatalogResponse): CatalogOptions {
+function toSuccessResponse({projectId, catalogId, options}: UpdateCatalogResponse): CatalogOptions {
     function toItem(status: ItemStatus): ItemOption {
         const item = new ItemOption();
         switch (status.type) {
@@ -83,13 +84,12 @@ function toSuccessResponse(response: UpdateCatalogResponse): CatalogOptions {
     }
 
     const familyOptions: FamilyOptions[] =
-        Object.keys(response.options)
-            .map(familyId => toFamilyOptions(familyId, response.options[familyId]));
+        Object.keys(options)
+            .map(familyId => toFamilyOptions(familyId, options[familyId]));
 
     const catalogOptions = new CatalogOptions();
-    catalogOptions.setCatalogId(response.id);
     catalogOptions.setOptionsList(familyOptions);
-    catalogOptions.setToken(response.token);
+    catalogOptions.setState(defaultCatalogState(projectId, catalogId));
     return catalogOptions;
 }
 

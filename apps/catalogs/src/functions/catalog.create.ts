@@ -7,7 +7,6 @@ import {
     buildCatalog,
     CatalogBuildError,
     CatalogOptionsError,
-    CatalogToken,
     findOptions as findOptionsInner,
     Options,
 } from "@ignition/catalogs";
@@ -30,9 +29,9 @@ export type CreateCatalogError =
     | CatalogOptionsError
 
 export type CreateCatalogResponse = {
-    readonly id: string;
+    readonly projectId: string;
+    readonly catalogId: string;
     readonly options: Options;
-    readonly token: CatalogToken;
 }
 
 type ProjectId = string;
@@ -55,7 +54,7 @@ export function createCatalog(
                 .map(() => catalogState)
         )
         .chain(catalogState => findOptionsInner(catalogState).toNomadRTE<Datastore>())
-        .map(([options, catalog]) => ({id: catalogId, options: options, token: catalog.token}));
+        .map(([options, _]) => ({projectId: projectId, catalogId: catalogId, options: options}));
 }
 
 function saveCatalogEntity(

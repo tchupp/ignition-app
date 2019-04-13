@@ -29,9 +29,9 @@ export type UpdateCatalogError =
     | CatalogOptionsError
 
 export type UpdateCatalogResponse = {
-    readonly id: string;
+    readonly projectId: string;
+    readonly catalogId: string;
     readonly options: Options;
-    readonly token: string;
 }
 
 type ProjectId = string;
@@ -53,8 +53,8 @@ export function updateCatalog(
                 .chain(saveCatalogEntity)
                 .map(() => catalogState)
         )
-        .chain(catalogToken => findOptionsInner(catalogToken).toNomadRTE<Datastore>())
-        .map(([options, catalog]) => ({id: catalogId, options: options, token: catalog.token}));
+        .chain(catalogState => findOptionsInner(catalogState).toNomadRTE<Datastore>())
+        .map(([options, _]) => ({projectId: projectId, catalogId: catalogId, options: options}));
 }
 
 function saveCatalogEntity(

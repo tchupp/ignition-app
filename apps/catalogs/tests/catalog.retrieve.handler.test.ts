@@ -95,10 +95,36 @@ test("retrieveCatalog returns error, when catalog does not exist", async (t) => 
     ));
 });
 
+test("retrieveCatalog returns error, when request is missing projectId", async (t) => {
+    const datastoreStub: Datastore = mock(Datastore);
+
+    const req = new RetrieveCatalogRequest();
+    req.setCatalogId("catalog-7");
+
+    const datastore = instance(datastoreStub);
+    const [result] = await retrieveCatalog(req)
+        .run(datastore);
+
+    t.deepEqual(result, left(
+        serviceError(
+            "Missing ProjectId",
+            status.INVALID_ARGUMENT,
+            [
+                badRequestDetail({
+                    fieldViolationsList: [{
+                        field: "project_id",
+                        description: "Project Id is required"
+                    }]
+                })
+            ])
+    ));
+});
+
 test("retrieveCatalog returns error, when request is missing catalogId", async (t) => {
     const datastoreStub: Datastore = mock(Datastore);
 
     const req = new RetrieveCatalogRequest();
+    req.setProjectId(projectId);
 
     const datastore = instance(datastoreStub);
     const [result] = await retrieveCatalog(req)

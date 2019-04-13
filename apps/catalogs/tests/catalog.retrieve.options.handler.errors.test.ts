@@ -14,10 +14,36 @@ import {badRequestDetail, preconditionFailureDetail, serviceError} from "../src/
 const timestamp = new Date();
 const projectId = "my-project";
 
+test("retrieveCatalogOptions returns error, when request is missing projectId", async (t) => {
+    const datastoreStub: Datastore = mock(Datastore);
+
+    const req = new RetrieveCatalogOptionsRequest();
+    req.setCatalogId("catalog-19");
+
+    const datastore = instance(datastoreStub);
+    const [result] = await retrieveCatalogOptions(req)
+        .run(datastore);
+
+    t.deepEqual(result, left(
+        serviceError(
+            "Missing ProjectId",
+            status.INVALID_ARGUMENT,
+            [
+                badRequestDetail({
+                    fieldViolationsList: [{
+                        field: "project_id",
+                        description: "Project Id is required"
+                    }]
+                })
+            ])
+    ));
+});
+
 test("retrieveCatalogOptions returns error, when request is missing catalogId", async (t) => {
     const datastoreStub: Datastore = mock(Datastore);
 
     const req = new RetrieveCatalogOptionsRequest();
+    req.setProjectId(projectId);
 
     const datastore = instance(datastoreStub);
     const [result] = await retrieveCatalogOptions(req)
@@ -120,7 +146,7 @@ test("retrieveCatalogOptions returns error, when datastore has an empty catalog 
 
     t.deepEqual(result, left(
         serviceError(
-            "Malformed catalog token, catalog must be re-created",
+            "Malformed catalog, catalog must be re-created",
             status.FAILED_PRECONDITION,
             [
                 preconditionFailureDetail({
@@ -159,37 +185,5 @@ test("retrieveCatalogOptions returns error, when catalog does not exist", async 
         serviceError(
             "No catalog found with id 'catalog-5'",
             status.NOT_FOUND)
-    ));
-});
-
-test("retrieveCatalogOptions returns error, when request contains bad token", async (t) => {
-    const catalogId = "catalog-7";
-    const token = "MwAAAAAAAAAoMCA";
-
-    const datastoreStub: Datastore = mock(Datastore);
-
-    const req = new RetrieveCatalogOptionsRequest();
-    req.setProjectId(projectId);
-    req.setCatalogId(catalogId);
-
-    req.setToken(token);
-
-    const datastore = instance(datastoreStub);
-    const [result] = await retrieveCatalogOptions(req)
-        .map(catalog => catalog.toObject())
-        .run(datastore);
-
-    t.deepEqual(result, left(
-        serviceError(
-            "Request contains bad catalog token",
-            status.INVALID_ARGUMENT,
-            [
-                badRequestDetail({
-                    fieldViolationsList: [{
-                        field: "token",
-                        description: `token: ${token}`
-                    }]
-                })
-            ])
     ));
 });

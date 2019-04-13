@@ -1,4 +1,5 @@
 import {Item} from "@ignition/catalogs";
+import {Option, tryCatch} from "fp-ts/lib/Option";
 
 export type CatalogState = {
     readonly projectId: string,
@@ -16,8 +17,8 @@ export function defaultCatalogState(projectId: string, catalogId: string): Seria
     });
 }
 
-export function CatalogState(state: SerializedCatalogState): CatalogState {
-    return JSON.parse(new Buffer(state, "base64").toString("ascii"));
+export function CatalogState(state: SerializedCatalogState): Option<CatalogState> {
+    return tryCatch(() => JSON.parse(new Buffer(state, "base64").toString("ascii")));
 }
 
 export type SerializedCatalogState = string;

@@ -17,6 +17,7 @@ import {
 import {badRequestDetail, serviceError} from "../src/infrastructure/errors.pb";
 import {updateCatalog} from "../src/functions/catalog.update.handler";
 import {CatalogAssembly} from "../src/functions/catalog.entity";
+import {defaultCatalogState} from "../src/functions/catalog.state";
 
 const timestamp = new Date();
 const projectId = "my-project";
@@ -71,8 +72,7 @@ test("updateCatalog returns 'created' when catalog is properly formed", async (t
         .run(datastore);
 
     const expected = {
-        catalogId: catalogId,
-        token: entity.data.token,
+        state: defaultCatalogState(projectId, catalogId),
         optionsList: [
             {
                 familyId: "pants",

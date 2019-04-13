@@ -72,6 +72,19 @@ function toErrorResponse(error: RetrieveCatalogError): GrpcServiceError {
                 status.INTERNAL,
                 []);
 
+        case "MissingProjectId":
+            return serviceError(
+                "Missing ProjectId",
+                status.INVALID_ARGUMENT,
+                [
+                    badRequestDetail({
+                        fieldViolationsList: [{
+                            field: "project_id",
+                            description: "Project Id is required"
+                        }]
+                    })
+                ]);
+
         case "MissingCatalogId":
             return serviceError(
                 "Missing CatalogId",

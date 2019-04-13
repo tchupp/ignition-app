@@ -1,5 +1,5 @@
 import {nomadRTE} from "@ignition/nomad";
-import {CatalogToken, Item, ItemStatus} from "@ignition/catalogs";
+import {Item, ItemStatus} from "@ignition/catalogs";
 
 import {CatalogOptions, FamilyOptions, ItemOption, RetrieveCatalogOptionsRequest} from "../../generated/catalogs_pb";
 import {status} from "grpc";
@@ -11,24 +11,31 @@ import {
 } from "./catalog.retrieve.options";
 import {badRequestDetail, GrpcServiceError, preconditionFailureDetail, serviceError} from "../infrastructure/errors.pb";
 import {CatalogsResult} from "../infrastructure/result";
+import {CatalogState, SerializedCatalogState} from "./catalog.state";
+import {Option} from "fp-ts/lib/Option";
+
+type ProjectId = string;
+type CatalogId = string;
+type FromRequest = [ProjectId, CatalogId, Option<CatalogState>, Item[], Item[]];
 
 export function retrieveCatalogOptions(req: RetrieveCatalogOptionsRequest): CatalogsResult<GrpcServiceError, CatalogOptions> {
     return fromRequest(req)
-        .chain(([projectId, catalogId, token, selections]) => retrieveCatalogOptionsInner(projectId, catalogId, token, selections))
+        .chain(([projectId, catalogId, catalogState, selections, exclusions]) => retrieveCatalogOptionsInner(projectId, catalogId, catalogState, selections, exclusions))
         .mapLeft(toErrorResponse)
         .map(toSuccessResponse);
 }
 
-function fromRequest(req: RetrieveCatalogOptionsRequest): CatalogsResult<RetrieveCatalogOptionsError, [string, string, CatalogToken, Item[]]> {
+function fromRequest(req: RetrieveCatalogOptionsRequest): CatalogsResult<RetrieveCatalogOptionsError, FromRequest> {
     const projectId = req.getProjectId();
     const catalogId = req.getCatalogId();
-    const token = req.getToken();
+    const catalogState = CatalogState(req.getState());
     const selections = req.getSelectionsList();
+    const exclusions = req.getExclusionsList();
 
-    return nomadRTE.of([projectId, catalogId, token, selections] as [string, string, CatalogToken, Item[]]);
+    return nomadRTE.of([projectId, catalogId, catalogState, selections, exclusions] as FromRequest);
 }
 
-function toSuccessResponse(response: RetrieveCatalogOptionsResponse): CatalogOptions {
+function toSuccessResponse({options, catalogState}: RetrieveCatalogOptionsResponse): CatalogOptions {
     function toItem(status: ItemStatus): ItemOption {
         const item = new ItemOption();
         item.setItemId(status.item);
@@ -59,13 +66,12 @@ function toSuccessResponse(response: RetrieveCatalogOptionsResponse): CatalogOpt
     }
 
     const familyOptions: FamilyOptions[] =
-        Object.keys(response.options)
-            .map(familyId => toFamilyOptions(familyId, response.options[familyId]));
+        Object.keys(options)
+            .map(familyId => toFamilyOptions(familyId, options[familyId]));
 
     const catalogOptions = new CatalogOptions();
-    catalogOptions.setCatalogId(response.id);
     catalogOptions.setOptionsList(familyOptions);
-    catalogOptions.setToken(response.token);
+    catalogOptions.setState(SerializedCatalogState(catalogState));
     return catalogOptions;
 }
 
@@ -78,6 +84,19 @@ function toErrorResponse(error: RetrieveCatalogOptionsError): GrpcServiceError {
                 "Datastore Error",
                 status.INTERNAL,
                 []);
+
+        case "MissingProjectId":
+            return serviceError(
+                "Missing ProjectId",
+                status.INVALID_ARGUMENT,
+                [
+                    badRequestDetail({
+                        fieldViolationsList: [{
+                            field: "project_id",
+                            description: "Project Id is required"
+                        }]
+                    })
+                ]);
 
         case "MissingCatalogId":
             return serviceError(
@@ -144,7 +163,7 @@ function toErrorResponse(error: RetrieveCatalogOptionsError): GrpcServiceError {
 
         case "BadToken":
             return serviceError(
-                "Malformed catalog token, catalog must be re-created",
+                "Malformed catalog, catalog must be re-created",
                 status.FAILED_PRECONDITION,
                 [
                     preconditionFailureDetail({
@@ -152,19 +171,6 @@ function toErrorResponse(error: RetrieveCatalogOptionsError): GrpcServiceError {
                             type: "CatalogToken",
                             subject: error.catalogId,
                             description: "Catalog token is malformed",
-                        }]
-                    })
-                ]);
-
-        case "BadUserToken":
-            return serviceError(
-                "Request contains bad catalog token",
-                status.INVALID_ARGUMENT,
-                [
-                    badRequestDetail({
-                        fieldViolationsList: [{
-                            field: "token",
-                            description: `token: ${error.token}`
                         }]
                     })
                 ]);

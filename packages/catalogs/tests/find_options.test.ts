@@ -63,12 +63,24 @@ test("findOptions with no rules, and one selection", async t => {
 });
 
 test("findOptions with no rules, and two selections", async t => {
-    const [result1] = await findOptions(await catalogState, ["pants:slacks,   shirts:red"]).run();
+    const [result1] = await findOptions(await catalogState, ["pants:slacks"]).run();
+
+    const expectedOptions1: Options = {
+        "shirts": [
+            {type: "Available", item: "shirts:blue"},
+            {type: "Available", item: "shirts:red"}
+        ],
+        "pants": [
+            {type: "Selected", item: "pants:slacks"},
+            {type: "Excluded", item: "pants:jeans"},
+        ]
+    };
+    t.deepEqual(result1.map(e => e[0]), right(expectedOptions1));
 
     const newCatalogState = result1.map(e => e[1]).getOrElse(DEFAULT_STATE);
-    const [result2] = await findOptions(newCatalogState, []).run();
+    const [result2] = await findOptions(newCatalogState, ["shirts:red"]).run();
 
-    const expectedOptions: Options = {
+    const expectedOptions2: Options = {
         "shirts": [
             {type: "Selected", item: "shirts:red"},
             {type: "Excluded", item: "shirts:blue"}
@@ -78,8 +90,7 @@ test("findOptions with no rules, and two selections", async t => {
             {type: "Excluded", item: "pants:jeans"},
         ]
     };
-    t.deepEqual(result1.map(e => e[0]), right(expectedOptions));
-    t.deepEqual(result1, result2);
+    t.deepEqual(result2.map(e => e[0]), right(expectedOptions2));
 });
 
 test("findOptions with no rules, and one exclusion", async t => {

@@ -103,13 +103,16 @@ impl CatalogState {
         let catalog = Self::catalog_from_token(&self.token)?;
         Self::validate_selections_and_exclusions(&catalog, selections, exclusions)?;
 
-        let catalog = catalog.restrict(selections, exclusions);
+        let selections = Self::chain(&self.selections, selections);
+        let exclusions = Self::chain(&self.exclusions, exclusions);
+
+        let catalog = catalog.restrict(&selections, &exclusions);
         let combinations = catalog.combinations();
 
         let new_state = CatalogState {
             token: Self::catalog_to_token(&catalog),
-            selections: Self::chain(&self.selections, selections),
-            exclusions: Self::chain(&self.exclusions, exclusions),
+            selections,
+            exclusions,
         };
 
         Ok((combinations, new_state))
@@ -119,11 +122,11 @@ impl CatalogState {
         let catalog = Self::catalog_from_token(&self.token)?;
         Self::validate_selections_and_exclusions(&catalog, selections, exclusions)?;
 
-        let catalog = catalog.restrict(selections, exclusions);
-        let total = catalog.combinations.len();
-
         let selections = Self::chain(&self.selections, selections);
         let exclusions = Self::chain(&self.exclusions, exclusions);
+
+        let catalog = catalog.restrict(&selections, &exclusions);
+        let total = catalog.combinations.len();
 
         let options = catalog.item_occurrences()
             .map(|(family, (item, count))| {
