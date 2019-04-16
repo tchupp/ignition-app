@@ -93,7 +93,8 @@ const service: grpc.UntypedServiceImplementation = {
 };
 
 function main() {
-    const port = '0.0.0.0:8080';
+    const PORT = process.env.PORT || 8080;
+    const port = `0.0.0.0:${PORT}`;
 
     const server = new grpc.Server();
     server.addService(CatalogManagerService, service);
