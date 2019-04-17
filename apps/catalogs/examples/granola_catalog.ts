@@ -70,11 +70,17 @@ function createGranolaCatalog(client: CatalogManagerClient, projectId: string, c
     });
 }
 
-function retrieveGranolaIngredientsOptions(client: CatalogManagerClient, projectId: string, catalogId: string, token: string = "", selections: string[] = []): Promise<CatalogOptions> {
+function retrieveGranolaIngredientsOptions(
+    client: CatalogManagerClient,
+    projectId: string,
+    catalogId: string,
+    catalogState: string = "",
+    selections: string[] = []
+): Promise<CatalogOptions> {
     const retrieveOptionsRequest = new RetrieveCatalogOptionsRequest();
     retrieveOptionsRequest.setProjectId(projectId);
     retrieveOptionsRequest.setCatalogId(catalogId);
-    retrieveOptionsRequest.setToken(token);
+    retrieveOptionsRequest.setState(catalogState);
     retrieveOptionsRequest.setSelectionsList(selections);
 
     return new Promise<CatalogOptions>((resolve, reject) => {
@@ -135,7 +141,7 @@ async function main() {
         console.log(`Selecting: ${ingredient.itemId}\n`);
 
         // Add the ingredient to the recipe
-        ingredientsOptions = await retrieveGranolaIngredientsOptions(client, projectId, catalogId, ingredientsOptions.getToken(), [ingredient.itemId]);
+        ingredientsOptions = await retrieveGranolaIngredientsOptions(client, projectId, catalogId, ingredientsOptions.getState(), [ingredient.itemId]);
 
         // Find the first available ingredient
         ingredient = findFirstAvailableIngredient(ingredientsOptions);

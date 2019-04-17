@@ -130,11 +130,17 @@ function createComputerCatalog(client: CatalogManagerClient, projectId: string, 
     });
 }
 
-function retrievePartsOptions(client: CatalogManagerClient, projectId: string, catalogId: string, token: string = "", selections: string[] = []): Promise<CatalogOptions> {
+function retrievePartsOptions(
+    client: CatalogManagerClient,
+    projectId: string,
+    catalogId: string,
+    catalogState: string = "",
+    selections: string[] = []
+): Promise<CatalogOptions> {
     const retrieveOptionsRequest = new RetrieveCatalogOptionsRequest();
     retrieveOptionsRequest.setProjectId(projectId);
     retrieveOptionsRequest.setCatalogId(catalogId);
-    retrieveOptionsRequest.setToken(token);
+    retrieveOptionsRequest.setState(catalogState);
     retrieveOptionsRequest.setSelectionsList(selections);
 
     return new Promise<CatalogOptions>((resolve, reject) => {
@@ -195,7 +201,7 @@ async function main() {
         console.log(`Selecting: ${part.itemId}\n`);
 
         // Add the part to the build
-        partOptions = await retrievePartsOptions(client, projectId, catalogId, partOptions.getToken(), [part.itemId]);
+        partOptions = await retrievePartsOptions(client, projectId, catalogId, partOptions.getState(), [part.itemId]);
 
         // Find the first available part
         part = findFirstAvailablePart(partOptions);
