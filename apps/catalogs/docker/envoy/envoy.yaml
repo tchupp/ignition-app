@@ -20,9 +20,16 @@ static_resources:
                     - name: local_service
                       domains: ["*"]
                       routes:
-                        - match: { prefix: "/", grpc: {} }
+                        - match: { prefix: "/" }
                           route: { cluster: grpc-backend, auto_host_rewrite: true, timeout: { seconds: 60 } }
+                      cors:
+                        allow_origin_string_match:
+                          safe_regex:
+                            google_re2: { }
+                            regex: ".*"
                 http_filters:
+                  - name: envoy.cors
+                  - name: envoy.grpc_web
                   - name: envoy.grpc_json_transcoder
                     config:
                       proto_descriptor: "/data/api_descriptor.pb"
