@@ -4,6 +4,8 @@ variables:
   GIT_SUBMODULE_STRATEGY: normal
   VERSIONED_CATALOGS_IMAGE: '$CATALOGS_IMAGE:v$CI_PIPELINE_IID'
   LATEST_CATALOGS_IMAGE: '$CATALOGS_IMAGE:latest'
+  VERSIONED_CATALOGS_ENVOY_IMAGE: '$CATALOGS_ENVOY_IMAGE:v$CI_PIPELINE_IID'
+  LATEST_CATALOGS_ENVOY_IMAGE: '$CATALOGS_ENVOY_IMAGE:latest'
 
 cache:
   key: "$CI_PROJECT_NAME"
@@ -40,9 +42,12 @@ publish:catalogs-docker:
     - echo ${SERVICE_ACCOUNT} | base64 -d > sa_credentials.json
     - docker login -u _json_key --password-stdin https://gcr.io < sa_credentials.json
   script:
-    - docker build --cache-from "${LATEST_CATALOGS_IMAGE}" -t "${VERSIONED_CATALOGS_IMAGE}" -t "${LATEST_CATALOGS_IMAGE}" apps/catalogs
+    - docker build --cache-from "${LATEST_CATALOGS_IMAGE}" -t "${VERSIONED_CATALOGS_IMAGE}" -t "${LATEST_CATALOGS_IMAGE}" -f apps/catalogs/docker/app/Dockerfile apps/catalogs
+    - docker build --cache-from "${LATEST_CATALOGS_ENVOY_IMAGE}" -t "${VERSIONED_CATALOGS_ENVOY_IMAGE}" -t "${LATEST_CATALOGS_ENVOY_IMAGE}" -f apps/catalogs/docker/envoy/Dockerfile apps/catalogs
     - docker push "${VERSIONED_CATALOGS_IMAGE}"
+    - docker push "${VERSIONED_CATALOGS_ENVOY_IMAGE}"
     - docker push "${LATEST_CATALOGS_IMAGE}"
+    - docker push "${LATEST_CATALOGS_ENVOY_IMAGE}"
   only:
     - master
 
@@ -53,16 +58,9 @@ deploy:catalogs-prod:
     - echo ${SERVICE_ACCOUNT} | base64 -d > sa_credentials.json
     - gcloud auth activate-service-account --key-file=sa_credentials.json
     - gcloud config set project $GCP_PROJECT
-    - gcloud container clusters get-credentials ${GKE_CLUSTER_NAME} --zone ${GKE_CLUSTER_ZONE}
   script:
-    - echo "Updating Catalogs Deployment"
-    - sed -i "s,\$CATALOGS_IMAGE,$CATALOGS_IMAGE,g" apps/catalogs/k8s-deployment.yml
-    - sed -i "s,\$GCP_PROJECT,$GCP_PROJECT,g" apps/catalogs/k8s-deployment.yml
-    - sed -i "s,\$VERSION,v$CI_PIPELINE_IID,g" apps/catalogs/k8s-deployment.yml
-    - kubectl apply -f apps/catalogs/k8s-deployment.yml
-    - echo "Updating Catalogs Endpoints config"
-    - sed -i "s,\$GCP_PROJECT,$GCP_PROJECT,g" apps/catalogs/api_config.yml
-    - gcloud endpoints services deploy apps/catalogs/api_descriptor.pb apps/catalogs/api_config.yml
+    - gcloud run deploy --image "${LATEST_CATALOGS_IMAGE}" --allow-unauthenticated
+    - gcloud run deploy --image "${LATEST_CATALOGS_ENVOY_IMAGE}" --allow-unauthenticated
   environment:
     name: production
   only:
