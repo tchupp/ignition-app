@@ -130,6 +130,7 @@ test("createCatalog returns error when catalog already exists", async (t) => {
     const datastoreStub: Datastore = mock(Datastore);
 
     when(datastoreStub.key(deepEqual({path: ["Project", projectId, "Catalog", catalogId]}))).thenReturn(catalogKey);
+    //@ts-ignore
     when(datastoreStub.insert(deepEqual(entity))).thenReject(insertError);
 
     const datastore = instance(datastoreStub);
